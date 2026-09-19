@@ -118,6 +118,13 @@ const RUN_SPEED  = 6.6;
 const GRAVITY    = 24.0;
 const JUMP_SPEED = 6.8;
 
+// Motion blur
+const MB_STRENGTH = 1.35;   // global multiplier on angular delta → UV offset
+const MB_MAX      = 0.045;  // cap on blur length in UV
+
+// Lake
+const LAKE_X = 0, LAKE_Z = -55, LAKE_RADIUS = 42, LAKE_Y = 0.08;
+
 // Sun: 26° elevation, 135° azimuth — warm afternoon
 const SUN_ELEV = 26 * Math.PI / 180;
 const SUN_AZIM = 135 * Math.PI / 180;
@@ -127,7 +134,6 @@ const SUN_DIR = new THREE.Vector3(
   Math.cos(SUN_ELEV) * Math.cos(SUN_AZIM)
 ).normalize();
 
-// Horizon colour, linear HDR (matches sky shader horizon)
 const HORIZON_LIN = new THREE.Color().setRGB(0.72, 0.82, 0.92, THREE.LinearSRGBColorSpace);
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -135,8 +141,9 @@ const UP = new THREE.Vector3(0, 1, 0);
 /* ===================================================================== */
 /*  State                                                                */
 /* ===================================================================== */
-let scene, camera, renderer, composer, controls, sky, gradePass;
+let scene, camera, renderer, composer, controls, sky, water;
 let pmremRT = null;
+let gradePass, motionBlurPass;
 let ready = false;
 
 const clock  = new THREE.Clock();
@@ -144,13 +151,19 @@ const keys   = Object.create(null);
 const clouds = [];
 const cloudGroup = new THREE.Group();
 
+// Motion blur tracking
+const _prevQuat = new THREE.Quaternion();
+const _deltaQ   = new THREE.Quaternion();
+const _deltaE   = new THREE.Euler();
+
 const player = {
   pos: new THREE.Vector3(0, EYE_HEIGHT, 0),
   vel: new THREE.Vector3(),
   grounded: true,
   bobPhase: 0,
   bobBlend: 0,
-  idlePhase: 0
+  idlePhase: 0,
+  roll: 0
 };
 
 const forward = new THREE.Vector3();
@@ -193,7 +206,7 @@ function showError(err) {
 function init() {
   /* ---------- renderer ---------- */
   renderer = new THREE.WebGLRenderer({
-    antialias: false,          // SMAA handles this
+    antialias: false,
     powerPreference: 'high-performance',
     stencil: false,
     alpha: false
@@ -214,13 +227,19 @@ function init() {
   scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(HORIZON_LIN, 0.00042);
 
-  /* ---------- camera ---------- */
+  /* ---------- camera ----------
+     NOTE: PointerLockControls uses YXZ Euler internally. We MUST match
+     that order on the camera's own Euler, otherwise writing
+     camera.rotation.z for roll corrupts the camera orientation. */
   camera = new THREE.PerspectiveCamera(
     70, window.innerWidth / window.innerHeight, 0.1, 30000
   );
+  camera.rotation.order = 'YXZ';
   camera.position.copy(player.pos);
 
-  /* ---------- sun (directional + shadow) ---------- */
+  _prevQuat.copy(camera.quaternion);
+
+  /* ---------- sun ---------- */
   const sun = new THREE.DirectionalLight(0xfff1d6, 3.4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -236,9 +255,9 @@ function init() {
   scene.add(sun.target);
   scene.userData.sun = sun;
 
-  /* ---------- ground baseplate ---------- */
+  /* ---------- ground ---------- */
   const groundMaps = generateConcreteTextures(512, maxAniso);
-  const detailTex   = generateDetailTexture(256, maxAniso);
+  const detailTex  = generateDetailTexture(256, maxAniso);
 
   const GROUND_SIZE = 6000;
   const TILE = 6;
@@ -260,13 +279,9 @@ function init() {
     dithering: true
   });
 
-  // Two-scale detail blending via shader injection
   groundMat.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
-    shader.fragmentShader = `
-      uniform sampler2D detailMap;
-    ` + shader.fragmentShader;
-
+    shader.fragmentShader = `uniform sampler2D detailMap;\n` + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
       /* glsl */`
@@ -280,24 +295,26 @@ function init() {
 
   const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, 1, 1);
   groundGeo.rotateX(-Math.PI / 2);
-  groundGeo.setAttribute('uv2', groundGeo.attributes.uv); // for aoMap
+  groundGeo.setAttribute('uv2', groundGeo.attributes.uv);
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.receiveShadow = true;
   scene.add(ground);
 
-  /* ---------- distant terrain (hills fading into fog) ---------- */
-  const terrain = makeDistantTerrain();
-  scene.add(terrain);
+  /* ---------- distant terrain ---------- */
+  scene.add(makeDistantTerrain());
 
-  /* ---------- scattered rocks ---------- */
-  const rocks = makeRocks(420, maxAniso);
-  scene.add(rocks);
+  /* ---------- scattered rocks (avoid the lake) ---------- */
+  scene.add(makeRocks(420, maxAniso));
+
+  /* ---------- lake ---------- */
+  water = makeLake();
+  scene.add(water);
 
   /* ---------- sky dome ---------- */
   sky = makeSky();
   scene.add(sky);
 
-  /* ---------- bake environment map from sky for IBL ---------- */
+  /* ---------- bake IBL from the sky ---------- */
   bakeEnvironment();
 
   /* ---------- clouds ---------- */
@@ -330,31 +347,33 @@ function init() {
   window.addEventListener('keyup', (e) => { keys[e.code] = false; });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-  /* ---------- post-processing pipeline ---------- */
+  /* ---------- post pipeline ---------- */
   composer = new EffectComposer(renderer);
   composer.setPixelRatio(pixelRatio);
   composer.setSize(window.innerWidth, window.innerHeight);
 
   composer.addPass(new RenderPass(scene, camera));
 
-  // Subtle bloom — only the sun disc and bright cloud edges should trigger it
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.42,   // strength
-    0.55,   // radius
-    0.86    // threshold (HDR)
+    0.42, 0.55, 0.86
   );
   composer.addPass(bloom);
 
-  // Tone map + colorspace (ACES → sRGB)
   composer.addPass(new OutputPass());
 
-  // Filmic grade: vignette + chromatic aberration + grain + colour grade
+  // Motion blur — spin-blur driven by camera angular delta
+  motionBlurPass = new ShaderPass(makeMotionBlurShader());
+  motionBlurPass.uniforms.uAngular.value.set(0, 0);
+  motionBlurPass.uniforms.uStrength.value = MB_STRENGTH;
+  motionBlurPass.uniforms.uMax.value = MB_MAX;
+  composer.addPass(motionBlurPass);
+
+  // Filmic grade
   gradePass = new ShaderPass(makeGradeShader());
   gradePass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
   composer.addPass(gradePass);
 
-  // Antialiasing on the final LDR image
   composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
 
   /* ---------- resize ---------- */
@@ -370,7 +389,7 @@ function init() {
 }
 
 /* ===================================================================== */
-/*  Sky dome — analytic atmosphere gradient + sun disc + Mie glow        */
+/*  Sky dome                                                             */
 /* ===================================================================== */
 function makeSky() {
   const geo = new THREE.SphereGeometry(14000, 32, 20);
@@ -379,9 +398,7 @@ function makeSky() {
     side: THREE.BackSide,
     depthWrite: false,
     fog: false,
-    uniforms: {
-      uSunDir: { value: SUN_DIR.clone() }
-    },
+    uniforms: { uSunDir: { value: SUN_DIR.clone() } },
     vertexShader: /* glsl */`
       varying vec3 vWorldPos;
       void main() {
@@ -392,44 +409,43 @@ function makeSky() {
     `,
     fragmentShader: /* glsl */`
       precision highp float;
-
       uniform vec3 uSunDir;
       varying vec3 vWorldPos;
 
-      // Analytic sky: three-stop gradient + sun disc + Mie halo.
-      // Output is LINEAR HDR (tone mapping is applied later by the composer).
       void main() {
         vec3 rayDir = normalize(vWorldPos - cameraPosition);
         vec3 sunDir = normalize(uSunDir);
         float sunDot = dot(rayDir, sunDir);
         float h = max(rayDir.y, 0.0);
 
-        // Sky colours in linear-HDR space, tuned to survive ACES
-        vec3 zenith  = vec3(0.085, 0.255, 0.780);
-        vec3 mid     = vec3(0.320, 0.600, 1.020);
-        vec3 horizon = vec3(0.860, 0.960, 1.060);
+        // Three-stop atmospheric gradient (linear HDR)
+        vec3 zenith  = vec3(0.070, 0.230, 0.780);
+        vec3 mid     = vec3(0.310, 0.585, 1.030);
+        vec3 horizon = vec3(0.940, 0.960, 1.010);
 
         vec3 col;
-        if (h < 0.22) {
-          col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
+        if (h < 0.24) {
+          col = mix(horizon, mid, smoothstep(0.0, 0.24, h));
         } else {
-          col = mix(mid, zenith, pow(smoothstep(0.22, 1.0, h), 0.85));
+          col = mix(mid, zenith, pow(smoothstep(0.24, 1.0, h), 0.82));
         }
 
-        // Mie-like forward-scattering glow around the sun
+        // Multi-tier sun halo — wide warm haze, then tighter glows, then
+        // the disc itself. All very bright in linear HDR so bloom catches it.
         float mu = max(sunDot, 0.0);
-        col += vec3(1.00, 0.92, 0.74) * pow(mu, 5.0)   * 0.55;
-        col += vec3(1.00, 0.95, 0.85) * pow(mu, 48.0)  * 1.10;
-        col += vec3(1.00, 0.98, 0.94) * pow(mu, 400.0) * 3.20;
+        col += vec3(1.00, 0.85, 0.62) * pow(mu, 3.0)   * 0.42;
+        col += vec3(1.00, 0.90, 0.72) * pow(mu, 14.0)  * 0.65;
+        col += vec3(1.00, 0.95, 0.85) * pow(mu, 64.0)  * 1.30;
+        col += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 3.60;
 
-        // Sun disc — extremely bright so bloom picks it up
-        float disc = smoothstep(0.99976, 0.99992, sunDot);
-        col += vec3(1.0, 0.97, 0.90) * disc * 32.0;
+        // Sun disc with soft edge
+        float disc = smoothstep(0.99970, 0.99994, sunDot);
+        col += vec3(1.0, 0.97, 0.90) * disc * 40.0;
 
-        // Below-horizon haze so nothing goes black
+        // Below-horizon haze
         if (rayDir.y < 0.0) {
           float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
-          col = mix(horizon, vec3(0.72, 0.78, 0.86), gt);
+          col = mix(horizon, vec3(0.68, 0.74, 0.82), gt);
         }
 
         gl_FragColor = vec4(col, 1.0);
@@ -444,32 +460,153 @@ function makeSky() {
 }
 
 /* ===================================================================== */
-/*  Bake PMREM environment map from the sky (for IBL / reflections)      */
+/*  Lake — realistic water with Fresnel sky reflection & waves           */
+/* ===================================================================== */
+function makeLake() {
+  const geo = new THREE.CircleGeometry(LAKE_RADIUS, 128);
+  geo.rotateX(-Math.PI / 2);
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime:        { value: 0 },
+      uSunDir:      { value: SUN_DIR.clone() },
+      uDeepColor:   { value: new THREE.Color(0.008, 0.040, 0.085) },
+      uShallow:     { value: new THREE.Color(0.020, 0.090, 0.135) },
+      uZenith:      { value: new THREE.Color(0.070, 0.230, 0.780) },
+      uMid:         { value: new THREE.Color(0.310, 0.585, 1.030) },
+      uHorizon:     { value: new THREE.Color(0.940, 0.960, 1.010) },
+      uFogColor:    { value: HORIZON_LIN.clone() },
+      uFogDensity:  { value: 0.00042 }
+    },
+    vertexShader: /* glsl */`
+      varying vec3 vWorldPos;
+      void main() {
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vWorldPos = wp.xyz;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }
+    `,
+    fragmentShader: /* glsl */`
+      precision highp float;
+      uniform float uTime;
+      uniform vec3  uSunDir;
+      uniform vec3  uDeepColor;
+      uniform vec3  uShallow;
+      uniform vec3  uZenith, uMid, uHorizon;
+      uniform vec3  uFogColor;
+      uniform float uFogDensity;
+      varying vec3 vWorldPos;
+
+      // --- Analytic sky (matches sky dome) ---
+      vec3 skyColor(vec3 rayDir, vec3 sunDir) {
+        float h = max(rayDir.y, 0.0);
+        vec3 col;
+        if (h < 0.24) col = mix(uHorizon, uMid, smoothstep(0.0, 0.24, h));
+        else          col = mix(uMid, uZenith, pow(smoothstep(0.24, 1.0, h), 0.82));
+
+        float sunDot = max(dot(rayDir, sunDir), 0.0);
+        col += vec3(1.00, 0.85, 0.62) * pow(sunDot, 3.0)   * 0.42;
+        col += vec3(1.00, 0.90, 0.72) * pow(sunDot, 14.0)  * 0.65;
+        col += vec3(1.00, 0.95, 0.85) * pow(sunDot, 64.0)  * 1.30;
+        col += vec3(1.00, 0.98, 0.94) * pow(sunDot, 500.0) * 3.60;
+        float disc = smoothstep(0.99970, 0.99994, sunDot);
+        col += vec3(1.0, 0.97, 0.90) * disc * 40.0;
+
+        if (rayDir.y < 0.0) {
+          float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
+          col = mix(uHorizon, vec3(0.68, 0.74, 0.82), gt);
+        }
+        return col;
+      }
+
+      // --- Wave height (sum of directional sines) ---
+      float waveH(vec2 p, float t) {
+        float h = 0.0;
+        h += 0.100 * sin(dot(p, normalize(vec2( 1.00,  0.30))) *  1.1 + t * 0.90);
+        h += 0.070 * sin(dot(p, normalize(vec2( 0.70, -0.60))) *  2.3 + t * 1.40);
+        h += 0.045 * sin(dot(p, normalize(vec2(-0.40,  0.90))) *  4.1 + t * 2.00);
+        h += 0.024 * sin(dot(p, normalize(vec2( 0.20, -0.95))) *  7.3 + t * 2.60);
+        h += 0.013 * sin(dot(p, normalize(vec2( 0.95,  0.40))) * 13.0 + t * 3.30);
+        h += 0.006 * sin(dot(p, normalize(vec2(-0.85, -0.40))) * 22.0 + t * 4.10);
+        return h;
+      }
+
+      vec3 waveNormal(vec2 p, float t) {
+        float e = 0.08;
+        float hL = waveH(p - vec2(e, 0.0), t);
+        float hR = waveH(p + vec2(e, 0.0), t);
+        float hD = waveH(p - vec2(0.0, e), t);
+        float hU = waveH(p + vec2(0.0, e), t);
+        return normalize(vec3(-(hR - hL) / (2.0 * e), 1.0, -(hU - hD) / (2.0 * e)));
+      }
+
+      void main() {
+        vec3 viewVec = cameraPosition - vWorldPos;
+        float viewDist = length(viewVec);
+        vec3 viewDir = viewVec / viewDist;
+        vec3 sunDir = normalize(uSunDir);
+
+        vec3 n = waveNormal(vWorldPos.xz, uTime);
+
+        // Fresnel (Schlick)
+        float NdotV = max(dot(n, viewDir), 0.0);
+        float fresnel = 0.02 + 0.98 * pow(1.0 - NdotV, 5.0);
+
+        // Sky reflection
+        vec3 reflDir = reflect(-viewDir, n);
+        vec3 reflCol = skyColor(reflDir, sunDir);
+
+        // Water body (fake depth absorption using view angle)
+        float depthMix = smoothstep(0.0, 0.6, NdotV);  // near 1 looking down
+        vec3 bodyCol = mix(uShallow, uDeepColor, depthMix);
+
+        // Combine body + reflection
+        vec3 col = mix(bodyCol, reflCol, fresnel);
+
+        // Sun specular + glitter
+        vec3 halfDir = normalize(viewDir + sunDir);
+        float NdotH = max(dot(n, halfDir), 0.0);
+        float spec = pow(NdotH, 400.0) * 9.0;
+        float glitter = pow(NdotH, 2200.0) * 40.0;
+        col += vec3(1.0, 0.95, 0.85) * (spec + glitter);
+
+        // Fog
+        float fogFactor = 1.0 - exp(-pow(uFogDensity * viewDist, 2.0));
+        col = mix(col, uFogColor, fogFactor);
+
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(LAKE_X, LAKE_Y, LAKE_Z);
+  mesh.renderOrder = 1;   // draw after ground
+  return mesh;
+}
+
+/* ===================================================================== */
+/*  PMREM environment bake from the sky                                  */
 /* ===================================================================== */
 function bakeEnvironment() {
   const tmpScene = new THREE.Scene();
-
-  const parent = sky.parent;
   scene.remove(sky);
   tmpScene.add(sky);
   sky.position.set(0, 0, 0);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
-
   pmremRT = pmrem.fromScene(tmpScene, 0, 0.1, 50000);
-
   scene.environment = pmremRT.texture;
 
   tmpScene.remove(sky);
   scene.add(sky);
   sky.position.copy(camera.position);
-
   pmrem.dispose();
 }
 
 /* ===================================================================== */
-/*  Distant terrain ring — cheap hills that fade into the fog            */
+/*  Distant terrain                                                      */
 /* ===================================================================== */
 function makeDistantTerrain() {
   const SIZE = 24000;
@@ -512,7 +649,7 @@ function makeDistantTerrain() {
 }
 
 /* ===================================================================== */
-/*  Scattered instanced rocks                                            */
+/*  Rocks (rejection-sampled around the lake)                            */
 /* ===================================================================== */
 function makeRocks(count, maxAniso) {
   const geo = new THREE.DodecahedronGeometry(1.0, 0);
@@ -538,12 +675,25 @@ function makeRocks(count, maxAniso) {
   const v = new THREE.Vector3();
   const s = new THREE.Vector3();
 
-  for (let i = 0; i < count; i++) {
+  const lakeR2 = (LAKE_RADIUS + 2) * (LAKE_RADIUS + 2);
+
+  let placed = 0;
+  let attempts = 0;
+  while (placed < count && attempts < count * 20) {
+    attempts++;
+
     const t = rng();
     const radius = 4 + Math.pow(t, 2.4) * 400;
     const ang = rng() * Math.PI * 2;
 
-    v.set(Math.cos(ang) * radius, 0, Math.sin(ang) * radius);
+    const px = Math.cos(ang) * radius;
+    const pz = Math.sin(ang) * radius;
+
+    // Skip if inside the lake
+    const dx = px - LAKE_X, dz = pz - LAKE_Z;
+    if (dx * dx + dz * dz < lakeR2) continue;
+
+    v.set(px, 0, pz);
 
     const sizeClass = rng();
     let base;
@@ -561,27 +711,29 @@ function makeRocks(count, maxAniso) {
     v.y = s.y * 0.45;
 
     m.compose(v, q, s);
-    mesh.setMatrixAt(i, m);
+    mesh.setMatrixAt(placed, m);
+    placed++;
   }
+  mesh.count = placed;
 
   mesh.instanceMatrix.needsUpdate = true;
   return mesh;
 }
 
 /* ===================================================================== */
-/*  Clouds — layered sprite billboards                                   */
+/*  Clouds                                                               */
 /* ===================================================================== */
 function buildClouds(maxAniso) {
   const texRng = mulberry32(0xC10D0C10);
   const textures = [];
-  for (let i = 0; i < 9; i++) textures.push(makeCloudTexture(texRng, 512, maxAniso));
+  for (let i = 0; i < 10; i++) textures.push(makeCloudTexture(texRng, 1024, maxAniso));
 
   const rng = mulberry32(0xBEEFCAFE);
 
   const layers = [
-    [ 320, 1100,  180,  340,  120,  260, 20, 0.78],
-    [ 800, 2400,  380,  720,  280,  560, 26, 0.72],
-    [1600, 4600,  750, 1350,  520, 1150, 16, 0.55]
+    [ 320, 1100,  180,  340,  120,  260, 22, 0.82],
+    [ 800, 2400,  380,  720,  280,  560, 28, 0.74],
+    [1600, 4600,  750, 1350,  520, 1150, 18, 0.55]
   ];
 
   for (const [minD, maxD, minY, maxY, minS, maxS, count, baseOp] of layers) {
@@ -614,7 +766,7 @@ function buildClouds(maxAniso) {
   }
 }
 
-/* Draws a fluffy sunlit cloud into a canvas and returns it as a texture. */
+/* Improved cloud texture: flat base, billowy top, silver lining, detail. */
 function makeCloudTexture(rand, size, maxAniso) {
   const W = size;
   const H = Math.round(size * 0.5);
@@ -623,21 +775,23 @@ function makeCloudTexture(rand, size, maxAniso) {
   const ctx = cvs.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
-  const puffCount = 30 + Math.floor(rand() * 14);
+  // ---- 1. Silhouette: many overlapping soft puffs ----
+  const puffCount = 60 + Math.floor(rand() * 30);
   for (let i = 0; i < puffCount; i++) {
     const t = i / (puffCount - 1);
     const bell = Math.sin(t * Math.PI);
 
-    const x = W * 0.10 + t * W * 0.80 + (rand() - 0.5) * W * 0.05;
-    const r = W * (0.045 + 0.100 * bell * (0.55 + rand() * 0.85));
-    const y = H * 0.68
-            - bell * H * 0.27 * (0.5 + rand() * 0.9)
+    // Bias puffs toward the top so the base stays flat
+    const x = W * 0.08 + t * W * 0.84 + (rand() - 0.5) * W * 0.04;
+    const r = W * (0.030 + 0.100 * bell * (0.5 + rand() * 0.9));
+    const y = H * 0.72
+            - bell * H * 0.32 * (0.4 + rand() * 1.0)
             - rand() * H * 0.05;
 
-    const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
+    const g = ctx.createRadialGradient(x, y, r * 0.03, x, y, r);
     g.addColorStop(0.00, 'rgba(255,255,255,1)');
-    g.addColorStop(0.40, 'rgba(255,255,255,0.95)');
-    g.addColorStop(0.72, 'rgba(255,255,255,0.40)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.96)');
+    g.addColorStop(0.70, 'rgba(255,255,255,0.42)');
     g.addColorStop(1.00, 'rgba(255,255,255,0)');
 
     ctx.fillStyle = g;
@@ -646,37 +800,42 @@ function makeCloudTexture(rand, size, maxAniso) {
     ctx.fill();
   }
 
+  // ---- 2. Richer internal structure (still restricted to silhouette) ----
   ctx.globalCompositeOperation = 'source-atop';
 
-  const topLight = ctx.createLinearGradient(0, H * 0.04, 0, H * 0.55);
-  topLight.addColorStop(0.00, 'rgba(255, 252, 235, 0.62)');
-  topLight.addColorStop(1.00, 'rgba(255, 252, 235, 0.00)');
+  // Warm top light
+  const topLight = ctx.createLinearGradient(0, H * 0.02, 0, H * 0.60);
+  topLight.addColorStop(0.00, 'rgba(255, 252, 238, 0.70)');
+  topLight.addColorStop(1.00, 'rgba(255, 252, 238, 0.00)');
   ctx.fillStyle = topLight;
   ctx.fillRect(0, 0, W, H);
 
-  const baseShadow = ctx.createLinearGradient(0, H * 0.34, 0, H * 0.88);
+  // Cool shadowed underside — this is what sells cumulus
+  const baseShadow = ctx.createLinearGradient(0, H * 0.32, 0, H * 0.92);
   baseShadow.addColorStop(0.00, 'rgba(180, 198, 224, 0.00)');
-  baseShadow.addColorStop(0.50, 'rgba(160, 182, 214, 0.42)');
-  baseShadow.addColorStop(1.00, 'rgba(110, 138, 178, 0.92)');
+  baseShadow.addColorStop(0.45, 'rgba(150, 176, 212, 0.45)');
+  baseShadow.addColorStop(1.00, 'rgba(95, 128, 172, 0.95)');
   ctx.fillStyle = baseShadow;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.globalAlpha = 0.10;
-  for (let i = 0; i < 46; i++) {
+  // Cauliflower detail — small lighter/darker blobs
+  ctx.globalAlpha = 0.11;
+  for (let i = 0; i < 90; i++) {
     const x = rand() * W;
-    const y = H * 0.32 + rand() * H * 0.55;
-    const r = 8 + rand() * 28;
-    const dark = rand() < 0.55;
-    ctx.fillStyle = dark ? 'rgba(110,132,166,1)' : 'rgba(255,255,255,1)';
+    const y = H * 0.25 + rand() * H * 0.6;
+    const r = 10 + rand() * 34;
+    const dark = rand() < 0.58;
+    ctx.fillStyle = dark ? 'rgba(95,120,158,1)' : 'rgba(255,255,255,1)';
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  const rim = ctx.createLinearGradient(0, H * 0.08, 0, H * 0.44);
+  // Silver lining band along the sunward edges
+  const rim = ctx.createLinearGradient(0, H * 0.05, 0, H * 0.42);
   rim.addColorStop(0.00, 'rgba(255, 255, 255, 0.00)');
-  rim.addColorStop(0.55, 'rgba(255, 254, 244, 0.60)');
+  rim.addColorStop(0.50, 'rgba(255, 254, 244, 0.65)');
   rim.addColorStop(1.00, 'rgba(255, 255, 255, 0.00)');
   ctx.fillStyle = rim;
   ctx.fillRect(0, 0, W, H);
@@ -734,7 +893,7 @@ function generateConcreteTextures(size, maxAniso) {
     }
   }
 
-  // --- Albedo ---
+  // Albedo
   const albedoCv = document.createElement('canvas');
   albedoCv.width = albedoCv.height = size;
   const actx = albedoCv.getContext('2d');
@@ -753,7 +912,7 @@ function generateConcreteTextures(size, maxAniso) {
   }
   actx.putImageData(albedoImg, 0, 0);
 
-  // --- Normal ---
+  // Normal
   const normalCv = document.createElement('canvas');
   normalCv.width = normalCv.height = size;
   const nctx = normalCv.getContext('2d');
@@ -778,7 +937,7 @@ function generateConcreteTextures(size, maxAniso) {
   }
   nctx.putImageData(normalImg, 0, 0);
 
-  // --- Roughness ---
+  // Roughness
   const roughCv = document.createElement('canvas');
   roughCv.width = roughCv.height = size;
   const rctx = roughCv.getContext('2d');
@@ -793,7 +952,7 @@ function generateConcreteTextures(size, maxAniso) {
   }
   rctx.putImageData(roughImg, 0, 0);
 
-  // --- AO ---
+  // AO
   const aoCv = document.createElement('canvas');
   aoCv.width = aoCv.height = size;
   const aoctx = aoCv.getContext('2d');
@@ -827,7 +986,6 @@ function generateConcreteTextures(size, maxAniso) {
   return { albedo: albedoTex, normal: normalTex, rough: roughTex, ao: aoTex };
 }
 
-/* Small tileable detail texture used for two-scale blending. */
 function generateDetailTexture(size, maxAniso) {
   const cvs = document.createElement('canvas');
   cvs.width = cvs.height = size;
@@ -882,7 +1040,62 @@ function generateDetailTexture(size, maxAniso) {
 }
 
 /* ===================================================================== */
-/*  Filmic grade shader (hoisted function — safe to call from init)      */
+/*  Motion blur shader — radial spin blur from camera angular delta      */
+/* ===================================================================== */
+function makeMotionBlurShader() {
+  return {
+    uniforms: {
+      tDiffuse:  { value: null },
+      uAngular:  { value: new THREE.Vector2(0, 0) }, // (yaw, pitch) rad/frame
+      uStrength: { value: MB_STRENGTH },
+      uMax:      { value: MB_MAX }
+    },
+    vertexShader: /* glsl */`
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */`
+      precision highp float;
+      uniform sampler2D tDiffuse;
+      uniform vec2  uAngular;
+      uniform float uStrength;
+      uniform float uMax;
+      varying vec2 vUv;
+
+      void main() {
+        vec2 uv = vUv;
+        vec2 toCenter = uv - 0.5;
+
+        // Screen-space motion: pixels move proportional to their distance
+        // from the screen center, scaled by camera angular delta.
+        //   yaw   → horizontal shift
+        //   pitch → vertical shift (sign flipped)
+        vec2 dir = toCenter * vec2(uAngular.x, -uAngular.y) * uStrength;
+
+        // Clamp max blur length to avoid extreme smearing
+        float len = length(dir);
+        if (len > uMax) dir *= uMax / len;
+
+        // 9-tap directional blur
+        vec3 col = vec3(0.0);
+        const int SAMPLES = 9;
+        for (int i = 0; i < SAMPLES; i++) {
+          float t = (float(i) / float(SAMPLES - 1)) - 0.5;
+          col += texture2D(tDiffuse, uv + dir * t).rgb;
+        }
+        col /= float(SAMPLES);
+
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  };
+}
+
+/* ===================================================================== */
+/*  Filmic grade shader                                                  */
 /* ===================================================================== */
 function makeGradeShader() {
   return {
@@ -916,27 +1129,22 @@ function makeGradeShader() {
         vec2 cc = uv - 0.5;
         float r2 = dot(cc, cc);
 
-        // Chromatic aberration — subtle, radial
         float ca = r2 * 0.0024;
         vec3 col;
         col.r = texture2D(tDiffuse, uv + cc * ca).r;
         col.g = texture2D(tDiffuse, uv).g;
         col.b = texture2D(tDiffuse, uv - cc * ca).b;
 
-        // Vignette
         float vig = smoothstep(0.95, 0.35, r2 * 1.9);
         col *= mix(0.70, 1.0, vig);
 
-        // Split-tone grade: cool shadows, warm highlights
         float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
         vec3 shadowTint    = vec3(0.94, 0.98, 1.06);
         vec3 highlightTint = vec3(1.05, 1.00, 0.94);
         col *= mix(shadowTint, highlightTint, smoothstep(0.0, 1.0, lum));
 
-        // Gentle contrast
         col = (col - 0.5) * 1.035 + 0.5;
 
-        // Film grain (animated)
         float grain = hash(uv * uResolution + uTime * 60.0) - 0.5;
         col += grain * 0.014;
 
@@ -958,13 +1166,25 @@ function animate() {
 
   updatePlayer(delta, active, t);
 
+  // --- Motion blur: measure camera angular delta this frame ---
+  _deltaQ.copy(_prevQuat).invert().multiply(camera.quaternion);
+  _deltaE.setFromQuaternion(_deltaQ, 'YXZ');
+  motionBlurPass.uniforms.uAngular.value.set(_deltaE.y, _deltaE.x);
+  _prevQuat.copy(camera.quaternion);
+
+  // --- Sky follows the eye ---
   sky.position.copy(camera.position);
 
+  // --- Water animates via uTime ---
+  if (water) water.material.uniforms.uTime.value = t;
+
+  // --- Sun follows the player so shadow cascades stay centred ---
   const sun = scene.userData.sun;
   sun.position.copy(camera.position).addScaledVector(SUN_DIR, 160);
   sun.target.position.copy(camera.position);
   sun.target.updateMatrixWorld();
 
+  // --- Cloud drift ---
   for (let i = 0; i < clouds.length; i++) {
     const c = clouds[i];
     c.position.x += c.userData.speed * delta;
@@ -972,10 +1192,12 @@ function animate() {
   }
   cloudGroup.position.set(camera.position.x, 0, camera.position.z);
 
+  // --- Grade time ---
   if (gradePass) gradePass.uniforms.uTime.value = t;
 
   composer.render();
 
+  // FPS
   fpsAccum += delta; fpsFrames++;
   if (fpsAccum >= 0.5) {
     hud.textContent = Math.round(fpsFrames / fpsAccum) + ' FPS';
@@ -1027,6 +1249,7 @@ function updatePlayer(delta, active, t) {
     player.grounded = false;
   }
 
+  // Head bob + idle breathing
   const hSpeed = Math.hypot(player.vel.x, player.vel.z);
   const wantBob = (player.grounded && hSpeed > 0.35) ? 1 : 0;
   player.bobBlend = THREE.MathUtils.damp(player.bobBlend, wantBob, 6, delta);
@@ -1042,9 +1265,12 @@ function updatePlayer(delta, active, t) {
   camera.position.z += right.z * sway;
   camera.position.y += bobY + idle;
 
-  const roll = -mx * 0.008 * (running ? 1.4 : 1.0);
-  camera.rotation.z = THREE.MathUtils.damp(camera.rotation.z, roll, 6, delta);
+  // Camera roll — now safe because camera.rotation.order === 'YXZ'
+  const rollTarget = -mx * 0.009 * (running ? 1.35 : 1.0);
+  player.roll = THREE.MathUtils.damp(player.roll, rollTarget, 6, delta);
+  camera.rotation.z = player.roll;
 
+  // FOV kick when sprinting
   const targetFov = 70 + (running && hSpeed > 4.2 ? 5.5 : 0.0);
   if (Math.abs(camera.fov - targetFov) > 0.02) {
     camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
