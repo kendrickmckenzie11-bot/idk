@@ -3,31 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grey Baseplate</title>
+<title>Grey Baseplate — Realistic Sky</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #9fc6e8; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: #cfe4f7;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
   canvas { display: block; }
 
   #crosshair {
-    position: fixed; left: 50%; top: 50%; width: 6px; height: 6px;
-    margin: -3px 0 0 -3px; border-radius: 50%;
-    background: rgba(255,255,255,.9);
-    box-shadow: 0 0 3px rgba(0,0,0,.7);
-    pointer-events: none; opacity: 0; transition: opacity .2s;
+    position: fixed; left: 50%; top: 50%;
+    width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.8);
+    box-shadow: 0 0 4px rgba(0,0,0,.65);
+    pointer-events: none;
+    opacity: 0; transition: opacity .25s ease;
   }
   #crosshair.show { opacity: 1; }
 
   #overlay {
-    position: fixed; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 14px;
-    background: rgba(0,0,0,.55); color: #fff; text-align: center;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    cursor: pointer; user-select: none;
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    background: rgba(10, 20, 35, .55);
+    backdrop-filter: blur(3px);
+    color: #fff; text-align: center; cursor: pointer;
+    user-select: none; transition: opacity .3s ease;
   }
-  #overlay.hidden { display: none; }
-  #overlay h1 { margin: 0; font-size: 34px; letter-spacing: .5px; }
-  #overlay p { margin: 0; font-size: 15px; line-height: 1.6; opacity: .85; }
-  #overlay strong { font-size: 18px; opacity: 1; }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+  #overlay h1 {
+    margin: 0; font-size: 36px; font-weight: 600; letter-spacing: .4px;
+    text-shadow: 0 2px 18px rgba(0,0,0,.5);
+  }
+  #overlay .play { font-size: 18px; font-weight: 600; opacity: .95; }
+  #overlay .keys { font-size: 14px; opacity: .75; line-height: 2.2; }
+  kbd {
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 5px; padding: 2px 7px;
+    font-family: inherit; font-size: 13px;
+  }
 </style>
 </head>
 <body>
@@ -36,8 +53,14 @@
 
 <div id="overlay">
   <h1>Grey Baseplate</h1>
-  <p><strong>Click to play</strong></p>
-  <p>WASD — walk &nbsp;·&nbsp; Mouse — look &nbsp;·&nbsp; Space — jump &nbsp;·&nbsp; Shift — run &nbsp;·&nbsp; Esc — release</p>
+  <div class="play">Click to play</div>
+  <div class="keys">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &nbsp;·&nbsp;
+    <kbd>Mouse</kbd> look &nbsp;·&nbsp;
+    <kbd>Space</kbd> jump &nbsp;·&nbsp;
+    <kbd>Shift</kbd> run &nbsp;·&nbsp;
+    <kbd>Esc</kbd> release
+  </div>
 </div>
 
 <script type="importmap">
@@ -53,158 +76,426 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-// ---------- Tunables ----------
-const EYE_HEIGHT  = 1.7;   // camera height above the plate
-const WALK_SPEED  = 5;     // units / second
-const RUN_SPEED   = 9;
-const GRAVITY     = 25;
-const JUMP_SPEED  = 9;
-const HALF        = 500;   // baseplate is 1000 x 1000, so half = 500
+/* ================================================================== */
+/*  Tunables                                                          */
+/* ================================================================== */
+const EYE_HEIGHT = 1.70;   // metres
+const WALK_SPEED = 3.6;    // m/s
+const RUN_SPEED  = 7.2;    // m/s
+const GRAVITY    = 24.0;
+const JUMP_SPEED = 7.0;
 
-// ---------- State ----------
-let scene, camera, renderer, controls;
+const HORIZON_COLOR = 0xcfe4f7;                       // sky colour at the horizon = fog colour
+const SUN_DIR = new THREE.Vector3(0.42, 0.55, -0.72).normalize(); // direction TOWARD the sun
+const UP = new THREE.Vector3(0, 1, 0);
 
-const clock    = new THREE.Clock();
-const velocity = new THREE.Vector3();
-const keys     = Object.create(null);
-let canJump    = true;
+/* ================================================================== */
+/*  Globals                                                           */
+/* ================================================================== */
+let scene, camera, renderer, controls, sky;
 
-// Scratch vectors (avoid allocating every frame)
+const clock = new THREE.Clock();
+const keys  = Object.create(null);
+
+const player = {
+  pos: new THREE.Vector3(0, EYE_HEIGHT, 0), // eye position
+  vel: new THREE.Vector3(),
+  grounded: true,
+  bobPhase: 0,
+  bobBlend: 0
+};
+
 const forward = new THREE.Vector3();
 const right   = new THREE.Vector3();
 const wish    = new THREE.Vector3();
 
+const clouds     = [];
+const cloudGroup = new THREE.Group(); // follows the player in XZ so the sky is never empty
+
+/* ================================================================== */
+/*  Boot                                                              */
+/* ================================================================== */
 init();
 animate();
 
-// ---------- Setup ----------
+/* ================================================================== */
+/*  Init                                                              */
+/* ================================================================== */
 function init() {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x9fc6e8);
-  scene.fog = new THREE.Fog(0x9fc6e8, 150, 520);
-
-  camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 2000);
-  camera.position.set(0, EYE_HEIGHT, 0);
-
-  // Lights
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x555555, 2.2));
-  const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-  sun.position.set(80, 150, 60);
-  scene.add(sun);
-
-  // Grey baseplate
-  const plateGeo = new THREE.PlaneGeometry(HALF * 2, HALF * 2);
-  plateGeo.rotateX(-Math.PI / 2);
-  const plate = new THREE.Mesh(
-    plateGeo,
-    new THREE.MeshLambertMaterial({ color: 0x808080 })
-  );
-  scene.add(plate);
-
-  // Faint grid so you can actually feel yourself moving
-  const grid = new THREE.GridHelper(HALF * 2, 100, 0x000000, 0x000000);
-  grid.material.transparent = true;
-  grid.material.opacity = 0.12;
-  grid.position.y = 0.02;
-  scene.add(grid);
-
-  // Renderer
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(innerWidth, innerHeight);
+  /* ---------- renderer ---------- */
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   document.body.appendChild(renderer.domElement);
 
-  // Mouse-look controls
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  /* ---------- scene & camera ---------- */
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(HORIZON_COLOR, 0.00085);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 4000);
+  camera.position.copy(player.pos);
+
+  /* ---------- lights ---------- */
+  const hemi = new THREE.HemisphereLight(0xbcd9ff, 0x6b6b6b, 2.4);
+  scene.add(hemi);
+
+  const sun = new THREE.DirectionalLight(0xfff2dd, 3.4);
+  sun.position.copy(SUN_DIR).multiplyScalar(300);
+  scene.add(sun);
+  scene.add(sun.target);
+
+  /* ---------- grey baseplate ---------- */
+  const groundTex = makeConcreteTexture(512);
+  groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
+  groundTex.repeat.set(400, 400);            // ~30 m per tile
+  groundTex.anisotropy = maxAniso;
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(12000, 12000),
+    new THREE.MeshStandardMaterial({
+      map: groundTex,
+      roughness: 0.96,
+      metalness: 0.0
+    })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
+  /* ---------- sky dome ---------- */
+  sky = makeSky();
+  scene.add(sky);
+
+  /* ---------- clouds ---------- */
+  scene.add(cloudGroup);
+  buildClouds(maxAniso);
+
+  /* ---------- controls ---------- */
   controls = new PointerLockControls(camera, renderer.domElement);
 
   const overlay   = document.getElementById('overlay');
   const crosshair = document.getElementById('crosshair');
 
   overlay.addEventListener('click', () => controls.lock());
+
   controls.addEventListener('lock', () => {
     overlay.classList.add('hidden');
     crosshair.classList.add('show');
   });
+
   controls.addEventListener('unlock', () => {
     overlay.classList.remove('hidden');
     crosshair.classList.remove('show');
+    player.vel.x = 0;
+    player.vel.z = 0;
   });
 
-  // Keyboard
-  addEventListener('keydown', (e) => {
+  /* ---------- input ---------- */
+  window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     if (e.code === 'Space') e.preventDefault();
   });
-  addEventListener('keyup', (e) => {
-    keys[e.code] = false;
-  });
-  addEventListener('blur', () => {
-    for (const k in keys) keys[k] = false;
-  });
+  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-  // Resize
-  addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
   });
 }
 
-// ---------- Main loop ----------
+/* ================================================================== */
+/*  Sky dome (gradient + sun disc + glow)                             */
+/* ================================================================== */
+function makeSky() {
+  const geo = new THREE.SphereGeometry(1500, 48, 32);
+
+  const mat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    uniforms: {
+      uTop:     { value: new THREE.Color(0x1a5fc8) },
+      uHorizon: { value: new THREE.Color(HORIZON_COLOR) },
+      uGround:  { value: new THREE.Color(0xa8b6c4) },
+      uSunDir:  { value: SUN_DIR.clone() }
+    },
+    vertexShader: /* glsl */`
+      varying vec3 vDir;
+      void main() {
+        vDir = normalize(position);          // sphere is centred on the camera
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */`
+      uniform vec3 uTop;
+      uniform vec3 uHorizon;
+      uniform vec3 uGround;
+      uniform vec3 uSunDir;
+      varying vec3 vDir;
+
+      void main() {
+        vec3 d = normalize(vDir);
+
+        // vertical sky gradient (deeper blue overhead, pale near the horizon)
+        float t = pow(clamp(d.y, 0.0, 1.0), 0.55);
+        vec3 col = mix(uHorizon, uTop, t);
+
+        // haze below the horizon line
+        col = mix(col, uGround, smoothstep(0.0, -0.12, d.y));
+
+        // sun disc + two-layer glow
+        float s = max(dot(d, normalize(uSunDir)), 0.0);
+        col += vec3(1.00, 0.97, 0.90) * pow(s, 1500.0) * 5.0;
+        col += vec3(1.00, 0.94, 0.82) * pow(s, 40.0)   * 0.35;
+        col += vec3(1.00, 0.96, 0.88) * pow(s, 6.0)    * 0.07;
+
+        gl_FragColor = vec4(col, 1.0);
+
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+  return mesh;
+}
+
+/* ================================================================== */
+/*  Cloud sprites                                                     */
+/* ================================================================== */
+function buildClouds(maxAniso) {
+  // a handful of unique cloud textures, reused across many sprites
+  const texRng = mulberry32(20240607);
+  const textures = [];
+  for (let i = 0; i < 7; i++) textures.push(makeCloudTexture(texRng, maxAniso));
+
+  const rng = mulberry32(991);
+
+  for (let i = 0; i < 46; i++) {
+    const tex = textures[(rng() * textures.length) | 0];
+
+    const mat = new THREE.SpriteMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      opacity: 0.50 + rng() * 0.45,
+      fog: true
+    });
+
+    const sprite = new THREE.Sprite(mat);
+
+    const ang = rng() * Math.PI * 2;
+    const rad = 260 + rng() * 1040;    // horizontal distance from the player
+    const w   = 220 + rng() * 420;     // world width
+
+    sprite.scale.set(w, w * 0.5, 1);   // textures are 2:1
+    sprite.position.set(Math.cos(ang) * rad, 150 + rng() * 280, Math.sin(ang) * rad);
+    sprite.userData.speed = 2 + rng() * 5;   // wind drift, m/s
+
+    cloudGroup.add(sprite);
+    clouds.push(sprite);
+  }
+}
+
+/* Draws a fluffy white cloud onto a canvas and returns it as a texture. */
+function makeCloudTexture(rand, maxAniso) {
+  const W = 512, H = 256;
+  const cvs = document.createElement('canvas');
+  cvs.width = W;
+  cvs.height = H;
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  // --- build the cloud out of soft overlapping puffs ---
+  const n = 16 + Math.floor(rand() * 10);
+  for (let i = 0; i < n; i++) {
+    const t    = i / (n - 1);
+    const bell = Math.sin(t * Math.PI);                 // 0 → 1 → 0
+
+    const x = W * 0.16 + t * W * 0.68 + (rand() - 0.5) * W * 0.06;
+    const r = W * (0.05 + 0.09 * bell * (0.6 + rand() * 0.8));
+    const y = H * 0.62 - bell * H * 0.22 * (0.5 + rand() * 0.9) - rand() * H * 0.04;
+
+    const g = ctx.createRadialGradient(x, y, r * 0.10, x, y, r);
+    g.addColorStop(0.00, 'rgba(255,255,255,1)');
+    g.addColorStop(0.45, 'rgba(255,255,255,0.92)');
+    g.addColorStop(0.75, 'rgba(255,255,255,0.35)');
+    g.addColorStop(1.00, 'rgba(255,255,255,0)');
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // --- shade the underside (only where cloud pixels already exist) ---
+  ctx.globalCompositeOperation = 'source-atop';
+
+  const shade = ctx.createLinearGradient(0, H * 0.30, 0, H * 0.78);
+  shade.addColorStop(0.00, 'rgba(255,255,255,0.00)');
+  shade.addColorStop(0.45, 'rgba(206,216,230,0.35)');
+  shade.addColorStop(1.00, 'rgba(158,172,192,0.80)');
+
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = maxAniso;
+  return tex;
+}
+
+/* ================================================================== */
+/*  Ground texture (procedural concrete)                              */
+/* ================================================================== */
+function makeConcreteTexture(size) {
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = size;
+  const ctx = cvs.getContext('2d');
+
+  const img = ctx.createImageData(size, size);
+  const d = img.data;
+
+  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
+    const v = 132 + (Math.random() - 0.5) * 18;
+    d[p]     = v;
+    d[p + 1] = v;
+    d[p + 2] = Math.min(255, v * 1.02);   // touch of cool blue
+    d[p + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // fine speckles / pits
+  for (let i = 0; i < size * 12; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const r = Math.random() * 1.2 + 0.2;
+    const dark = Math.random() < 0.55;
+    ctx.fillStyle = dark
+      ? `rgba(40,40,44,${Math.random() * 0.25})`
+      : `rgba(240,240,245,${Math.random() * 0.18})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/* ================================================================== */
+/*  Main loop                                                         */
+/* ================================================================== */
 function animate() {
   requestAnimationFrame(animate);
 
   const delta = Math.min(clock.getDelta(), 0.05);
+  const active = controls.isLocked;
 
-  if (controls.isLocked) {
-    // --- Horizontal movement ---
-    camera.getWorldDirection(forward);
-    forward.y = 0;
-    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
-    forward.normalize();
+  updatePlayer(delta, active);
 
-    right.crossVectors(forward, camera.up).normalize();
+  // keep the sky dome centred on the eye so the horizon never drifts
+  sky.position.copy(camera.position);
 
-    const moveZ = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
-    const moveX = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
-
-    wish.set(0, 0, 0)
-        .addScaledVector(forward, moveZ)
-        .addScaledVector(right,   moveX);
-    if (wish.lengthSq() > 0) wish.normalize();
-
-    const speed = (keys['ShiftLeft'] || keys['ShiftRight']) ? RUN_SPEED : WALK_SPEED;
-
-    // Smooth accel / decel
-    velocity.x = THREE.MathUtils.damp(velocity.x, wish.x * speed, 12, delta);
-    velocity.z = THREE.MathUtils.damp(velocity.z, wish.z * speed, 12, delta);
-
-    camera.position.x += velocity.x * delta;
-    camera.position.z += velocity.z * delta;
-
-    // Keep on the plate
-    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -HALF + 1, HALF - 1);
-    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -HALF + 1, HALF - 1);
-
-    // --- Vertical movement (gravity + jump) ---
-    velocity.y -= GRAVITY * delta;
-    camera.position.y += velocity.y * delta;
-
-    if (camera.position.y <= EYE_HEIGHT) {
-      camera.position.y = EYE_HEIGHT;
-      velocity.y = 0;
-      canJump = true;
-    }
-
-    if (keys['Space'] && canJump) {
-      velocity.y = JUMP_SPEED;
-      canJump = false;
-    }
-  } else {
-    velocity.set(0, 0, 0);
+  // drift the clouds and wrap them around
+  for (const c of clouds) {
+    c.position.x += c.userData.speed * delta;
+    if (c.position.x > 1500) c.position.x = -1500;
   }
+  cloudGroup.position.set(camera.position.x, 0, camera.position.z);
 
   renderer.render(scene, camera);
+}
+
+/* ================================================================== */
+/*  Player movement                                                   */
+/* ================================================================== */
+function updatePlayer(delta, active) {
+  /* ---------- look direction, flattened onto the ground plane ---------- */
+  camera.getWorldDirection(forward);
+  forward.y = 0;
+  if (forward.lengthSq() < 1e-8) forward.set(0, 0, -1);
+  forward.normalize();
+  right.crossVectors(forward, UP).normalize();
+
+  /* ---------- input ---------- */
+  const mz = active ? (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0) : 0;
+  const mx = active ? (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0) : 0;
+
+  wish.set(0, 0, 0)
+      .addScaledVector(forward, mz)
+      .addScaledVector(right, mx);
+  if (wish.lengthSq() > 0) wish.normalize();
+
+  const running = active && (keys['ShiftLeft'] || keys['ShiftRight']);
+  const targetSpeed = running ? RUN_SPEED : WALK_SPEED;
+
+  // snappier on the ground, floaty in the air
+  const accel = player.grounded ? 14 : 3;
+  player.vel.x = THREE.MathUtils.damp(player.vel.x, wish.x * targetSpeed, accel, delta);
+  player.vel.z = THREE.MathUtils.damp(player.vel.z, wish.z * targetSpeed, accel, delta);
+
+  player.pos.x += player.vel.x * delta;
+  player.pos.z += player.vel.z * delta;
+
+  /* ---------- gravity & jump ---------- */
+  player.vel.y -= GRAVITY * delta;
+  player.pos.y += player.vel.y * delta;
+
+  if (player.pos.y <= EYE_HEIGHT) {
+    player.pos.y = EYE_HEIGHT;
+    player.vel.y = 0;
+    player.grounded = true;
+  } else {
+    player.grounded = false;
+  }
+
+  if (active && keys['Space'] && player.grounded) {
+    player.vel.y = JUMP_SPEED;
+    player.grounded = false;
+  }
+
+  /* ---------- head bob ---------- */
+  const hSpeed = Math.hypot(player.vel.x, player.vel.z);
+  const wantBob = (player.grounded && hSpeed > 0.4) ? 1 : 0;
+
+  player.bobBlend = THREE.MathUtils.damp(player.bobBlend, wantBob, 7, delta);
+  player.bobPhase += delta * (4.5 + hSpeed * 0.9);
+
+  const bobY = Math.sin(player.bobPhase * 2) * 0.035 * player.bobBlend;
+  const sway = Math.cos(player.bobPhase)     * 0.025 * player.bobBlend;
+
+  /* ---------- apply to the camera ---------- */
+  camera.position.copy(player.pos);
+  camera.position.x += right.x * sway;
+  camera.position.z += right.z * sway;
+  camera.position.y += bobY;
+
+  /* ---------- subtle FOV kick while sprinting ---------- */
+  const targetFov = 75 + (running && hSpeed > 4.5 ? 6 : 0);
+  if (Math.abs(camera.fov - targetFov) > 0.01) {
+    camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
+    camera.updateProjectionMatrix();
+  }
+}
+
+/* ================================================================== */
+/*  Tiny seeded RNG (so cloud shapes are stable between reloads)      */
+/* ================================================================== */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 </script>
 </body>
