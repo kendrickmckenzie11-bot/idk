@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Realistic Baseplate</title>
+<title>Baseplate</title>
 <style>
   html, body {
     margin: 0; height: 100%; overflow: hidden;
@@ -56,11 +56,20 @@
     font-size: 12px; max-width: 70vw; text-align: center;
     margin-top: 12px;
   }
+  #hud {
+    position: fixed; top: 10px; left: 12px;
+    color: rgba(255,255,255,.55); font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    pointer-events: none; user-select: none;
+    letter-spacing: .05em;
+  }
 </style>
 </head>
 <body>
 
-<div id="loading">Building sky…</div>
+<div id="loading">Building world…</div>
+<div id="hud"></div>
 <div id="crosshair"></div>
 
 <div id="overlay">
@@ -87,11 +96,6 @@
 <script type="module">
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { EffectComposer }     from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }         from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass }    from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass }         from 'three/addons/postprocessing/OutputPass.js';
-import { SMAAPass }           from 'three/addons/postprocessing/SMAAPass.js';
 
 /* ===================================================================== */
 /*  Tunables                                                             */
@@ -102,9 +106,7 @@ const RUN_SPEED  = 6.8;
 const GRAVITY    = 24.0;
 const JUMP_SPEED = 7.0;
 
-const CLOUD_BOTTOM = 620.0;
-const CLOUD_TOP    = 1420.0;
-
+// Sun: 25° elevation, 135° azimuth
 const SUN_ELEV = 25 * Math.PI / 180;
 const SUN_AZIM = 135 * Math.PI / 180;
 const SUN_DIR = new THREE.Vector3(
@@ -118,11 +120,13 @@ const UP = new THREE.Vector3(0, 1, 0);
 /* ===================================================================== */
 /*  State                                                                */
 /* ===================================================================== */
-let scene, camera, renderer, composer, controls, sky, skyUniforms;
+let scene, camera, renderer, controls, sky;
 let ready = false;
 
-const clock = new THREE.Clock();
-const keys  = Object.create(null);
+const clock  = new THREE.Clock();
+const keys   = Object.create(null);
+const clouds = [];
+const cloudGroup = new THREE.Group();
 
 const player = {
   pos: new THREE.Vector3(0, EYE_HEIGHT, 0),
@@ -136,6 +140,9 @@ const forward = new THREE.Vector3();
 const right   = new THREE.Vector3();
 const wish    = new THREE.Vector3();
 
+let fpsAccum = 0, fpsFrames = 0;
+const hud = document.getElementById('hud');
+
 /* ===================================================================== */
 /*  Boot                                                                 */
 /* ===================================================================== */
@@ -147,19 +154,12 @@ try {
   console.error('Init failed:', err);
   showError(err);
 }
-
 if (ready) animate();
 
-/* ===================================================================== */
-/*  Loading helpers                                                      */
-/* ===================================================================== */
 function hideLoading() {
-  // Wait one frame so the first render lands before we fade out.
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.getElementById('loading').classList.add('hidden');
-    });
-  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('loading').classList.add('hidden');
+  }));
 }
 function showError(err) {
   const el = document.getElementById('loading');
@@ -177,50 +177,47 @@ function showError(err) {
 /*  Init                                                                 */
 /* ===================================================================== */
 function init() {
-  /* ---------- renderer ---------- */
+  /* ---------- renderer (with MSAA, no post-processing) ---------- */
   renderer = new THREE.WebGLRenderer({
-    antialias: false,                  // handled by SMAA pass
+    antialias: true,
     powerPreference: 'high-performance',
     stencil: false
   });
-  const pixelRatio = Math.min(window.devicePixelRatio, 1.75);
-  renderer.setPixelRatio(pixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 1.05;
   document.body.appendChild(renderer.domElement);
 
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
   /* ---------- scene ---------- */
   scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0xc4d6e8, 0.00022);
+  // Fog matches the horizon colour exactly so the ground fades into the sky.
+  scene.fog = new THREE.FogExp2(0xc7d7e6, 0.00035);
 
   /* ---------- camera ---------- */
   camera = new THREE.PerspectiveCamera(
-    72, window.innerWidth / window.innerHeight, 0.1, 20000
+    72, window.innerWidth / window.innerHeight, 0.1, 30000
   );
   camera.position.copy(player.pos);
 
   /* ---------- lights ---------- */
-  const hemi = new THREE.HemisphereLight(0xbdd6f2, 0x5a5750, 1.4);
-  scene.add(hemi);
+  scene.add(new THREE.HemisphereLight(0xbdd6f2, 0x5a5750, 1.35));
 
-  const sun = new THREE.DirectionalLight(0xfff1d8, 2.6);
-  sun.position.copy(SUN_DIR).multiplyScalar(800);
-  sun.target.position.set(0, 0, 0);
+  const sun = new THREE.DirectionalLight(0xfff1d8, 2.7);
+  sun.position.copy(SUN_DIR).multiplyScalar(500);
   scene.add(sun);
-  scene.add(sun.target);
 
-  const fill = new THREE.DirectionalLight(0xc8d8ee, 0.25);
-  fill.position.copy(SUN_DIR).multiplyScalar(-800);
+  const fill = new THREE.DirectionalLight(0xc8d8ee, 0.22);
+  fill.position.copy(SUN_DIR).multiplyScalar(-500);
   scene.add(fill);
 
   /* ---------- ground ---------- */
-  const { albedoTex, normalTex, roughTex } = generateConcreteTextures(1024, maxAniso);
+  const { albedoTex, normalTex, roughTex } = generateConcreteTextures(512, maxAniso);
   const GROUND_SIZE = 20000;
-  const TILE = 22;
+  const TILE = 20;
   const reps = GROUND_SIZE / TILE;
 
   albedoTex.repeat.set(reps, reps);
@@ -233,20 +230,22 @@ function init() {
   const groundMat = new THREE.MeshStandardMaterial({
     map: albedoTex,
     normalMap: normalTex,
-    normalScale: new THREE.Vector2(0.9, 0.9),
+    normalScale: new THREE.Vector2(0.7, 0.7),
     roughnessMap: roughTex,
     roughness: 1.0,
     metalness: 0.0,
-    envMapIntensity: 1.0,
     dithering: true
   });
 
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  scene.add(ground);
+  scene.add(new THREE.Mesh(groundGeo, groundMat));
 
-  /* ---------- sky ---------- */
+  /* ---------- sky dome (gradient only — cheap) ---------- */
   sky = makeSky();
   scene.add(sky);
+
+  /* ---------- clouds (sprites — cheap) ---------- */
+  scene.add(cloudGroup);
+  buildClouds(maxAniso);
 
   /* ---------- controls ---------- */
   controls = new PointerLockControls(camera, renderer.domElement);
@@ -255,7 +254,6 @@ function init() {
   const crosshair = document.getElementById('crosshair');
 
   overlay.addEventListener('click', () => controls.lock());
-
   controls.addEventListener('lock', () => {
     overlay.classList.add('hidden');
     crosshair.classList.add('show');
@@ -275,55 +273,28 @@ function init() {
   window.addEventListener('keyup', (e) => { keys[e.code] = false; });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-  /* ---------- post-processing ---------- */
-  composer = new EffectComposer(renderer);
-  composer.setPixelRatio(pixelRatio);
-  composer.setSize(window.innerWidth, window.innerHeight);
-
-  composer.addPass(new RenderPass(scene, camera));
-
-  const bloom = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.32,   // strength
-    0.55,   // radius
-    0.92    // threshold
-  );
-  composer.addPass(bloom);
-
-  composer.addPass(new OutputPass());
-
-  // SMAA takes *pixel* dimensions. Use the renderer's pixel ratio, not
-  // composer.getPixelRatio() (which does not exist).
-  composer.addPass(new SMAAPass(
-    Math.floor(window.innerWidth  * pixelRatio),
-    Math.floor(window.innerHeight * pixelRatio)
-  ));
-
   /* ---------- resize ---------- */
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
   });
 }
 
 /* ===================================================================== */
-/*  Sky dome — analytic atmosphere + raymarched volumetric clouds        */
+/*  Sky — analytic gradient + sun disc + Mie glow (no clouds in shader)  */
 /* ===================================================================== */
 function makeSky() {
-  const geo = new THREE.SphereGeometry(9000, 64, 40);
-
-  skyUniforms = {
-    uSunDir: { value: SUN_DIR.clone() },
-    uTime:   { value: 0 }
-  };
+  // Low segment count: gradient doesn't need geometry detail.
+  const geo = new THREE.SphereGeometry(14000, 24, 16);
 
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     fog: false,
-    uniforms: skyUniforms,
+    uniforms: {
+      uSunDir: { value: SUN_DIR.clone() }
+    },
     vertexShader: /* glsl */`
       varying vec3 vWorldPos;
       void main() {
@@ -334,71 +305,19 @@ function makeSky() {
     `,
     fragmentShader: /* glsl */`
       precision highp float;
-
-      uniform vec3  uSunDir;
-      uniform float uTime;
-
+      uniform vec3 uSunDir;
       varying vec3 vWorldPos;
 
-      const float PI = 3.14159265359;
-
-      /* ---------------- Hashes & noise ---------------- */
-      float hash13(vec3 p3) {
-        p3 = fract(p3 * 0.1031);
-        p3 += dot(p3, p3.zyx + 31.32);
-        return fract((p3.x + p3.y) * p3.z);
-      }
-
-      float vnoise(vec3 x) {
-        vec3 i = floor(x);
-        vec3 f = fract(x);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(
-          mix(mix(hash13(i + vec3(0,0,0)), hash13(i + vec3(1,0,0)), f.x),
-              mix(hash13(i + vec3(0,1,0)), hash13(i + vec3(1,1,0)), f.x), f.y),
-          mix(mix(hash13(i + vec3(0,0,1)), hash13(i + vec3(1,0,1)), f.x),
-              mix(hash13(i + vec3(0,1,1)), hash13(i + vec3(1,1,1)), f.x), f.y),
-          f.z);
-      }
-
-      float billowFbm(vec3 p) {
-        float v = 0.0;
-        float a = 0.5;
-        for (int i = 0; i < 4; i++) {
-          float n = vnoise(p);
-          n = 1.0 - abs(2.0 * n - 1.0);
-          v += a * n;
-          p *= 2.07;
-          a *= 0.5;
-        }
-        return v;
-      }
-
-      float detailFbm(vec3 p) {
-        float v = 0.0, a = 0.5;
-        for (int i = 0; i < 3; i++) {
-          v += a * vnoise(p);
-          p *= 2.13;
-          a *= 0.5;
-        }
-        return v;
-      }
-
-      /* ---------------- Phase ---------------- */
-      float hg(float cosT, float g) {
-        float g2 = g * g;
-        return (1.0 - g2) /
-               (4.0 * PI * pow(max(0.0, 1.0 - 2.0 * g * cosT + g2), 1.5));
-      }
-
-      /* ---------------- Sky gradient ---------------- */
-      vec3 skyColor(vec3 rayDir, vec3 sunDir) {
+      void main() {
+        vec3 rayDir = normalize(vWorldPos - cameraPosition);
+        vec3 sunDir = normalize(uSunDir);
         float sunDot = dot(rayDir, sunDir);
         float h = max(rayDir.y, 0.0);
 
+        // three-stop vertical gradient
         vec3 zenith  = vec3(0.055, 0.175, 0.520);
         vec3 mid     = vec3(0.240, 0.480, 0.830);
-        vec3 horizon = vec3(0.660, 0.780, 0.900);
+        vec3 horizon = vec3(0.700, 0.800, 0.900);
 
         vec3 sky;
         if (h < 0.22) {
@@ -407,121 +326,23 @@ function makeSky() {
           sky = mix(mid, zenith, pow(smoothstep(0.22, 1.0, h), 0.85));
         }
 
+        // Mie-ish glow around the sun
         float mu = max(sunDot, 0.0);
         sky += vec3(1.00, 0.93, 0.78) * pow(mu, 6.0)   * 0.30;
         sky += vec3(1.00, 0.96, 0.88) * pow(mu, 64.0)  * 0.55;
         sky += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 1.20;
 
-        float disc = smoothstep(0.99978, 0.99992, sunDot);
-        sky += vec3(1.0, 0.97, 0.92) * disc * 24.0;
+        // sun disc
+        float disc = smoothstep(0.99975, 0.99990, sunDot);
+        sky += vec3(1.0, 0.97, 0.92) * disc * 20.0;
 
+        // haze below the horizon so nothing black shows through
         if (rayDir.y < 0.0) {
           float gt = clamp(-rayDir.y * 5.0, 0.0, 1.0);
           sky = mix(horizon * 1.02, vec3(0.52, 0.53, 0.55), gt);
         }
-        return sky;
-      }
 
-      /* ---------------- Cloud density ---------------- */
-      float cloudDensity(vec3 p) {
-        float h = (p.y - ${CLOUD_BOTTOM.toFixed(1)}) /
-                  (${CLOUD_TOP.toFixed(1)} - ${CLOUD_BOTTOM.toFixed(1)});
-        if (h < 0.0 || h > 1.0) return 0.0;
-
-        float profile = smoothstep(0.0, 0.14, h) *
-                        smoothstep(1.0, 0.62, h);
-        if (profile <= 0.0) return 0.0;
-
-        vec3 wind = vec3(uTime * 4.5, 0.0, uTime * 1.6);
-        vec3 q = (p + wind) * 0.00072;
-
-        float base = billowFbm(q);
-        float det  = detailFbm(q * 6.5) * 0.22;
-
-        float d = base * 0.85 + det - 0.52;
-        d = max(d, 0.0) * 2.2;
-
-        return d * profile;
-      }
-
-      float lightMarch(vec3 pos, vec3 sunDir) {
-        float acc = 0.0;
-        float step = 140.0;
-        vec3 p = pos;
-        for (int i = 0; i < 4; i++) {
-          p += sunDir * step;
-          acc += cloudDensity(p) * step;
-        }
-        return acc;
-      }
-
-      /* ---------------- Cloud raymarch ---------------- */
-      vec4 raymarchClouds(vec3 ro, vec3 rd, vec3 sunDir) {
-        if (rd.y < 0.008) return vec4(0.0);
-
-        float t0 = (${CLOUD_BOTTOM.toFixed(1)} - ro.y) / rd.y;
-        float t1 = (${CLOUD_TOP.toFixed(1)}    - ro.y) / rd.y;
-        t0 = max(t0, 0.0);
-        if (t1 <= t0) return vec4(0.0);
-
-        const int STEPS = 44;
-        float span = t1 - t0;
-        float stepSize = span / float(STEPS);
-
-        float dither = (hash13(vec3(gl_FragCoord.xy, uTime * 60.0)) - 0.5) * stepSize;
-        vec3 pos = ro + rd * (t0 + dither);
-
-        float transmittance = 1.0;
-        vec3  scattered = vec3(0.0);
-
-        float cosT = dot(rd, sunDir);
-        float phase = hg(cosT, 0.52);
-
-        vec3 sunColor = vec3(1.00, 0.96, 0.90);
-        vec3 skyAmb   = vec3(0.42, 0.55, 0.74);
-
-        const float EXT = 0.0021;
-
-        for (int i = 0; i < STEPS; i++) {
-          float dens = cloudDensity(pos);
-          if (dens > 0.002) {
-            float lightDens = lightMarch(pos, sunDir);
-            float lightTrans = exp(-lightDens * EXT);
-
-            float sunBoost = 1.0 + 2.5 * pow(max(cosT, 0.0), 12.0);
-
-            vec3 S = sunColor * lightTrans * phase * 3.2 * sunBoost
-                   + skyAmb * 0.14;
-
-            float ext = dens * stepSize * EXT;
-            float a = 1.0 - exp(-ext);
-
-            scattered += transmittance * S * a;
-            transmittance *= exp(-ext);
-
-            if (transmittance < 0.012) break;
-          }
-          pos += rd * stepSize;
-        }
-
-        return vec4(scattered, 1.0 - transmittance);
-      }
-
-      /* ---------------- Main ---------------- */
-      void main() {
-        vec3 rayDir = normalize(vWorldPos - cameraPosition);
-        vec3 sunDir = normalize(uSunDir);
-
-        vec3 sky = skyColor(rayDir, sunDir);
-
-        vec4 clouds = vec4(0.0);
-        if (rayDir.y > 0.005) {
-          clouds = raymarchClouds(cameraPosition, rayDir, sunDir);
-        }
-
-        vec3 col = mix(sky, clouds.rgb, clamp(clouds.a, 0.0, 1.0));
-
-        gl_FragColor = vec4(col, 1.0);
+        gl_FragColor = vec4(sky, 1.0);
       }
     `
   });
@@ -530,6 +351,145 @@ function makeSky() {
   mesh.frustumCulled = false;
   mesh.renderOrder = -1000;
   return mesh;
+}
+
+/* ===================================================================== */
+/*  Cloud sprites                                                        */
+/* ===================================================================== */
+function buildClouds(maxAniso) {
+  // Bake ~8 distinct cloud textures up front, then reuse them.
+  const texRng = mulberry32(0xC10D);
+  const textures = [];
+  for (let i = 0; i < 8; i++) textures.push(makeCloudTexture(texRng, 512, maxAniso));
+
+  const rng = mulberry32(0xBEEF);
+
+  // Three atmospheric layers, each with its own character.
+  // [minDist, maxDist, minY, maxY, minScale, maxScale, count, baseOpacity]
+  const layers = [
+    // low, small, crisp cumulus
+    [ 280, 900,  220, 380, 130, 260, 16, 0.72],
+    // mid cumulus — the "hero" layer
+    [ 700, 2000, 380, 700, 260, 520, 22, 0.68],
+    // high, large, hazy cirrus
+    [1400, 4200, 700, 1300, 500, 1100, 14, 0.50]
+  ];
+
+  for (const [minD, maxD, minY, maxY, minS, maxS, count, baseOpacity] of layers) {
+    for (let i = 0; i < count; i++) {
+      const tex = textures[(rng() * textures.length) | 0];
+
+      const mat = new THREE.SpriteMaterial({
+        map: tex,
+        transparent: true,
+        depthWrite: false,
+        depthTest: true,
+        fog: true,
+        opacity: baseOpacity * (0.85 + rng() * 0.30)
+      });
+
+      const sprite = new THREE.Sprite(mat);
+
+      const ang = rng() * Math.PI * 2;
+      const rad = minD + rng() * (maxD - minD);
+      const y   = minY + rng() * (maxY - minY);
+      const w   = minS + rng() * (maxS - minS);
+
+      sprite.scale.set(w, w * 0.5, 1);      // textures are 2:1
+      sprite.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
+      sprite.userData.speed = 2.5 + rng() * 4.5;   // m/s drift
+
+      cloudGroup.add(sprite);
+      clouds.push(sprite);
+    }
+  }
+}
+
+/* Draws a fluffy cumulus cloud into a canvas and returns it as a texture. */
+function makeCloudTexture(rand, size, maxAniso) {
+  const W = size;
+  const H = Math.round(size * 0.5);
+  const cvs = document.createElement('canvas');
+  cvs.width = W;
+  cvs.height = H;
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  // ---- 1. Silhouette: lots of soft radial puffs along a horizontal band ----
+  const puffCount = 26 + Math.floor(rand() * 12);
+  for (let i = 0; i < puffCount; i++) {
+    const t = i / (puffCount - 1);
+    const bell = Math.sin(t * Math.PI);                 // 0 → 1 → 0
+
+    const x = W * 0.10 + t * W * 0.80 + (rand() - 0.5) * W * 0.05;
+    const r = W * (0.045 + 0.095 * bell * (0.55 + rand() * 0.85));
+    const y = H * 0.66
+            - bell * H * 0.26 * (0.5 + rand() * 0.9)
+            - rand() * H * 0.05;
+
+    const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
+    g.addColorStop(0.00, 'rgba(255,255,255,1)');
+    g.addColorStop(0.40, 'rgba(255,255,255,0.95)');
+    g.addColorStop(0.72, 'rgba(255,255,255,0.42)');
+    g.addColorStop(1.00, 'rgba(255,255,255,0)');
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ---- 2. Restrict subsequent passes to the cloud silhouette ----
+  ctx.globalCompositeOperation = 'source-atop';
+
+  // Sunlit top: warm white highlight
+  const topLight = ctx.createLinearGradient(0, H * 0.08, 0, H * 0.55);
+  topLight.addColorStop(0.00, 'rgba(255, 252, 240, 0.55)');
+  topLight.addColorStop(1.00, 'rgba(255, 252, 240, 0.00)');
+  ctx.fillStyle = topLight;
+  ctx.fillRect(0, 0, W, H);
+
+  // Shadowed base: cool grey-blue (simulates ambient sky + self-shadow)
+  const baseShadow = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.85);
+  baseShadow.addColorStop(0.00, 'rgba(190, 204, 224, 0.00)');
+  baseShadow.addColorStop(0.50, 'rgba(170, 188, 214, 0.42)');
+  baseShadow.addColorStop(1.00, 'rgba(130, 152, 186, 0.85)');
+  ctx.fillStyle = baseShadow;
+  ctx.fillRect(0, 0, W, H);
+
+  // ---- 3. Soft internal detail (breaks up the smooth blobs) ----
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.globalAlpha = 0.10;
+  for (let i = 0; i < 40; i++) {
+    const x = rand() * W;
+    const y = H * 0.35 + rand() * H * 0.5;
+    const r = 8 + rand() * 26;
+    const dark = rand() < 0.55;
+    ctx.fillStyle = dark ? 'rgba(120,140,170,1)' : 'rgba(255,255,255,1)';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ---- 4. Silver lining: bright rim along the top edges ----
+  ctx.globalCompositeOperation = 'source-atop';
+  const rim = ctx.createLinearGradient(0, H * 0.10, 0, H * 0.42);
+  rim.addColorStop(0.00, 'rgba(255, 255, 255, 0.00)');
+  rim.addColorStop(0.55, 'rgba(255, 253, 245, 0.55)');
+  rim.addColorStop(1.00, 'rgba(255, 255, 255, 0.00)');
+  ctx.fillStyle = rim;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.globalCompositeOperation = 'source-over';
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = maxAniso;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+  return tex;
 }
 
 /* ===================================================================== */
@@ -569,8 +529,8 @@ function generateConcreteTextures(size, maxAniso) {
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = x / size, v = y / size;
-      let h = fbm(u, v, 10, 6);
-      h += fbm(u, v, 90, 3) * 0.06;
+      let h = fbm(u, v, 10, 5);
+      h += fbm(u, v, 90, 2) * 0.06;
       h += (Math.random() - 0.5) * 0.025;
       height[y * size + x] = h;
     }
@@ -602,7 +562,7 @@ function generateConcreteTextures(size, maxAniso) {
   const nctx = normalCv.getContext('2d');
   const normalImg = nctx.createImageData(size, size);
   const nd = normalImg.data;
-  const strength = 6.5;
+  const strength = 5.5;
 
   for (let y = 0; y < size; y++) {
     const y0 = (y - 1 + size) % size;
@@ -668,13 +628,27 @@ function animate() {
   const delta = Math.min(clock.getDelta(), 0.05);
   const active = controls.isLocked;
 
-  skyUniforms.uTime.value += delta;
-
   updatePlayer(delta, active);
 
+  // Sky stays centred on the eye
   sky.position.copy(camera.position);
 
-  composer.render();
+  // Cloud drift + horizontal wrap so the sky never empties out
+  for (let i = 0; i < clouds.length; i++) {
+    const c = clouds[i];
+    c.position.x += c.userData.speed * delta;
+    if (c.position.x > 5200) c.position.x = -5200;
+  }
+  cloudGroup.position.set(camera.position.x, 0, camera.position.z);
+
+  renderer.render(scene, camera);
+
+  // FPS readout
+  fpsAccum += delta; fpsFrames++;
+  if (fpsAccum >= 0.5) {
+    hud.textContent = Math.round(fpsFrames / fpsAccum) + ' FPS';
+    fpsAccum = 0; fpsFrames = 0;
+  }
 }
 
 /* ===================================================================== */
@@ -739,6 +713,18 @@ function updatePlayer(delta, active) {
     camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
     camera.updateProjectionMatrix();
   }
+}
+
+/* ===================================================================== */
+/*  Seeded RNG                                                           */
+/* ===================================================================== */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 </script>
 </body>
