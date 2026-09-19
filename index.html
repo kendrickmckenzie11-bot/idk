@@ -1,294 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Singing Monsters Clone</title>
-    <style>
-        /* --- GENERAL STYLES --- */
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* Prevents scrolling */
-            background-color: #87CEEB; /* Sky blue */
-            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif; /* Cartoonish font */
-            user-select: none; /* Prevents text selection when clicking fast */
-        }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grey Baseplate</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #9fc6e8; }
+  canvas { display: block; }
 
-        /* --- THE ISLAND (Background) --- */
-        #island {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 85vh; /* Leaves room for the UI bar */
-            background: radial-gradient(circle at center bottom, #7CFC00 0%, #228B22 40%, #006400 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+  #crosshair {
+    position: fixed; left: 50%; top: 50%; width: 6px; height: 6px;
+    margin: -3px 0 0 -3px; border-radius: 50%;
+    background: rgba(255,255,255,.9);
+    box-shadow: 0 0 3px rgba(0,0,0,.7);
+    pointer-events: none; opacity: 0; transition: opacity .2s;
+  }
+  #crosshair.show { opacity: 1; }
 
-        /* A simple CSS tree to make it look like an island */
-        .tree {
-            position: absolute;
-            bottom: 10%;
-            left: 10%;
-            width: 20px;
-            height: 60px;
-            background-color: #8B4513;
-            border-radius: 5px;
-        }
-        .tree::after {
-            content: '';
-            position: absolute;
-            top: -40px;
-            left: -30px;
-            width: 80px;
-            height: 80px;
-            background-color: #32CD32;
-            border-radius: 50%;
-            box-shadow: inset -10px -10px 0 rgba(0,0,0,0.2);
-        }
-
-        /* --- THE MONSTER --- */
-        .monster {
-            font-size: 100px;
-            cursor: pointer;
-            transition: transform 0.1s;
-            filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.5));
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .monster:active {
-            transform: scale(1.2);
-        }
-
-        /* Animation for the monster to float */
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-            100% { transform: translateY(0px); }
-        }
-
-        /* --- THE BOTTOM UI BAR --- */
-        #ui-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 15vh;
-            background-color: #5c4033; /* Dark wood/stone color */
-            border-top: 5px solid #2a1f16;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 10px;
-            box-sizing: border-box;
-            box-shadow: 0px -10px 20px rgba(0,0,0,0.5);
-        }
-
-        /* --- UI BUTTONS --- */
-        .ui-btn {
-            position: relative;
-            width: 12%;
-            height: 80%;
-            background: linear-gradient(180deg, #8c7b6d 0%, #4a3b2c 100%);
-            border: 3px solid #1a110a;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: inset 0px 5px 0px rgba(255,255,255,0.2), 0px 5px 10px rgba(0,0,0,0.5);
-            transition: all 0.1s;
-        }
-
-        .ui-btn:hover {
-            background: linear-gradient(180deg, #a69686 0%, #5a4b3c 100%);
-            transform: translateY(-2px);
-        }
-
-        .ui-btn:active {
-            transform: translateY(2px);
-            box-shadow: inset 0px 2px 0px rgba(255,255,255,0.2), 0px 2px 5px rgba(0,0,0,0.5);
-        }
-
-        .ui-icon {
-            font-size: 24px;
-            margin-bottom: 5px;
-            text-shadow: 1px 1px 2px black;
-        }
-
-        .ui-text {
-            font-size: 10px;
-            color: white;
-            text-shadow: 1px 1px 0px black, -1px -1px 0px black, 1px -1px 0px black, -1px 1px 0px black;
-            text-align: center;
-            letter-spacing: 1px;
-        }
-
-        /* --- NOTIFICATION BADGE (Red Exclamation) --- */
-        .badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background-color: #e74c3c;
-            color: white;
-            border: 2px solid #c0392b;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        /* Sale Banner */
-        .sale-banner {
-            position: absolute;
-            top: -15px;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 5px;
-            border: 2px solid #c0392b;
-            font-weight: bold;
-            text-shadow: 1px 1px 0px black;
-        }
-    </style>
+  #overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    background: rgba(0,0,0,.55); color: #fff; text-align: center;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer; user-select: none;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h1 { margin: 0; font-size: 34px; letter-spacing: .5px; }
+  #overlay p { margin: 0; font-size: 15px; line-height: 1.6; opacity: .85; }
+  #overlay strong { font-size: 18px; opacity: 1; }
+</style>
 </head>
 <body>
 
-    <!-- THE ISLAND AREA -->
-    <div id="island">
-        <!-- A CSS Tree -->
-        <div class="tree"></div>
-        
-        <!-- A Clickable Monster (Using an Emoji as a placeholder) -->
-        <!-- In the future, you can replace this with an <img> tag or a CSS-drawn character -->
-        <div class="monster" id="monster1" onclick="singMonster('monster1')">👾</div>
-    </div>
+<div id="crosshair"></div>
 
-    <!-- THE BOTTOM UI BAR -->
-    <div id="ui-bar">
-        
-        <div class="ui-btn" onclick="openMenu('Collection')">
-            <span class="ui-icon">📖</span>
-            <span class="ui-text">COLLECTION</span>
-            <div class="badge">!</div>
-        </div>
+<div id="overlay">
+  <h1>Grey Baseplate</h1>
+  <p><strong>Click to play</strong></p>
+  <p>WASD — walk &nbsp;·&nbsp; Mouse — look &nbsp;·&nbsp; Space — jump &nbsp;·&nbsp; Shift — run &nbsp;·&nbsp; Esc — release</p>
+</div>
 
-        <div class="ui-btn" onclick="openMenu('Map')">
-            <span class="ui-icon">🗺️</span>
-            <span class="ui-text">MAP</span>
-            <div class="badge">!</div>
-        </div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 
-        <div class="ui-btn" onclick="openMenu('Mailbox')">
-            <span class="ui-icon">📬</span>
-            <span class="ui-text">MAILBOX</span>
-            <div class="badge">!</div>
-        </div>
+<script type="module">
+import * as THREE from 'three';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-        <div class="ui-btn" onclick="openMenu('Friends')">
-            <span class="ui-icon">👥</span>
-            <span class="ui-text">FRIENDS</span>
-            <div class="badge">!</div>
-        </div>
+// ---------- Tunables ----------
+const EYE_HEIGHT  = 1.7;   // camera height above the plate
+const WALK_SPEED  = 5;     // units / second
+const RUN_SPEED   = 9;
+const GRAVITY     = 25;
+const JUMP_SPEED  = 9;
+const HALF        = 500;   // baseplate is 1000 x 1000, so half = 500
 
-        <div class="ui-btn" onclick="openMenu('Market')">
-            <div class="sale-banner">SALE</div>
-            <span class="ui-icon">🏪</span>
-            <span class="ui-text">MARKET</span>
-        </div>
+// ---------- State ----------
+let scene, camera, renderer, controls;
 
-        <div class="ui-btn" onclick="openMenu('Info')">
-            <span class="ui-icon">ℹ️</span>
-            <span class="ui-text">INFO</span>
-        </div>
+const clock    = new THREE.Clock();
+const velocity = new THREE.Vector3();
+const keys     = Object.create(null);
+let canJump    = true;
 
-        <div class="ui-btn" onclick="openMenu('Options')">
-            <span class="ui-icon">⚙️</span>
-            <span class="ui-text">OPTIONS</span>
-        </div>
+// Scratch vectors (avoid allocating every frame)
+const forward = new THREE.Vector3();
+const right   = new THREE.Vector3();
+const wish    = new THREE.Vector3();
 
-    </div>
+init();
+animate();
 
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // A simple audio context to generate a "beep" sound for the monster
-        // (Since we can't load external MP3s in a single HTML file without a URL)
-        let audioCtx = null;
-        let isPlaying = false;
+// ---------- Setup ----------
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x9fc6e8);
+  scene.fog = new THREE.Fog(0x9fc6e8, 150, 520);
 
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
+  camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 2000);
+  camera.position.set(0, EYE_HEIGHT, 0);
 
-        // Function called when a monster is clicked
-        function singMonster(monsterId) {
-            initAudio();
-            
-            // Visual feedback
-            const monster = document.getElementById(monsterId);
-            monster.style.transform = "scale(1.3)";
-            setTimeout(() => {
-                monster.style.transform = "scale(1)";
-            }, 150);
+  // Lights
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x555555, 2.2));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+  sun.position.set(80, 150, 60);
+  scene.add(sun);
 
-            // Audio feedback (Playing a simple synth note)
-            // In a real MSM clone, you would play a looping backing track here.
-            if (audioCtx) {
-                const osc = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                
-                osc.type = 'triangle'; // Sounds kind of like a monster
-                osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4 note
-                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
-                
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                
-                osc.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.5);
-            }
-        }
+  // Grey baseplate
+  const plateGeo = new THREE.PlaneGeometry(HALF * 2, HALF * 2);
+  plateGeo.rotateX(-Math.PI / 2);
+  const plate = new THREE.Mesh(
+    plateGeo,
+    new THREE.MeshLambertMaterial({ color: 0x808080 })
+  );
+  scene.add(plate);
 
-        // Function called when a UI button is clicked
-        function openMenu(menuName) {
-            // In a real game, this would open a modal or change the scene.
-            // For now, we just alert the user.
-            alert("Opening " + menuName + " menu!");
-            
-            // Remove the notification badge when clicked
-            const buttons = document.querySelectorAll('.ui-btn');
-            buttons.forEach(btn => {
-                if (btn.innerText.includes(menuName.toUpperCase())) {
-                    const badge = btn.querySelector('.badge');
-                    if (badge) {
-                        badge.style.display = 'none';
-                    }
-                }
-            });
-        }
-    </script>
+  // Faint grid so you can actually feel yourself moving
+  const grid = new THREE.GridHelper(HALF * 2, 100, 0x000000, 0x000000);
+  grid.material.transparent = true;
+  grid.material.opacity = 0.12;
+  grid.position.y = 0.02;
+  scene.add(grid);
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Mouse-look controls
+  controls = new PointerLockControls(camera, renderer.domElement);
+
+  const overlay   = document.getElementById('overlay');
+  const crosshair = document.getElementById('crosshair');
+
+  overlay.addEventListener('click', () => controls.lock());
+  controls.addEventListener('lock', () => {
+    overlay.classList.add('hidden');
+    crosshair.classList.add('show');
+  });
+  controls.addEventListener('unlock', () => {
+    overlay.classList.remove('hidden');
+    crosshair.classList.remove('show');
+  });
+
+  // Keyboard
+  addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+    if (e.code === 'Space') e.preventDefault();
+  });
+  addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+  });
+  addEventListener('blur', () => {
+    for (const k in keys) keys[k] = false;
+  });
+
+  // Resize
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+}
+
+// ---------- Main loop ----------
+function animate() {
+  requestAnimationFrame(animate);
+
+  const delta = Math.min(clock.getDelta(), 0.05);
+
+  if (controls.isLocked) {
+    // --- Horizontal movement ---
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1);
+    forward.normalize();
+
+    right.crossVectors(forward, camera.up).normalize();
+
+    const moveZ = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
+    const moveX = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
+
+    wish.set(0, 0, 0)
+        .addScaledVector(forward, moveZ)
+        .addScaledVector(right,   moveX);
+    if (wish.lengthSq() > 0) wish.normalize();
+
+    const speed = (keys['ShiftLeft'] || keys['ShiftRight']) ? RUN_SPEED : WALK_SPEED;
+
+    // Smooth accel / decel
+    velocity.x = THREE.MathUtils.damp(velocity.x, wish.x * speed, 12, delta);
+    velocity.z = THREE.MathUtils.damp(velocity.z, wish.z * speed, 12, delta);
+
+    camera.position.x += velocity.x * delta;
+    camera.position.z += velocity.z * delta;
+
+    // Keep on the plate
+    camera.position.x = THREE.MathUtils.clamp(camera.position.x, -HALF + 1, HALF - 1);
+    camera.position.z = THREE.MathUtils.clamp(camera.position.z, -HALF + 1, HALF - 1);
+
+    // --- Vertical movement (gravity + jump) ---
+    velocity.y -= GRAVITY * delta;
+    camera.position.y += velocity.y * delta;
+
+    if (camera.position.y <= EYE_HEIGHT) {
+      camera.position.y = EYE_HEIGHT;
+      velocity.y = 0;
+      canJump = true;
+    }
+
+    if (keys['Space'] && canJump) {
+      velocity.y = JUMP_SPEED;
+      canJump = false;
+    }
+  } else {
+    velocity.set(0, 0, 0);
+  }
+
+  renderer.render(scene, camera);
+}
+</script>
 </body>
 </html>
