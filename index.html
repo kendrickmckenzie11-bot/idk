@@ -1,745 +1,880 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Realistic Baseplate</title>
-<style>
-  html, body {
-    margin: 0; height: 100%; overflow: hidden;
-    background: #9ab8d8;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
-  canvas { display: block; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS - AI Assistant</title>
+    <!-- Puter.js: Free AI models without API keys -->
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  #crosshair {
-    position: fixed; left: 50%; top: 50%;
-    width: 4px; height: 4px; margin: -2px 0 0 -2px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.85);
-    box-shadow: 0 0 4px rgba(0,0,0,.7);
-    pointer-events: none;
-    opacity: 0; transition: opacity .25s ease;
-  }
-  #crosshair.show { opacity: 1; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+        }
 
-  #overlay {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 14px;
-    background: rgba(10, 18, 30, .55);
-    backdrop-filter: blur(4px);
-    color: #fff; text-align: center; cursor: pointer;
-    user-select: none; transition: opacity .3s ease;
-    text-shadow: 0 2px 20px rgba(0,0,0,.6);
-  }
-  #overlay.hidden { opacity: 0; pointer-events: none; }
-  #overlay h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: .3px; }
-  #overlay .play { font-size: 17px; font-weight: 600; opacity: .95; }
-  #overlay .keys { font-size: 13px; opacity: .72; line-height: 2.3; }
-  kbd {
-    background: rgba(255,255,255,.13);
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 5px; padding: 2px 7px;
-    font-family: inherit; font-size: 12px;
-  }
-  #loading {
-    position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: #0c1420; color: #c8d8e8;
-    font-size: 14px; letter-spacing: .1em; text-transform: uppercase;
-    transition: opacity .5s ease; z-index: 100;
-  }
-  #loading.hidden { opacity: 0; pointer-events: none; }
-</style>
+        /* Animated background rings */
+        .bg-rings {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmax; height: 100vmax;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid rgba(0, 255, 200, 0.06);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        .ring:nth-child(1) { width: 30vmax; height: 30vmax; animation-delay: 0s; }
+        .ring:nth-child(2) { width: 50vmax; height: 50vmax; animation-delay: 0.5s; }
+        .ring:nth-child(3) { width: 70vmax; height: 70vmax; animation-delay: 1s; }
+        .ring:nth-child(4) { width: 90vmax; height: 90vmax; animation-delay: 1.5s; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .app {
+            position: relative;
+            z-index: 10;
+            width: min(900px, 95vw);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .header h1 {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            color: #00ffc8;
+            text-shadow: 0 0 30px rgba(0, 255, 200, 0.5), 0 0 60px rgba(0, 255, 200, 0.2);
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: #558877;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        /* Chat area */
+        .chat-container {
+            flex: 1;
+            background: rgba(10, 15, 20, 0.85);
+            border: 1px solid rgba(0, 255, 200, 0.15);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
+            max-height: 45vh;
+            box-shadow: 0 0 40px rgba(0, 255, 200, 0.05), inset 0 0 40px rgba(0, 255, 200, 0.02);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(0, 255, 200, 0.3); border-radius: 2px; }
+
+        .msg {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+            word-wrap: break-word;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: rgba(0, 255, 200, 0.12);
+            border: 1px solid rgba(0, 255, 200, 0.25);
+            color: #b0ffe8;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.jarvis {
+            align-self: flex-start;
+            background: rgba(30, 40, 50, 0.9);
+            border: 1px solid rgba(100, 150, 180, 0.2);
+            color: #d0d8e0;
+            border-bottom-left-radius: 4px;
+        }
+        .msg.system {
+            align-self: center;
+            background: transparent;
+            color: #558877;
+            font-size: 0.78rem;
+            border: 1px dashed rgba(0, 255, 200, 0.15);
+            text-align: center;
+        }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 4px;
+            font-size: 0.78rem;
+            color: #558877;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #00ffc8;
+            margin-right: 6px;
+            box-shadow: 0 0 8px rgba(0, 255, 200, 0.8);
+            animation: blink 2s infinite;
+        }
+        .status-dot.idle { background: #558877; box-shadow: none; animation: none; }
+        .status-dot.listening { background: #ff6b6b; box-shadow: 0 0 12px rgba(255, 107, 107, 0.8); animation: blink 0.6s infinite; }
+        .status-dot.thinking { background: #ffd93d; box-shadow: 0 0 12px rgba(255, 217, 61, 0.8); animation: blink 0.8s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 22px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 255, 200, 0.3);
+            background: rgba(0, 255, 200, 0.08);
+            color: #00ffc8;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: rgba(0, 255, 200, 0.18);
+            box-shadow: 0 0 20px rgba(0, 255, 200, 0.2);
+            transform: translateY(-1px);
+        }
+        .btn:active { transform: translateY(0); }
+        .btn.active {
+            background: rgba(0, 255, 200, 0.25);
+            box-shadow: 0 0 25px rgba(0, 255, 200, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-primary {
+            border-color: rgba(0, 255, 200, 0.5);
+            background: rgba(0, 255, 200, 0.15);
+        }
+        .btn-danger {
+            border-color: rgba(255, 107, 107, 0.5);
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+        }
+        .btn-danger:hover {
+            background: rgba(255, 107, 107, 0.2);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.2);
+        }
+
+        /* Input row */
+        .input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 255, 200, 0.2);
+            background: rgba(10, 15, 20, 0.9);
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-row input:focus {
+            border-color: rgba(0, 255, 200, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 200, 0.1);
+        }
+        .input-row input::placeholder { color: #446655; }
+
+        /* Mouse cursor simulation */
+        .jarvis-cursor {
+            position: fixed;
+            width: 20px; height: 20px;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: none;
+        }
+        .jarvis-cursor.active { display: block; }
+        .jarvis-cursor::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px; height: 12px;
+            background: rgba(0, 255, 200, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 255, 200, 0.8), 0 0 30px rgba(0, 255, 200, 0.4);
+        }
+        .jarvis-cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px; height: 24px;
+            border: 1px solid rgba(0, 255, 200, 0.4);
+            border-radius: 50%;
+            animation: cursorPulse 1.5s ease-out infinite;
+        }
+        @keyframes cursorPulse {
+            0% { width: 12px; height: 12px; opacity: 1; }
+            100% { width: 40px; height: 40px; opacity: 0; }
+        }
+
+        /* Help panel */
+        .help-panel {
+            position: fixed;
+            top: 0; right: -420px;
+            width: 400px; max-width: 90vw;
+            height: 100vh;
+            background: rgba(10, 15, 20, 0.97);
+            border-left: 1px solid rgba(0, 255, 200, 0.2);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 24px;
+            overflow-y: auto;
+            transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .help-panel.open { right: 0; }
+        .help-panel h2 {
+            color: #00ffc8;
+            font-weight: 400;
+            margin-bottom: 16px;
+            letter-spacing: 0.1em;
+        }
+        .help-panel h3 {
+            color: #00ffc8;
+            font-weight: 400;
+            font-size: 0.9rem;
+            margin: 18px 0 8px;
+            letter-spacing: 0.05em;
+        }
+        .help-panel p, .help-panel li {
+            color: #b0c0b8;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+        .help-panel ul { padding-left: 18px; }
+        .help-panel code {
+            background: rgba(0, 255, 200, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #00ffc8;
+        }
+        .help-panel .close-help {
+            position: absolute;
+            top: 16px; right: 16px;
+            background: none;
+            border: none;
+            color: #558877;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .help-panel .close-help:hover { color: #00ffc8; }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+        }
+        .overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .app { padding: 12px; gap: 12px; }
+            .chat-container { max-height: 35vh; min-height: 220px; }
+            .controls { gap: 6px; }
+            .btn { padding: 8px 14px; font-size: 0.78rem; }
+            .msg { max-width: 90%; font-size: 0.82rem; }
+            .help-panel { width: 100%; right: -100%; }
+        }
+    </style>
 </head>
 <body>
 
-<div id="loading">Building sky…</div>
-<div id="crosshair"></div>
-
-<div id="overlay">
-  <h1>Baseplate</h1>
-  <div class="play">Click to play</div>
-  <div class="keys">
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;·&nbsp;
-    <kbd>Mouse</kbd> look &nbsp;·&nbsp;
-    <kbd>Space</kbd> jump &nbsp;·&nbsp;
-    <kbd>Shift</kbd> run &nbsp;·&nbsp;
-    <kbd>Esc</kbd> release
-  </div>
+<!-- Animated background -->
+<div class="bg-rings">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
 </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
+<!-- Simulated AI cursor -->
+<div class="jarvis-cursor" id="jarvisCursor"></div>
 
-<script type="module">
-import * as THREE from 'three';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { EffectComposer }     from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }         from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass }    from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass }         from 'three/addons/postprocessing/OutputPass.js';
-import { SMAAPass }           from 'three/addons/postprocessing/SMAAPass.js';
+<!-- Main app -->
+<div class="app">
+    <div class="header">
+        <h1>J.A.R.V.I.S</h1>
+        <div class="subtitle">Just A Rather Very Intelligent System</div>
+    </div>
 
-/* ===================================================================== */
-/*  Tunables                                                             */
-/* ===================================================================== */
-const EYE_HEIGHT = 1.70;
-const WALK_SPEED = 3.4;
-const RUN_SPEED  = 6.8;
-const GRAVITY    = 24.0;
-const JUMP_SPEED = 7.0;
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="msg system">
+                Jarvis online. Say <strong>"Hey Jarvis"</strong> or type a command below.
+            </div>
+        </div>
+    </div>
 
-const CLOUD_BOTTOM = 620.0;
-const CLOUD_TOP    = 1420.0;
+    <div class="status-bar">
+        <span>
+            <span class="status-dot idle" id="statusDot"></span>
+            <span id="statusText">Idle</span>
+        </span>
+        <span id="modelLabel">Model: GPT-5 Nano</span>
+    </div>
 
-// Sun direction: 25° elevation, ~135° azimuth
-const SUN_ELEV = 25 * Math.PI / 180;
-const SUN_AZIM = 135 * Math.PI / 180;
-const SUN_DIR = new THREE.Vector3(
-  Math.cos(SUN_ELEV) * Math.sin(SUN_AZIM),
-  Math.sin(SUN_ELEV),
-  Math.cos(SUN_ELEV) * Math.cos(SUN_AZIM)
-).normalize();
+    <div class="controls">
+        <button class="btn btn-primary" id="micBtn" title="Toggle voice input (or press Space)">
+            🎤 Listen
+        </button>
+        <button class="btn" id="fileBtn" title="Open a local file">
+            📂 Open File
+        </button>
+        <button class="btn" id="helpBtn" title="Show commands">
+            ❓ Help
+        </button>
+        <button class="btn btn-danger" id="clearBtn" title="Clear conversation">
+            🗑 Clear
+        </button>
+    </div>
 
-const UP = new THREE.Vector3(0, 1, 0);
+    <div class="input-row">
+        <input type="text" id="textInput" placeholder="Type a command or question..." autocomplete="off">
+        <button class="btn btn-primary" id="sendBtn">Send</button>
+    </div>
+</div>
 
-/* ===================================================================== */
-/*  State                                                                */
-/* ===================================================================== */
-let scene, camera, renderer, composer, controls, sky, skyUniforms;
+<!-- Help panel -->
+<div class="overlay" id="overlay"></div>
+<div class="help-panel" id="helpPanel">
+    <button class="close-help" id="closeHelp">&times;</button>
+    <h2>Commands</h2>
 
-const clock = new THREE.Clock();
-const keys  = Object.create(null);
+    <h3>🌐 Browsing & Search</h3>
+    <ul>
+        <li><code>Open Google</code> / <code>Open YouTube</code></li>
+        <li><code>Search YouTube for lo-fi beats</code></li>
+        <li><code>Search Google for quantum computing</code></li>
+        <li><code>Open github.com</code></li>
+    </ul>
 
-const player = {
-  pos: new THREE.Vector3(0, EYE_HEIGHT, 0),
-  vel: new THREE.Vector3(),
-  grounded: true,
-  bobPhase: 0,
-  bobBlend: 0
-};
+    <h3>📁 File Operations</h3>
+    <ul>
+        <li><code>Open a file</code> — triggers the file picker</li>
+        <li><code>Read file</code> — reads the last opened file</li>
+        <li>Files are read locally; nothing is uploaded.</li>
+    </ul>
 
-const forward = new THREE.Vector3();
-const right   = new THREE.Vector3();
-const wish    = new THREE.Vector3();
+    <h3>🖱 Mouse Control</h3>
+    <ul>
+        <li><code>Move mouse to the center</code></li>
+        <li><code>Click the mic button</code></li>
+        <li><code>Move mouse to 400 300</code></li>
+        <li><em>Simulated within the browser window only.</em></li>
+    </ul>
 
-/* ===================================================================== */
-/*  Boot                                                                 */
-/* ===================================================================== */
-init();
-animate();
+    <h3>🤖 AI Conversation</h3>
+    <ul>
+        <li>Ask anything: "What's the weather like?"</li>
+        <li>Jarvis remembers the last few messages for context.</li>
+        <li>Powered by Puter.js — no API key required.</li>
+    </ul>
 
-/* ===================================================================== */
-/*  Init                                                                 */
-/* ===================================================================== */
-function init() {
-  /* ---------- renderer ---------- */
-  renderer = new THREE.WebGLRenderer({
-    antialias: false,                  // handled by SMAA pass
-    powerPreference: 'high-performance',
-    stencil: false
-  });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
-  document.body.appendChild(renderer.domElement);
+    <h3>🎤 Voice</h3>
+    <ul>
+        <li>Click <strong>Listen</strong> or press <code>Space</code> to talk.</li>
+        <li>Say "Hey Jarvis" to wake it up.</li>
+        <li>Chrome/Edge recommended for best speech support.</li>
+    </ul>
 
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+    <h3>⚠️ Browser Limits</h3>
+    <p>For security, a web page cannot control the real OS mouse or open arbitrary files without your permission. Mouse control is simulated visually, and file access requires the system picker.</p>
+</div>
 
-  /* ---------- scene ---------- */
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0xc4d6e8, 0.00022);
+<script>
+/* ============================================================
+   JARVIS — AI Assistant
+   Free AI via Puter.js • Voice via Web Speech API
+   File access via File System Access API
+   ============================================================ */
 
-  /* ---------- camera ---------- */
-  camera = new THREE.PerspectiveCamera(
-    72, window.innerWidth / window.innerHeight, 0.1, 20000
-  );
-  camera.position.copy(player.pos);
+// ---------- DOM refs ----------
+const chatMessages = document.getElementById('chatMessages');
+const micBtn       = document.getElementById('micBtn');
+const fileBtn      = document.getElementById('fileBtn');
+const helpBtn      = document.getElementById('helpBtn');
+const clearBtn     = document.getElementById('clearBtn');
+const sendBtn      = document.getElementById('sendBtn');
+const textInput    = document.getElementById('textInput');
+const statusDot    = document.getElementById('statusDot');
+const statusText   = document.getElementById('statusText');
+const modelLabel   = document.getElementById('modelLabel');
+const helpPanel    = document.getElementById('helpPanel');
+const overlay      = document.getElementById('overlay');
+const closeHelp    = document.getElementById('closeHelp');
+const jarvisCursor = document.getElementById('jarvisCursor');
 
-  /* ---------- lights ---------- */
-  // Hemisphere light: cool sky above, neutral ground bounce below
-  const hemi = new THREE.HemisphereLight(0xbdd6f2, 0x5a5750, 1.4);
-  scene.add(hemi);
+// ---------- State ----------
+let isListening   = false;
+let isThinking    = false;
+let conversation  = [];          // { role, content }
+let lastFileHandle = null;
+let lastFileContent = '';
 
-  // Sun (directional)
-  const sun = new THREE.DirectionalLight(0xfff1d8, 2.6);
-  sun.position.copy(SUN_DIR).multiplyScalar(800);
-  sun.target.position.set(0, 0, 0);
-  scene.add(sun);
-  scene.add(sun.target);
+const MAX_HISTORY = 10;          // keep last N messages for context
 
-  // Very soft fill from the opposite side (bounce light approximation)
-  const fill = new THREE.DirectionalLight(0xc8d8ee, 0.25);
-  fill.position.copy(SUN_DIR).multiplyScalar(-800);
-  scene.add(fill);
-
-  /* ---------- ground ---------- */
-  const { albedoTex, normalTex, roughTex } = generateConcreteTextures(1024, maxAniso);
-  const GROUND_SIZE = 20000;
-  const TILE = 22;      // metres per texture tile
-  const reps = GROUND_SIZE / TILE;
-
-  albedoTex.repeat.set(reps, reps);
-  normalTex.repeat.set(reps, reps);
-  roughTex.repeat.set(reps, reps);
-
-  const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, 1, 1);
-  groundGeo.rotateX(-Math.PI / 2);
-
-  const groundMat = new THREE.MeshStandardMaterial({
-    map: albedoTex,
-    normalMap: normalTex,
-    normalScale: new THREE.Vector2(0.9, 0.9),
-    roughnessMap: roughTex,
-    roughness: 1.0,
-    metalness: 0.0,
-    envMapIntensity: 1.0,
-    dithering: true
-  });
-
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  scene.add(ground);
-
-  /* ---------- sky ---------- */
-  sky = makeSky();
-  scene.add(sky);
-
-  /* ---------- controls ---------- */
-  controls = new PointerLockControls(camera, renderer.domElement);
-
-  const overlay   = document.getElementById('overlay');
-  const crosshair = document.getElementById('crosshair');
-
-  overlay.addEventListener('click', () => controls.lock());
-
-  controls.addEventListener('lock', () => {
-    overlay.classList.add('hidden');
-    crosshair.classList.add('show');
-  });
-  controls.addEventListener('unlock', () => {
-    overlay.classList.remove('hidden');
-    crosshair.classList.remove('show');
-    player.vel.x = 0;
-    player.vel.z = 0;
-  });
-
-  /* ---------- input ---------- */
-  window.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if (e.code === 'Space') e.preventDefault();
-  });
-  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
-
-  /* ---------- post-processing ---------- */
-  composer = new EffectComposer(renderer);
-  composer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-  composer.setSize(window.innerWidth, window.innerHeight);
-
-  composer.addPass(new RenderPass(scene, camera));
-
-  const bloom = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.32,   // strength
-    0.55,   // radius
-    0.92    // threshold — only bright sky/sun blooms
-  );
-  composer.addPass(bloom);
-
-  composer.addPass(new OutputPass());            // ACES + sRGB
-  composer.addPass(new SMAAPass(                   // antialiasing on LDR
-    window.innerWidth * composer.getPixelRatio(),
-    window.innerHeight * composer.getPixelRatio()
-  ));
-
-  /* ---------- resize ---------- */
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  /* ---------- hide loading ---------- */
-  requestAnimationFrame(() => {
-    document.getElementById('loading').classList.add('hidden');
-  });
+// ---------- Status helpers ----------
+function setStatus(state, text) {
+    statusDot.className = 'status-dot ' + state;
+    statusText.textContent = text;
 }
 
-/* ===================================================================== */
-/*  Sky dome — analytic atmosphere + raymarched volumetric clouds        */
-/* ===================================================================== */
-function makeSky() {
-  const geo = new THREE.SphereGeometry(9000, 64, 40);
+// ---------- Chat UI ----------
+function addMessage(role, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.textContent = text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
+}
 
-  skyUniforms = {
-    uSunDir:   { value: SUN_DIR.clone() },
-    uTime:     { value: 0 }
-  };
+function addSystemMessage(text) {
+    return addMessage('system', text);
+}
 
-  const mat = new THREE.ShaderMaterial({
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false,
-    uniforms: skyUniforms,
-    vertexShader: /* glsl */`
-      varying vec3 vWorldPos;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorldPos = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: /* glsl */`
-      precision highp float;
+// ---------- Speech synthesis ----------
+function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.05;
+    utterance.pitch = 0.9;
+    utterance.volume = 0.85;
+    // Prefer a UK male voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => /en-GB.*Male|Daniel|Google UK English Male/i.test(v.name));
+    if (preferred) utterance.voice = preferred;
+    window.speechSynthesis.speak(utterance);
+}
 
-      uniform vec3  uSunDir;
-      uniform float uTime;
+// ---------- AI call (Puter.js) ----------
+async function askAI(prompt) {
+    if (isThinking) return;
+    isThinking = true;
+    setStatus('thinking', 'Thinking...');
+    micBtn.disabled = true;
 
-      varying vec3 vWorldPos;
+    // Build messages for context
+    const messages = [
+        {
+            role: 'system',
+            content: `You are JARVIS, a helpful, concise AI assistant.
+                      You have access to the user's browser context.
+                      When the user asks you to open a website, search, or manipulate the mouse,
+                      respond with a short confirmation and the action will be handled separately.
+                      Keep responses under 120 words unless asked for detail.`
+        },
+        ...conversation.slice(-MAX_HISTORY),
+        { role: 'user', content: prompt }
+    ];
 
-      const float PI = 3.14159265359;
+    try {
+        const response = await puter.ai.chat(prompt, {
+            model: 'gpt-5-nano',
+            messages: messages
+        });
 
-      /* ---------------- Hashes & noise ---------------- */
-      float hash13(vec3 p3) {
-        p3 = fract(p3 * 0.1031);
-        p3 += dot(p3, p3.zyx + 31.32);
-        return fract((p3.x + p3.y) * p3.z);
-      }
+        // Puter returns different shapes depending on version — normalise.
+        const reply = typeof response === 'string'
+            ? response
+            : response?.message?.content
+              ?? response?.text
+              ?? JSON.stringify(response);
 
-      float vnoise(vec3 x) {
-        vec3 i = floor(x);
-        vec3 f = fract(x);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(
-          mix(mix(hash13(i + vec3(0,0,0)), hash13(i + vec3(1,0,0)), f.x),
-              mix(hash13(i + vec3(0,1,0)), hash13(i + vec3(1,1,0)), f.x), f.y),
-          mix(mix(hash13(i + vec3(0,0,1)), hash13(i + vec3(1,0,1)), f.x),
-              mix(hash13(i + vec3(0,1,1)), hash13(i + vec3(1,1,1)), f.x), f.y),
-          f.z);
-      }
+        addMessage('jarvis', reply);
+        conversation.push({ role: 'user', content: prompt });
+        conversation.push({ role: 'assistant', content: reply });
+        speak(reply);
 
-      // billowy fbm — adds the "puffy" character cumulus need
-      float billowFbm(vec3 p) {
-        float v = 0.0;
-        float a = 0.5;
-        for (int i = 0; i < 4; i++) {
-          float n = vnoise(p);
-          n = 1.0 - abs(2.0 * n - 1.0);
-          v += a * n;
-          p *= 2.07;
-          a *= 0.5;
-        }
-        return v;
-      }
+        // Try to detect intents from the AI reply + user prompt
+        handleIntents(prompt);
+    } catch (err) {
+        console.error('AI error:', err);
+        addSystemMessage('⚠️ AI request failed: ' + err.message);
+    } finally {
+        isThinking = false;
+        setStatus('idle', 'Idle');
+        micBtn.disabled = false;
+    }
+}
 
-      float detailFbm(vec3 p) {
-        float v = 0.0, a = 0.5;
-        for (int i = 0; i < 3; i++) {
-          v += a * vnoise(p);
-          p *= 2.13;
-          a *= 0.5;
-        }
-        return v;
-      }
+// ---------- Intent handling (client-side actions) ----------
+function handleIntents(userText) {
+    const lower = userText.toLowerCase();
 
-      /* ---------------- Phase functions ---------------- */
-      float hg(float cosT, float g) {
-        float g2 = g * g;
-        return (1.0 - g2) /
-               (4.0 * PI * pow(max(0.0, 1.0 - 2.0 * g * cosT + g2), 1.5));
-      }
+    // --- Open websites ---
+    if (/\b(open|launch|go to)\b.*\bgoogle\b/.test(lower)) {
+        window.open('https://www.google.com', '_blank');
+        addSystemMessage('Opened Google in a new tab.');
+    }
+    else if (/\b(open|launch|go to)\b.*\byoutube\b/.test(lower)) {
+        window.open('https://www.youtube.com', '_blank');
+        addSystemMessage('Opened YouTube in a new tab.');
+    }
+    else if (/\b(open|launch|go to)\b.*\bgithub\b/.test(lower)) {
+        window.open('https://github.com', '_blank');
+        addSystemMessage('Opened GitHub in a new tab.');
+    }
+    // --- Search intents ---
+    else if (/search\s+youtube\s+for\s+(.+)/i.test(userText)) {
+        const query = userText.match(/search\s+youtube\s+for\s+(.+)/i)[1];
+        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+        addSystemMessage(`Searching YouTube for “${query}”.`);
+    }
+    else if (/search\s+google\s+for\s+(.+)/i.test(userText)) {
+        const query = userText.match(/search\s+google\s+for\s+(.+)/i)[1];
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        addSystemMessage(`Searching Google for “${query}”.`);
+    }
+    // --- File intents ---
+    else if (/\b(open|read)\b.*\bfile\b/.test(lower)) {
+        openFilePicker();
+    }
+    // --- Mouse intents ---
+    else if (/move\s+mouse\s+to\s+(.+)/i.test(userText)) {
+        const args = userText.match(/move\s+mouse\s+to\s+(.+)/i)[1];
+        moveMouseFromCommand(args);
+    }
+    else if (/click\s+(.+)/i.test(userText)) {
+        const target = userText.match(/click\s+(.+)/i)[1].trim();
+        clickElement(target);
+    }
+}
 
-      /* ---------------- Sky gradient ---------------- */
-      vec3 skyColor(vec3 rayDir, vec3 sunDir) {
-        float sunDot = dot(rayDir, sunDir);
-        float h = max(rayDir.y, 0.0);
+// ---------- Mouse control (simulated) ----------
+function showCursor() {
+    jarvisCursor.classList.add('active');
+}
 
-        // Three-stop gradient: horizon → mid → zenith (linear-space colours)
-        vec3 zenith  = vec3(0.055, 0.175, 0.520);
-        vec3 mid     = vec3(0.240, 0.480, 0.830);
-        vec3 horizon = vec3(0.660, 0.780, 0.900);
+function hideCursor() {
+    jarvisCursor.classList.remove('active');
+}
 
-        vec3 sky;
-        if (h < 0.22) {
-          sky = mix(horizon, mid, smoothstep(0.0, 0.22, h));
+function moveCursorTo(x, y) {
+    showCursor();
+    jarvisCursor.style.left = (x - 10) + 'px';
+    jarvisCursor.style.top  = (y - 10) + 'px';
+}
+
+function moveMouseFromCommand(args) {
+    args = args.trim().toLowerCase();
+    if (args === 'center' || args === 'middle') {
+        moveCursorTo(window.innerWidth / 2, window.innerHeight / 2);
+        addSystemMessage('Mouse moved to center (simulated).');
+    } else {
+        const parts = args.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+        if (parts.length >= 2) {
+            moveCursorTo(parts[0], parts[1]);
+            addSystemMessage(`Mouse moved to ${parts[0]}, ${parts[1]} (simulated).`);
         } else {
-          sky = mix(mid, zenith, pow(smoothstep(0.22, 1.0, h), 0.85));
+            addSystemMessage('Could not parse coordinates. Try: "move mouse to 400 300".');
         }
-
-        // Mie glow around sun
-        float mu = max(sunDot, 0.0);
-        sky += vec3(1.00, 0.93, 0.78) * pow(mu, 6.0)   * 0.30;
-        sky += vec3(1.00, 0.96, 0.88) * pow(mu, 64.0)  * 0.55;
-        sky += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 1.20;
-
-        // Sun disc
-        float disc = smoothstep(0.99978, 0.99992, sunDot);
-        sky += vec3(1.0, 0.97, 0.92) * disc * 24.0;
-
-        // Below-horizon haze
-        if (rayDir.y < 0.0) {
-          float gt = clamp(-rayDir.y * 5.0, 0.0, 1.0);
-          sky = mix(horizon * 1.02, vec3(0.52, 0.53, 0.55), gt);
-        }
-        return sky;
-      }
-
-      /* ---------------- Cloud density ---------------- */
-      float cloudDensity(vec3 p) {
-        float h = (p.y - ${CLOUD_BOTTOM.toFixed(1)}) /
-                  (${CLOUD_TOP.toFixed(1)} - ${CLOUD_BOTTOM.toFixed(1)});
-        if (h < 0.0 || h > 1.0) return 0.0;
-
-        // Flat base, billowy top
-        float profile = smoothstep(0.0, 0.14, h) *
-                        smoothstep(1.0, 0.62, h);
-        if (profile <= 0.0) return 0.0;
-
-        // Wind
-        vec3 wind = vec3(uTime * 4.5, 0.0, uTime * 1.6);
-        vec3 q = (p + wind) * 0.00072;
-
-        float base = billowFbm(q);
-        float det  = detailFbm(q * 6.5) * 0.22;
-
-        float d = base * 0.85 + det - 0.52;
-        d = max(d, 0.0) * 2.2;
-
-        return d * profile;
-      }
-
-      /* ---------------- Light march toward sun ---------------- */
-      float lightMarch(vec3 pos, vec3 sunDir) {
-        float acc = 0.0;
-        float step = 140.0;
-        vec3 p = pos;
-        for (int i = 0; i < 4; i++) {
-          p += sunDir * step;
-          acc += cloudDensity(p) * step;
-        }
-        return acc;
-      }
-
-      /* ---------------- Cloud raymarch ---------------- */
-      vec4 raymarchClouds(vec3 ro, vec3 rd, vec3 sunDir) {
-        if (rd.y < 0.008) return vec4(0.0);
-
-        float t0 = (${CLOUD_BOTTOM.toFixed(1)} - ro.y) / rd.y;
-        float t1 = (${CLOUD_TOP.toFixed(1)}    - ro.y) / rd.y;
-        t0 = max(t0, 0.0);
-        if (t1 <= t0) return vec4(0.0);
-
-        const int STEPS = 44;
-        float span = t1 - t0;
-        float stepSize = span / float(STEPS);
-
-        // Jitter start to hide banding
-        float dither = (hash13(vec3(gl_FragCoord.xy, uTime * 60.0)) - 0.5) * stepSize;
-        vec3 pos = ro + rd * (t0 + dither);
-
-        float transmittance = 1.0;
-        vec3  scattered = vec3(0.0);
-
-        float cosT = dot(rd, sunDir);
-        float phase = hg(cosT, 0.52);
-
-        vec3 sunColor  = vec3(1.00, 0.96, 0.90);
-        vec3 skyAmb    = vec3(0.42, 0.55, 0.74);   // ambient sky bounce
-
-        const float EXT = 0.0021;
-
-        for (int i = 0; i < STEPS; i++) {
-          float dens = cloudDensity(pos);
-          if (dens > 0.002) {
-            float lightDens = lightMarch(pos, sunDir);
-            float lightTrans = exp(-lightDens * EXT);
-
-            // Silver-lining: forward scatter gets brighter near sun
-            float sunBoost = 1.0 + 2.5 * pow(max(cosT, 0.0), 12.0);
-
-            vec3 S = sunColor * lightTrans * phase * 3.2 * sunBoost
-                   + skyAmb * 0.14;
-
-            float ext = dens * stepSize * EXT;
-            float a = 1.0 - exp(-ext);
-
-            scattered += transmittance * S * a;
-            transmittance *= exp(-ext);
-
-            if (transmittance < 0.012) break;
-          }
-          pos += rd * stepSize;
-        }
-
-        return vec4(scattered, 1.0 - transmittance);
-      }
-
-      /* ---------------- Main ---------------- */
-      void main() {
-        vec3 rayDir = normalize(vWorldPos - cameraPosition);
-        vec3 sunDir = normalize(uSunDir);
-
-        vec3 sky = skyColor(rayDir, sunDir);
-
-        vec4 clouds = vec4(0.0);
-        if (rayDir.y > 0.005) {
-          clouds = raymarchClouds(cameraPosition, rayDir, sunDir);
-        }
-
-        vec3 col = mix(sky, clouds.rgb, clamp(clouds.a, 0.0, 1.0));
-
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  });
-
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.frustumCulled = false;
-  mesh.renderOrder = -1000;
-  return mesh;
-}
-
-/* ===================================================================== */
-/*  Procedural concrete textures (albedo + normal + roughness)           */
-/* ===================================================================== */
-function generateConcreteTextures(size, maxAniso) {
-  /* ---- tileable value-noise helpers ---- */
-  function hash2(ix, iy) {
-    let h = (ix * 374761393 + iy * 668265263) | 0;
-    h = ((h ^ (h >>> 13)) * 1274126177) | 0;
-    h = (h ^ (h >>> 16)) >>> 0;
-    return h / 4294967295;
-  }
-  function vnoise(x, y, period) {
-    const xi = Math.floor(x), yi = Math.floor(y);
-    const xf = x - xi, yf = y - yi;
-    const u = xf * xf * (3 - 2 * xf);
-    const v = yf * yf * (3 - 2 * yf);
-    const x0 = ((xi % period) + period) % period;
-    const y0 = ((yi % period) + period) % period;
-    const x1 = (x0 + 1) % period;
-    const y1 = (y0 + 1) % period;
-    const a = hash2(x0, y0), b = hash2(x1, y0);
-    const c = hash2(x0, y1), d = hash2(x1, y1);
-    return a*(1-u)*(1-v) + b*u*(1-v) + c*(1-u)*v + d*u*v;
-  }
-  function fbm(u, v, baseFreq, octaves) {
-    let val = 0, amp = 0.5, freq = baseFreq;
-    for (let i = 0; i < octaves; i++) {
-      val += amp * vnoise(u * freq, v * freq, freq);
-      freq *= 2;
-      amp *= 0.5;
     }
-    return val;
-  }
+    setTimeout(hideCursor, 2500);
+}
 
-  /* ---- 1. Build a height field ---- */
-  const height = new Float32Array(size * size);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const u = x / size, v = y / size;
-      let h = fbm(u, v, 10, 6);          // large/medium features
-      h += fbm(u, v, 90, 3) * 0.06;      // very fine grain
-      h += (Math.random() - 0.5) * 0.025; // micro speckle
-      height[y * size + x] = h;
+function clickElement(description) {
+    description = description.toLowerCase();
+    let target = null;
+
+    if (/mic|microphone|listen/.test(description)) target = micBtn;
+    else if (/file|open file/.test(description)) target = fileBtn;
+    else if (/help/.test(description)) target = helpBtn;
+    else if (/clear/.test(description)) target = clearBtn;
+    else if (/send/.test(description)) target = sendBtn;
+
+    if (target) {
+        const rect = target.getBoundingClientRect();
+        moveCursorTo(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        setTimeout(() => {
+            target.click();
+            addSystemMessage(`Clicked “${description}” (simulated).`);
+            hideCursor();
+        }, 500);
+    } else {
+        addSystemMessage(`Could not find a button matching “${description}”.`);
     }
-  }
+}
 
-  /* ---- 2. Albedo canvas ---- */
-  const albedoCv = document.createElement('canvas');
-  albedoCv.width = albedoCv.height = size;
-  const actx = albedoCv.getContext('2d');
-  const albedoImg = actx.createImageData(size, size);
-  const ad = albedoImg.data;
-
-  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
-    const h = height[i];
-    // base grey modulated by height (dirt settles in the hollows)
-    const base = 0.46 + (h - 0.5) * 0.30;
-    // subtle per-pixel colour noise so it isn't perfectly neutral
-    const n1 = (Math.random() - 0.5) * 0.030;
-    const n2 = (Math.random() - 0.5) * 0.026;
-    const n3 = (Math.random() - 0.5) * 0.022;
-    let r = base + n1;
-    let g = base + n2;
-    let b = base * 1.015 + n3;   // faint cool tint
-    ad[p    ] = Math.max(0, Math.min(255, r * 255));
-    ad[p + 1] = Math.max(0, Math.min(255, g * 255));
-    ad[p + 2] = Math.max(0, Math.min(255, b * 255));
-    ad[p + 3] = 255;
-  }
-  actx.putImageData(albedoImg, 0, 0);
-
-  /* ---- 3. Normal map from height (Sobel) ---- */
-  const normalCv = document.createElement('canvas');
-  normalCv.width = normalCv.height = size;
-  const nctx = normalCv.getContext('2d');
-  const normalImg = nctx.createImageData(size, size);
-  const nd = normalImg.data;
-  const strength = 6.5;
-
-  for (let y = 0; y < size; y++) {
-    const y0 = (y - 1 + size) % size;
-    const y1 = (y + 1) % size;
-    for (let x = 0; x < size; x++) {
-      const x0 = (x - 1 + size) % size;
-      const x1 = (x + 1) % size;
-
-      const hL = height[y  * size + x0];
-      const hR = height[y  * size + x1];
-      const hD = height[y0 * size + x ];
-      const hU = height[y1 * size + x ];
-
-      const dx = (hR - hL) * strength;
-      const dy = (hU - hD) * strength;
-      const len = Math.sqrt(dx*dx + dy*dy + 1.0);
-
-      const i = (y * size + x) * 4;
-      nd[i    ] = ((-dx / len) * 0.5 + 0.5) * 255;
-      nd[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255;
-      nd[i + 2] = (( 1.0 / len) * 0.5 + 0.5) * 255;
-      nd[i + 3] = 255;
+// ---------- File System Access ----------
+async function openFilePicker() {
+    if (!('showOpenFilePicker' in window)) {
+        addSystemMessage('⚠️ File System Access API is not supported in this browser.');
+        return;
     }
-  }
-  nctx.putImageData(normalImg, 0, 0);
-
-  /* ---- 4. Roughness map ---- */
-  const roughCv = document.createElement('canvas');
-  roughCv.width = roughCv.height = size;
-  const rctx = roughCv.getContext('2d');
-  const roughImg = rctx.createImageData(size, size);
-  const rd = roughImg.data;
-
-  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
-    const h = height[i];
-    // dry concrete sits around 0.88; tiny pits are a little rougher
-    let r = 0.88 + (h - 0.5) * 0.14;
-    r = Math.max(0.6, Math.min(1.0, r));
-    const v = r * 255;
-    rd[p    ] = v;
-    rd[p + 1] = v;
-    rd[p + 2] = v;
-    rd[p + 3] = 255;
-  }
-  rctx.putImageData(roughImg, 0, 0);
-
-  /* ---- 5. Upload as three.js textures ---- */
-  const albedoTex = new THREE.CanvasTexture(albedoCv);
-  albedoTex.colorSpace = THREE.SRGBColorSpace;
-  albedoTex.wrapS = albedoTex.wrapT = THREE.RepeatWrapping;
-  albedoTex.anisotropy = maxAniso;
-
-  const normalTex = new THREE.CanvasTexture(normalCv);
-  normalTex.wrapS = normalTex.wrapT = THREE.RepeatWrapping;
-  normalTex.anisotropy = maxAniso;
-
-  const roughTex = new THREE.CanvasTexture(roughCv);
-  roughTex.wrapS = roughTex.wrapT = THREE.RepeatWrapping;
-  roughTex.anisotropy = maxAniso;
-
-  return { albedoTex, normalTex, roughTex };
+    try {
+        const [handle] = await window.showOpenFilePicker({
+            types: [{
+                description: 'Text files',
+                accept: { 'text/*': ['.txt', '.md', '.json', '.js', '.html', '.css', '.csv', '.log'] }
+            }],
+            multiple: false
+        });
+        lastFileHandle = handle;
+        const file = await handle.getFile();
+        const text = await file.text();
+        lastFileContent = text;
+        addSystemMessage(`📄 Opened “${file.name}” (${(file.size / 1024).toFixed(1)} KB).`);
+        addMessage('jarvis', `I've read “${file.name}”. It contains ${text.length} characters. What would you like me to do with it?`);
+        speak(`I've opened ${file.name}.`);
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            addSystemMessage('⚠️ Could not open file: ' + err.message);
+        }
+    }
 }
 
-/* ===================================================================== */
-/*  Main loop                                                            */
-/* ===================================================================== */
-function animate() {
-  requestAnimationFrame(animate);
-
-  const delta = Math.min(clock.getDelta(), 0.05);
-  const active = controls.isLocked;
-
-  // Advance sky time (cloud drift)
-  skyUniforms.uTime.value += delta;
-
-  updatePlayer(delta, active);
-
-  // Keep sky dome centred on the eye
-  sky.position.copy(camera.position);
-
-  composer.render();
+async function readLastFile() {
+    if (!lastFileHandle) {
+        addSystemMessage('No file has been opened yet. Use “Open File” first.');
+        return;
+    }
+    try {
+        const file = await lastFileHandle.getFile();
+        const text = await file.text();
+        lastFileContent = text;
+        addSystemMessage(`📄 Re-read “${file.name}”.`);
+        addMessage('jarvis', `Here is the content of “${file.name}”:\n\n${text.slice(0, 1000)}${text.length > 1000 ? '\n\n…(truncated)' : ''}`);
+        speak(`I've read the file.`);
+    } catch (err) {
+        addSystemMessage('⚠️ Could not read file: ' + err.message);
+    }
 }
 
-/* ===================================================================== */
-/*  Player movement                                                      */
-/* ===================================================================== */
-function updatePlayer(delta, active) {
-  /* ---------- direction basis ---------- */
-  camera.getWorldDirection(forward);
-  forward.y = 0;
-  if (forward.lengthSq() < 1e-8) forward.set(0, 0, -1);
-  forward.normalize();
-  right.crossVectors(forward, UP).normalize();
+// ---------- Voice recognition ----------
+let recognition = null;
 
-  /* ---------- input ---------- */
-  const mz = active ? (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0) : 0;
-  const mx = active ? (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0) : 0;
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        addSystemMessage('⚠️ Speech recognition is not supported in this browser. Use Chrome or Edge.');
+        micBtn.disabled = true;
+        return;
+    }
 
-  wish.set(0, 0, 0)
-      .addScaledVector(forward, mz)
-      .addScaledVector(right, mx);
-  if (wish.lengthSq() > 0) wish.normalize();
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
 
-  const running = active && (keys['ShiftLeft'] || keys['ShiftRight']);
-  const targetSpeed = running ? RUN_SPEED : WALK_SPEED;
+    recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('active');
+        micBtn.textContent = '🔴 Listening...';
+        setStatus('listening', 'Listening...');
+    };
 
-  const accel = player.grounded ? 13 : 3;
-  player.vel.x = THREE.MathUtils.damp(player.vel.x, wish.x * targetSpeed, accel, delta);
-  player.vel.z = THREE.MathUtils.damp(player.vel.z, wish.z * targetSpeed, accel, delta);
+    recognition.onresult = (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) final += transcript;
+            else interim += transcript;
+        }
+        if (interim) {
+            textInput.placeholder = interim;
+        }
+        if (final) {
+            textInput.value = final;
+            textInput.placeholder = 'Type a command or question...';
+            // Auto-send after a short delay
+            setTimeout(() => {
+                const text = textInput.value.trim();
+                if (text) {
+                    textInput.value = '';
+                    addMessage('user', text);
+                    askAI(text);
+                }
+            }, 300);
+        }
+    };
 
-  player.pos.x += player.vel.x * delta;
-  player.pos.z += player.vel.z * delta;
+    recognition.onerror = (event) => {
+        console.error('Speech error:', event.error);
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+            addSystemMessage('⚠️ Speech error: ' + event.error);
+        }
+    };
 
-  /* ---------- gravity & jump ---------- */
-  player.vel.y -= GRAVITY * delta;
-  player.pos.y += player.vel.y * delta;
-
-  if (player.pos.y <= EYE_HEIGHT) {
-    player.pos.y = EYE_HEIGHT;
-    player.vel.y = 0;
-    player.grounded = true;
-  } else {
-    player.grounded = false;
-  }
-
-  if (active && keys['Space'] && player.grounded) {
-    player.vel.y = JUMP_SPEED;
-    player.grounded = false;
-  }
-
-  /* ---------- subtle head bob ---------- */
-  const hSpeed = Math.hypot(player.vel.x, player.vel.z);
-  const wantBob = (player.grounded && hSpeed > 0.35) ? 1 : 0;
-  player.bobBlend = THREE.MathUtils.damp(player.bobBlend, wantBob, 6, delta);
-  player.bobPhase += delta * (4.4 + hSpeed * 0.85);
-
-  const bobY = Math.sin(player.bobPhase * 2) * 0.032 * player.bobBlend;
-  const sway = Math.cos(player.bobPhase)     * 0.022 * player.bobBlend;
-
-  /* ---------- apply to camera ---------- */
-  camera.position.copy(player.pos);
-  camera.position.x += right.x * sway;
-  camera.position.z += right.z * sway;
-  camera.position.y += bobY;
-
-  /* ---------- slight FOV kick when sprinting ---------- */
-  const targetFov = 72 + (running && hSpeed > 4.2 ? 5.0 : 0.0);
-  if (Math.abs(camera.fov - targetFov) > 0.02) {
-    camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
-    camera.updateProjectionMatrix();
-  }
+    recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('active');
+        micBtn.textContent = '🎤 Listen';
+        setStatus('idle', 'Idle');
+        textInput.placeholder = 'Type a command or question...';
+    };
 }
+
+function toggleListening() {
+    if (!recognition) {
+        addSystemMessage('Speech recognition unavailable. Try Chrome or Edge.');
+        return;
+    }
+    if (isListening) {
+        recognition.stop();
+    } else {
+        try {
+            recognition.start();
+        } catch (e) {
+            // Already started
+        }
+    }
+}
+
+// ---------- Event wiring ----------
+micBtn.addEventListener('click', toggleListening);
+
+fileBtn.addEventListener('click', openFilePicker);
+
+sendBtn.addEventListener('click', () => {
+    const text = textInput.value.trim();
+    if (!text) return;
+    textInput.value = '';
+    addMessage('user', text);
+    askAI(text);
+});
+
+textInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendBtn.click();
+    }
+});
+
+// Space bar to toggle mic (when not typing in input)
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && document.activeElement !== textInput) {
+        e.preventDefault();
+        toggleListening();
+    }
+});
+
+clearBtn.addEventListener('click', () => {
+    chatMessages.innerHTML = '';
+    conversation = [];
+    addSystemMessage('Conversation cleared.');
+    hideCursor();
+});
+
+// Help panel
+helpBtn.addEventListener('click', () => {
+    helpPanel.classList.add('open');
+    overlay.classList.add('open');
+});
+closeHelp.addEventListener('click', closeHelpPanel);
+overlay.addEventListener('click', closeHelpPanel);
+
+function closeHelpPanel() {
+    helpPanel.classList.remove('open');
+    overlay.classList.remove('open');
+}
+
+// ---------- Boot ----------
+window.addEventListener('load', () => {
+    initSpeechRecognition();
+
+    // Greet
+    const greeting = 'Jarvis online. How can I assist you?';
+    addMessage('jarvis', greeting);
+    setTimeout(() => speak(greeting), 600);
+
+    // Preload voices
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // Show model label
+    modelLabel.textContent = 'Model: GPT-5 Nano (free via Puter.js)';
+
+    console.log(
+        '%cJ.A.R.V.I.S%c\nFree AI via Puter.js • Voice via Web Speech API\nFile access via File System Access API',
+        'color:#00ffc8;font-size:1.4em;font-weight:bold;',
+        'color:#558877;'
+    );
+});
+
+// ---------- Global error guard ----------
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('Unhandled rejection:', e.reason);
+    addSystemMessage('⚠️ Something went wrong. Check the console for details.');
+});
 </script>
+
 </body>
 </html>
