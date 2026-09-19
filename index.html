@@ -118,14 +118,11 @@ const RUN_SPEED  = 6.6;
 const GRAVITY    = 24.0;
 const JUMP_SPEED = 6.8;
 
-// Motion blur
-const MB_STRENGTH = 1.35;   // global multiplier on angular delta → UV offset
-const MB_MAX      = 0.045;  // cap on blur length in UV
+const MB_STRENGTH = 1.35;
+const MB_MAX      = 0.045;
 
-// Lake
 const LAKE_X = 0, LAKE_Z = -55, LAKE_RADIUS = 42, LAKE_Y = 0.08;
 
-// Sun: 26° elevation, 135° azimuth — warm afternoon
 const SUN_ELEV = 26 * Math.PI / 180;
 const SUN_AZIM = 135 * Math.PI / 180;
 const SUN_DIR = new THREE.Vector3(
@@ -151,7 +148,6 @@ const keys   = Object.create(null);
 const clouds = [];
 const cloudGroup = new THREE.Group();
 
-// Motion blur tracking
 const _prevQuat = new THREE.Quaternion();
 const _deltaQ   = new THREE.Quaternion();
 const _deltaE   = new THREE.Euler();
@@ -204,7 +200,6 @@ function showError(err) {
 /*  Init                                                                 */
 /* ===================================================================== */
 function init() {
-  /* ---------- renderer ---------- */
   renderer = new THREE.WebGLRenderer({
     antialias: false,
     powerPreference: 'high-performance',
@@ -216,37 +211,31 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 0.95;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-  /* ---------- scene ---------- */
   scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(HORIZON_LIN, 0.00042);
 
-  /* ---------- camera ----------
-     NOTE: PointerLockControls uses YXZ Euler internally. We MUST match
-     that order on the camera's own Euler, otherwise writing
-     camera.rotation.z for roll corrupts the camera orientation. */
   camera = new THREE.PerspectiveCamera(
     70, window.innerWidth / window.innerHeight, 0.1, 30000
   );
   camera.rotation.order = 'YXZ';
   camera.position.copy(player.pos);
-
   _prevQuat.copy(camera.quaternion);
 
   /* ---------- sun ---------- */
-  const sun = new THREE.DirectionalLight(0xfff1d6, 3.4);
+  const sun = new THREE.DirectionalLight(0xfff1d6, 2.7);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left   = -70;
-  sun.shadow.camera.right  =  70;
-  sun.shadow.camera.top    =  70;
-  sun.shadow.camera.bottom = -70;
+  sun.shadow.camera.left   = -95;
+  sun.shadow.camera.right  =  95;
+  sun.shadow.camera.top    =  95;
+  sun.shadow.camera.bottom = -95;
   sun.shadow.camera.near   = 1;
   sun.shadow.camera.far    = 500;
   sun.shadow.bias = -0.00015;
@@ -303,8 +292,16 @@ function init() {
   /* ---------- distant terrain ---------- */
   scene.add(makeDistantTerrain());
 
-  /* ---------- scattered rocks (avoid the lake) ---------- */
-  scene.add(makeRocks(420, maxAniso));
+  /* ---------- forest ---------- */
+  const forest = makeForest(90);
+  scene.add(forest.trunks);
+  scene.add(forest.foliage);
+
+  /* ---------- undergrowth ---------- */
+  scene.add(makeBushes(55));
+
+  /* ---------- scattered rocks ---------- */
+  scene.add(makeRocks(460));
 
   /* ---------- lake ---------- */
   water = makeLake();
@@ -314,7 +311,7 @@ function init() {
   sky = makeSky();
   scene.add(sky);
 
-  /* ---------- bake IBL from the sky ---------- */
+  /* ---------- bake IBL ---------- */
   bakeEnvironment();
 
   /* ---------- clouds ---------- */
@@ -339,7 +336,6 @@ function init() {
     player.vel.z = 0;
   });
 
-  /* ---------- input ---------- */
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     if (e.code === 'Space') e.preventDefault();
@@ -354,29 +350,29 @@ function init() {
 
   composer.addPass(new RenderPass(scene, camera));
 
+  // Reduced bloom — subtle, only catches the sun disc and specular glints
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.42, 0.55, 0.86
+    0.22,   // strength (down from 0.42)
+    0.60,   // radius
+    1.00    // threshold (up from 0.86)
   );
   composer.addPass(bloom);
 
   composer.addPass(new OutputPass());
 
-  // Motion blur — spin-blur driven by camera angular delta
   motionBlurPass = new ShaderPass(makeMotionBlurShader());
   motionBlurPass.uniforms.uAngular.value.set(0, 0);
   motionBlurPass.uniforms.uStrength.value = MB_STRENGTH;
   motionBlurPass.uniforms.uMax.value = MB_MAX;
   composer.addPass(motionBlurPass);
 
-  // Filmic grade
   gradePass = new ShaderPass(makeGradeShader());
   gradePass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
   composer.addPass(gradePass);
 
   composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
 
-  /* ---------- resize ---------- */
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -389,7 +385,7 @@ function init() {
 }
 
 /* ===================================================================== */
-/*  Sky dome                                                             */
+/*  Sky dome — dimmer sun, warmer gradient                               */
 /* ===================================================================== */
 function makeSky() {
   const geo = new THREE.SphereGeometry(14000, 32, 20);
@@ -418,10 +414,9 @@ function makeSky() {
         float sunDot = dot(rayDir, sunDir);
         float h = max(rayDir.y, 0.0);
 
-        // Three-stop atmospheric gradient (linear HDR)
-        vec3 zenith  = vec3(0.070, 0.230, 0.780);
-        vec3 mid     = vec3(0.310, 0.585, 1.030);
-        vec3 horizon = vec3(0.940, 0.960, 1.010);
+        vec3 zenith  = vec3(0.075, 0.235, 0.780);
+        vec3 mid     = vec3(0.320, 0.590, 1.010);
+        vec3 horizon = vec3(0.940, 0.955, 0.990);
 
         vec3 col;
         if (h < 0.24) {
@@ -430,19 +425,17 @@ function makeSky() {
           col = mix(mid, zenith, pow(smoothstep(0.24, 1.0, h), 0.82));
         }
 
-        // Multi-tier sun halo — wide warm haze, then tighter glows, then
-        // the disc itself. All very bright in linear HDR so bloom catches it.
+        // Sun halo — dimmed significantly so it doesn't blind the scene
         float mu = max(sunDot, 0.0);
-        col += vec3(1.00, 0.85, 0.62) * pow(mu, 3.0)   * 0.42;
-        col += vec3(1.00, 0.90, 0.72) * pow(mu, 14.0)  * 0.65;
-        col += vec3(1.00, 0.95, 0.85) * pow(mu, 64.0)  * 1.30;
-        col += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 3.60;
+        col += vec3(1.00, 0.85, 0.62) * pow(mu, 3.0)   * 0.16;
+        col += vec3(1.00, 0.90, 0.72) * pow(mu, 14.0)  * 0.34;
+        col += vec3(1.00, 0.95, 0.85) * pow(mu, 64.0)  * 0.62;
+        col += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 1.10;
 
-        // Sun disc with soft edge
+        // Sun disc — much softer (was 40, now 4)
         float disc = smoothstep(0.99970, 0.99994, sunDot);
-        col += vec3(1.0, 0.97, 0.90) * disc * 40.0;
+        col += vec3(1.0, 0.97, 0.90) * disc * 4.0;
 
-        // Below-horizon haze
         if (rayDir.y < 0.0) {
           float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
           col = mix(horizon, vec3(0.68, 0.74, 0.82), gt);
@@ -460,23 +453,23 @@ function makeSky() {
 }
 
 /* ===================================================================== */
-/*  Lake — realistic water with Fresnel sky reflection & waves           */
+/*  Lake — physically-inspired water                                     */
 /* ===================================================================== */
 function makeLake() {
-  const geo = new THREE.CircleGeometry(LAKE_RADIUS, 128);
+  const geo = new THREE.CircleGeometry(LAKE_RADIUS, 160);
   geo.rotateX(-Math.PI / 2);
 
   const mat = new THREE.ShaderMaterial({
     uniforms: {
-      uTime:        { value: 0 },
-      uSunDir:      { value: SUN_DIR.clone() },
-      uDeepColor:   { value: new THREE.Color(0.008, 0.040, 0.085) },
-      uShallow:     { value: new THREE.Color(0.020, 0.090, 0.135) },
-      uZenith:      { value: new THREE.Color(0.070, 0.230, 0.780) },
-      uMid:         { value: new THREE.Color(0.310, 0.585, 1.030) },
-      uHorizon:     { value: new THREE.Color(0.940, 0.960, 1.010) },
-      uFogColor:    { value: HORIZON_LIN.clone() },
-      uFogDensity:  { value: 0.00042 }
+      uTime:       { value: 0 },
+      uSunDir:     { value: SUN_DIR.clone() },
+      uDeepColor:  { value: new THREE.Color(0.003, 0.018, 0.040) },
+      uShallow:    { value: new THREE.Color(0.008, 0.048, 0.070) },
+      uZenith:     { value: new THREE.Color(0.075, 0.235, 0.780) },
+      uMid:        { value: new THREE.Color(0.320, 0.590, 1.010) },
+      uHorizon:    { value: new THREE.Color(0.940, 0.955, 0.990) },
+      uFogColor:   { value: HORIZON_LIN.clone() },
+      uFogDensity: { value: 0.00042 }
     },
     vertexShader: /* glsl */`
       varying vec3 vWorldPos;
@@ -488,16 +481,19 @@ function makeLake() {
     `,
     fragmentShader: /* glsl */`
       precision highp float;
+
       uniform float uTime;
       uniform vec3  uSunDir;
-      uniform vec3  uDeepColor;
-      uniform vec3  uShallow;
+      uniform vec3  uDeepColor, uShallow;
       uniform vec3  uZenith, uMid, uHorizon;
       uniform vec3  uFogColor;
       uniform float uFogDensity;
+
       varying vec3 vWorldPos;
 
-      // --- Analytic sky (matches sky dome) ---
+      const float PI = 3.14159265;
+
+      /* ---------- Analytic sky (matches sky dome) ---------- */
       vec3 skyColor(vec3 rayDir, vec3 sunDir) {
         float h = max(rayDir.y, 0.0);
         vec3 col;
@@ -505,12 +501,12 @@ function makeLake() {
         else          col = mix(uMid, uZenith, pow(smoothstep(0.24, 1.0, h), 0.82));
 
         float sunDot = max(dot(rayDir, sunDir), 0.0);
-        col += vec3(1.00, 0.85, 0.62) * pow(sunDot, 3.0)   * 0.42;
-        col += vec3(1.00, 0.90, 0.72) * pow(sunDot, 14.0)  * 0.65;
-        col += vec3(1.00, 0.95, 0.85) * pow(sunDot, 64.0)  * 1.30;
-        col += vec3(1.00, 0.98, 0.94) * pow(sunDot, 500.0) * 3.60;
+        col += vec3(1.00, 0.85, 0.62) * pow(sunDot, 3.0)   * 0.16;
+        col += vec3(1.00, 0.90, 0.72) * pow(sunDot, 14.0)  * 0.34;
+        col += vec3(1.00, 0.95, 0.85) * pow(sunDot, 64.0)  * 0.62;
+        col += vec3(1.00, 0.98, 0.94) * pow(sunDot, 500.0) * 1.10;
         float disc = smoothstep(0.99970, 0.99994, sunDot);
-        col += vec3(1.0, 0.97, 0.90) * disc * 40.0;
+        col += vec3(1.0, 0.97, 0.90) * disc * 4.0;
 
         if (rayDir.y < 0.0) {
           float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
@@ -519,25 +515,64 @@ function makeLake() {
         return col;
       }
 
-      // --- Wave height (sum of directional sines) ---
-      float waveH(vec2 p, float t) {
+      /* ---------- Deep-water dispersion relation ----------
+         For wavelength λ (metres), wave number k = 2π/λ
+         Angular frequency ω = sqrt(g · k), g = 9.81 m/s²
+         (Values are pre-baked as literals below.)            */
+      void accumWave(vec2 p, float t,
+                     vec2 dir, float amp, float k, float omega,
+                     inout float h, inout vec2 grad) {
+        vec2 d = normalize(dir);
+        float f = k * dot(d, p) - omega * t;
+        float s = sin(f);
+        float c = cos(f);
+        h    += amp * s;
+        grad += amp * k * c * d;
+      }
+
+      /* Sum of 10 waves spanning 12 m swell down to 25 cm ripple */
+      float waterHeight(vec2 p, float t, out vec2 grad) {
+        grad = vec2(0.0);
         float h = 0.0;
-        h += 0.100 * sin(dot(p, normalize(vec2( 1.00,  0.30))) *  1.1 + t * 0.90);
-        h += 0.070 * sin(dot(p, normalize(vec2( 0.70, -0.60))) *  2.3 + t * 1.40);
-        h += 0.045 * sin(dot(p, normalize(vec2(-0.40,  0.90))) *  4.1 + t * 2.00);
-        h += 0.024 * sin(dot(p, normalize(vec2( 0.20, -0.95))) *  7.3 + t * 2.60);
-        h += 0.013 * sin(dot(p, normalize(vec2( 0.95,  0.40))) * 13.0 + t * 3.30);
-        h += 0.006 * sin(dot(p, normalize(vec2(-0.85, -0.40))) * 22.0 + t * 4.10);
+
+        // λ=12m  k=0.524  ω=2.27   (long ocean swell)
+        accumWave(p, t, vec2( 1.00,  0.20), 0.150, 0.524, 2.27, h, grad);
+        // λ=8m   k=0.785  ω=2.77
+        accumWave(p, t, vec2( 0.70, -0.70), 0.100, 0.785, 2.77, h, grad);
+        // λ=5m   k=1.257  ω=3.51
+        accumWave(p, t, vec2(-0.30,  0.90), 0.065, 1.257, 3.51, h, grad);
+        // λ=3.2m k=1.964  ω=4.39
+        accumWave(p, t, vec2( 0.90,  0.50), 0.042, 1.964, 4.39, h, grad);
+        // λ=2.0m k=3.142  ω=5.55
+        accumWave(p, t, vec2(-0.80, -0.40), 0.026, 3.142, 5.55, h, grad);
+        // λ=1.4m k=4.488  ω=6.63
+        accumWave(p, t, vec2( 0.40, -0.90), 0.016, 4.488, 6.63, h, grad);
+        // λ=0.9m k=6.981  ω=8.27
+        accumWave(p, t, vec2(-0.60,  0.80), 0.010, 6.981, 8.27, h, grad);
+        // λ=0.6m k=10.47  ω=10.13
+        accumWave(p, t, vec2( 0.20,  0.98), 0.006, 10.47, 10.13, h, grad);
+        // λ=0.4m k=15.71  ω=12.41
+        accumWave(p, t, vec2(-0.95,  0.30), 0.0035, 15.71, 12.41, h, grad);
+        // λ=0.25m k=25.13 ω=15.69
+        accumWave(p, t, vec2( 0.60,  0.80), 0.0020, 25.13, 15.69, h, grad);
+
         return h;
       }
 
-      vec3 waveNormal(vec2 p, float t) {
-        float e = 0.08;
-        float hL = waveH(p - vec2(e, 0.0), t);
-        float hR = waveH(p + vec2(e, 0.0), t);
-        float hD = waveH(p - vec2(0.0, e), t);
-        float hU = waveH(p + vec2(0.0, e), t);
-        return normalize(vec3(-(hR - hL) / (2.0 * e), 1.0, -(hU - hD) / (2.0 * e)));
+      /* Micro-detail normal perturbation (adds sparkle without height) */
+      vec3 microNormal(vec2 p, float t, float fade) {
+        float n1 = sin(p.x * 3.7 + t * 2.3) * cos(p.y * 4.1 - t * 1.7);
+        float n2 = sin(p.x * 8.2 - t * 4.1) * cos(p.y * 7.6 + t * 3.3);
+        float n3 = sin(p.x * 17.5 + t * 6.7) * cos(p.y * 15.3 - t * 5.1);
+        vec2 dxz = vec2(
+          cos(p.x * 3.7 + t * 2.3) * 3.7 * n1 +
+          cos(p.x * 8.2 - t * 4.1) * 8.2 * n2 * 0.6 +
+          cos(p.x * 17.5 + t * 6.7) * 17.5 * n3 * 0.3,
+          -sin(p.y * 4.1 - t * 1.7) * 4.1 * n1 +
+          -sin(p.y * 7.6 + t * 3.3) * 7.6 * n2 * 0.6 +
+          -sin(p.y * 15.3 - t * 5.1) * 15.3 * n3 * 0.3
+        );
+        return normalize(vec3(-dxz.x * 0.014 * fade, 1.0, -dxz.y * 0.014 * fade));
       }
 
       void main() {
@@ -546,31 +581,55 @@ function makeLake() {
         vec3 viewDir = viewVec / viewDist;
         vec3 sunDir = normalize(uSunDir);
 
-        vec3 n = waveNormal(vWorldPos.xz, uTime);
+        // Distance-based LOD — fade ripple detail so far water isn't noisy
+        float lodFade = 1.0 / (1.0 + viewDist * 0.012);
 
-        // Fresnel (Schlick)
+        // Wave normal from analytic gradient
+        vec2 grad;
+        float h = waterHeight(vWorldPos.xz, uTime, grad);
+        grad *= lodFade;
+
+        vec3 n = normalize(vec3(-grad.x, 1.0, -grad.y));
+
+        // Blend with micro-detail normal
+        vec3 mn = microNormal(vWorldPos.xz, uTime, lodFade);
+        n = normalize(n + vec3(mn.x, 0.0, mn.z) * 0.6);
+
+        // ---------- Fresnel ----------
         float NdotV = max(dot(n, viewDir), 0.0);
-        float fresnel = 0.02 + 0.98 * pow(1.0 - NdotV, 5.0);
+        float F0 = 0.020;                              // water IOR = 1.33
+        float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 5.0);
 
-        // Sky reflection
+        // ---------- Sky reflection ----------
         vec3 reflDir = reflect(-viewDir, n);
+        reflDir.y = abs(reflDir.y);                    // never below horizon
         vec3 reflCol = skyColor(reflDir, sunDir);
 
-        // Water body (fake depth absorption using view angle)
-        float depthMix = smoothstep(0.0, 0.6, NdotV);  // near 1 looking down
-        vec3 bodyCol = mix(uShallow, uDeepColor, depthMix);
+        // ---------- Water body ----------
+        // Looking straight down we see through; at grazing angles we see surface
+        float downLooking = smoothstep(0.0, 0.75, NdotV);
+        vec3 bodyCol = mix(uShallow, uDeepColor, downLooking);
 
-        // Combine body + reflection
+        // Subsurface scattering — light punches through wave crests
+        float sss = pow(max(dot(viewDir, -sunDir), 0.0), 2.5)
+                  * smoothstep(0.02, 0.18, h)
+                  * 0.55;
+        bodyCol += vec3(0.055, 0.180, 0.165) * sss;
+
+        // ---------- Combine ----------
         vec3 col = mix(bodyCol, reflCol, fresnel);
 
-        // Sun specular + glitter
+        // ---------- Sun specular (two-lobe) ----------
         vec3 halfDir = normalize(viewDir + sunDir);
         float NdotH = max(dot(n, halfDir), 0.0);
-        float spec = pow(NdotH, 400.0) * 9.0;
-        float glitter = pow(NdotH, 2200.0) * 40.0;
-        col += vec3(1.0, 0.95, 0.85) * (spec + glitter);
+        float NdotL = max(dot(n, sunDir), 0.0);
 
-        // Fog
+        // Tight sun glint + wider sheen
+        float glint = pow(NdotH, 1400.0) * 6.5;
+        float sheen = pow(NdotH, 90.0)   * 0.28;
+        col += vec3(1.0, 0.96, 0.86) * (glint + sheen) * (0.3 + 0.7 * NdotL);
+
+        // ---------- Fog ----------
         float fogFactor = 1.0 - exp(-pow(uFogDensity * viewDist, 2.0));
         col = mix(col, uFogColor, fogFactor);
 
@@ -581,12 +640,179 @@ function makeLake() {
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(LAKE_X, LAKE_Y, LAKE_Z);
-  mesh.renderOrder = 1;   // draw after ground
+  mesh.renderOrder = 1;
   return mesh;
 }
 
 /* ===================================================================== */
-/*  PMREM environment bake from the sky                                  */
+/*  Forest — instanced trunks + instanced foliage                        */
+/* ===================================================================== */
+function makeForest(count) {
+  const rng = mulberry32(0x7EEE5);
+
+  // Trunk: tapered cylinder, base at y = 0
+  const trunkGeo = new THREE.CylinderGeometry(0.06, 0.14, 1.0, 6, 1);
+  trunkGeo.translate(0, 0.5, 0);
+
+  // Foliage: cluster of low-poly icospheres (pine cone meets blob)
+  const foliageGeo = new THREE.IcosahedronGeometry(0.65, 1);
+  foliageGeo.scale(1.0, 0.92, 1.0);
+  foliageGeo.translate(0, 1.78, 0);
+
+  const trunkMat = new THREE.MeshStandardMaterial({
+    color: 0x3d2c20,
+    roughness: 0.95,
+    metalness: 0.0,
+    flatShading: true,
+    envMapIntensity: 0.35
+  });
+
+  const foliageMat = new THREE.MeshStandardMaterial({
+    color: 0x3d5a2a,
+    roughness: 0.90,
+    metalness: 0.0,
+    flatShading: true,
+    envMapIntensity: 0.5
+  });
+
+  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
+  const foliage = new THREE.InstancedMesh(foliageGeo, foliageMat, count);
+
+  trunks.castShadow = true;
+  trunks.receiveShadow = true;
+  foliage.castShadow = true;
+  foliage.receiveShadow = true;
+
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  const v = new THREE.Vector3();
+  const s = new THREE.Vector3();
+  const c = new THREE.Color();
+
+  const lakeR2 = (LAKE_RADIUS + 3) * (LAKE_RADIUS + 3);
+
+  let placed = 0;
+  let attempts = 0;
+  while (placed < count && attempts < count * 40) {
+    attempts++;
+
+    const t = rng();
+    const radius = 10 + Math.pow(t, 1.7) * 280;
+    const ang = rng() * Math.PI * 2;
+    const px = Math.cos(ang) * radius;
+    const pz = Math.sin(ang) * radius;
+
+    // Keep the lake clear
+    const dx = px - LAKE_X, dz = pz - LAKE_Z;
+    if (dx * dx + dz * dz < lakeR2) continue;
+
+    const scale = 2.6 + rng() * 5.2;
+
+    v.set(px, 0, pz);
+    e.set(0, rng() * Math.PI * 2, 0);
+    q.setFromEuler(e);
+
+    s.set(scale * (0.7 + rng() * 0.35),
+          scale,
+          scale * (0.7 + rng() * 0.35));
+
+    m.compose(v, q, s);
+    trunks.setMatrixAt(placed, m);
+    foliage.setMatrixAt(placed, m);
+
+    // Colour variation per tree
+    const hue = 0.26 + (rng() - 0.5) * 0.07;
+    const sat = 0.32 + rng() * 0.18;
+    const lit = 0.16 + rng() * 0.10;
+    c.setHSL(hue, sat, lit);
+    foliage.setColorAt(placed, c);
+
+    placed++;
+  }
+
+  trunks.count = placed;
+  foliage.count = placed;
+  trunks.instanceMatrix.needsUpdate = true;
+  foliage.instanceMatrix.needsUpdate = true;
+  if (foliage.instanceColor) foliage.instanceColor.needsUpdate = true;
+
+  return { trunks, foliage };
+}
+
+/* ===================================================================== */
+/*  Undergrowth — instanced low-poly bushes                              */
+/* ===================================================================== */
+function makeBushes(count) {
+  const rng = mulberry32(0xB005);
+
+  const geo = new THREE.IcosahedronGeometry(0.55, 1);
+  geo.scale(1.25, 0.78, 1.25);
+  geo.translate(0, 0.42, 0);
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x3a4d28,
+    roughness: 0.92,
+    metalness: 0.0,
+    flatShading: true,
+    envMapIntensity: 0.4
+  });
+
+  const mesh = new THREE.InstancedMesh(geo, mat, count);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  const v = new THREE.Vector3();
+  const s = new THREE.Vector3();
+  const c = new THREE.Color();
+
+  const lakeR2 = (LAKE_RADIUS + 2) * (LAKE_RADIUS + 2);
+
+  let placed = 0;
+  let attempts = 0;
+  while (placed < count && attempts < count * 40) {
+    attempts++;
+
+    const t = rng();
+    const radius = 6 + Math.pow(t, 2.0) * 200;
+    const ang = rng() * Math.PI * 2;
+    const px = Math.cos(ang) * radius;
+    const pz = Math.sin(ang) * radius;
+
+    const dx = px - LAKE_X, dz = pz - LAKE_Z;
+    if (dx * dx + dz * dz < lakeR2) continue;
+
+    const scale = 0.6 + rng() * 1.4;
+
+    v.set(px, 0, pz);
+    e.set(0, rng() * Math.PI * 2, 0);
+    q.setFromEuler(e);
+    s.set(scale * (0.85 + rng() * 0.4),
+          scale * (0.7 + rng() * 0.5),
+          scale * (0.85 + rng() * 0.4));
+
+    m.compose(v, q, s);
+    mesh.setMatrixAt(placed, m);
+
+    const hue = 0.25 + (rng() - 0.5) * 0.06;
+    c.setHSL(hue, 0.35 + rng() * 0.15, 0.14 + rng() * 0.08);
+    mesh.setColorAt(placed, c);
+
+    placed++;
+  }
+
+  mesh.count = placed;
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+
+  return mesh;
+}
+
+/* ===================================================================== */
+/*  PMREM environment bake                                               */
 /* ===================================================================== */
 function bakeEnvironment() {
   const tmpScene = new THREE.Scene();
@@ -649,9 +875,9 @@ function makeDistantTerrain() {
 }
 
 /* ===================================================================== */
-/*  Rocks (rejection-sampled around the lake)                            */
+/*  Rocks                                                                */
 /* ===================================================================== */
-function makeRocks(count, maxAniso) {
+function makeRocks(count) {
   const geo = new THREE.DodecahedronGeometry(1.0, 0);
   geo.scale(1.0, 0.68, 1.0);
 
@@ -685,11 +911,9 @@ function makeRocks(count, maxAniso) {
     const t = rng();
     const radius = 4 + Math.pow(t, 2.4) * 400;
     const ang = rng() * Math.PI * 2;
-
     const px = Math.cos(ang) * radius;
     const pz = Math.sin(ang) * radius;
 
-    // Skip if inside the lake
     const dx = px - LAKE_X, dz = pz - LAKE_Z;
     if (dx * dx + dz * dz < lakeR2) continue;
 
@@ -766,7 +990,6 @@ function buildClouds(maxAniso) {
   }
 }
 
-/* Improved cloud texture: flat base, billowy top, silver lining, detail. */
 function makeCloudTexture(rand, size, maxAniso) {
   const W = size;
   const H = Math.round(size * 0.5);
@@ -775,13 +998,11 @@ function makeCloudTexture(rand, size, maxAniso) {
   const ctx = cvs.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
-  // ---- 1. Silhouette: many overlapping soft puffs ----
   const puffCount = 60 + Math.floor(rand() * 30);
   for (let i = 0; i < puffCount; i++) {
     const t = i / (puffCount - 1);
     const bell = Math.sin(t * Math.PI);
 
-    // Bias puffs toward the top so the base stays flat
     const x = W * 0.08 + t * W * 0.84 + (rand() - 0.5) * W * 0.04;
     const r = W * (0.030 + 0.100 * bell * (0.5 + rand() * 0.9));
     const y = H * 0.72
@@ -800,17 +1021,14 @@ function makeCloudTexture(rand, size, maxAniso) {
     ctx.fill();
   }
 
-  // ---- 2. Richer internal structure (still restricted to silhouette) ----
   ctx.globalCompositeOperation = 'source-atop';
 
-  // Warm top light
   const topLight = ctx.createLinearGradient(0, H * 0.02, 0, H * 0.60);
   topLight.addColorStop(0.00, 'rgba(255, 252, 238, 0.70)');
   topLight.addColorStop(1.00, 'rgba(255, 252, 238, 0.00)');
   ctx.fillStyle = topLight;
   ctx.fillRect(0, 0, W, H);
 
-  // Cool shadowed underside — this is what sells cumulus
   const baseShadow = ctx.createLinearGradient(0, H * 0.32, 0, H * 0.92);
   baseShadow.addColorStop(0.00, 'rgba(180, 198, 224, 0.00)');
   baseShadow.addColorStop(0.45, 'rgba(150, 176, 212, 0.45)');
@@ -818,7 +1036,6 @@ function makeCloudTexture(rand, size, maxAniso) {
   ctx.fillStyle = baseShadow;
   ctx.fillRect(0, 0, W, H);
 
-  // Cauliflower detail — small lighter/darker blobs
   ctx.globalAlpha = 0.11;
   for (let i = 0; i < 90; i++) {
     const x = rand() * W;
@@ -832,7 +1049,6 @@ function makeCloudTexture(rand, size, maxAniso) {
   }
   ctx.globalAlpha = 1;
 
-  // Silver lining band along the sunward edges
   const rim = ctx.createLinearGradient(0, H * 0.05, 0, H * 0.42);
   rim.addColorStop(0.00, 'rgba(255, 255, 255, 0.00)');
   rim.addColorStop(0.50, 'rgba(255, 254, 244, 0.65)');
@@ -893,7 +1109,6 @@ function generateConcreteTextures(size, maxAniso) {
     }
   }
 
-  // Albedo
   const albedoCv = document.createElement('canvas');
   albedoCv.width = albedoCv.height = size;
   const actx = albedoCv.getContext('2d');
@@ -912,7 +1127,6 @@ function generateConcreteTextures(size, maxAniso) {
   }
   actx.putImageData(albedoImg, 0, 0);
 
-  // Normal
   const normalCv = document.createElement('canvas');
   normalCv.width = normalCv.height = size;
   const nctx = normalCv.getContext('2d');
@@ -937,7 +1151,6 @@ function generateConcreteTextures(size, maxAniso) {
   }
   nctx.putImageData(normalImg, 0, 0);
 
-  // Roughness
   const roughCv = document.createElement('canvas');
   roughCv.width = roughCv.height = size;
   const rctx = roughCv.getContext('2d');
@@ -952,7 +1165,6 @@ function generateConcreteTextures(size, maxAniso) {
   }
   rctx.putImageData(roughImg, 0, 0);
 
-  // AO
   const aoCv = document.createElement('canvas');
   aoCv.width = aoCv.height = size;
   const aoctx = aoCv.getContext('2d');
@@ -1040,13 +1252,13 @@ function generateDetailTexture(size, maxAniso) {
 }
 
 /* ===================================================================== */
-/*  Motion blur shader — radial spin blur from camera angular delta      */
+/*  Motion blur shader                                                   */
 /* ===================================================================== */
 function makeMotionBlurShader() {
   return {
     uniforms: {
       tDiffuse:  { value: null },
-      uAngular:  { value: new THREE.Vector2(0, 0) }, // (yaw, pitch) rad/frame
+      uAngular:  { value: new THREE.Vector2(0, 0) },
       uStrength: { value: MB_STRENGTH },
       uMax:      { value: MB_MAX }
     },
@@ -1068,18 +1280,11 @@ function makeMotionBlurShader() {
       void main() {
         vec2 uv = vUv;
         vec2 toCenter = uv - 0.5;
-
-        // Screen-space motion: pixels move proportional to their distance
-        // from the screen center, scaled by camera angular delta.
-        //   yaw   → horizontal shift
-        //   pitch → vertical shift (sign flipped)
         vec2 dir = toCenter * vec2(uAngular.x, -uAngular.y) * uStrength;
 
-        // Clamp max blur length to avoid extreme smearing
         float len = length(dir);
         if (len > uMax) dir *= uMax / len;
 
-        // 9-tap directional blur
         vec3 col = vec3(0.0);
         const int SAMPLES = 9;
         for (int i = 0; i < SAMPLES; i++) {
@@ -1166,25 +1371,20 @@ function animate() {
 
   updatePlayer(delta, active, t);
 
-  // --- Motion blur: measure camera angular delta this frame ---
   _deltaQ.copy(_prevQuat).invert().multiply(camera.quaternion);
   _deltaE.setFromQuaternion(_deltaQ, 'YXZ');
   motionBlurPass.uniforms.uAngular.value.set(_deltaE.y, _deltaE.x);
   _prevQuat.copy(camera.quaternion);
 
-  // --- Sky follows the eye ---
   sky.position.copy(camera.position);
 
-  // --- Water animates via uTime ---
   if (water) water.material.uniforms.uTime.value = t;
 
-  // --- Sun follows the player so shadow cascades stay centred ---
   const sun = scene.userData.sun;
   sun.position.copy(camera.position).addScaledVector(SUN_DIR, 160);
   sun.target.position.copy(camera.position);
   sun.target.updateMatrixWorld();
 
-  // --- Cloud drift ---
   for (let i = 0; i < clouds.length; i++) {
     const c = clouds[i];
     c.position.x += c.userData.speed * delta;
@@ -1192,12 +1392,10 @@ function animate() {
   }
   cloudGroup.position.set(camera.position.x, 0, camera.position.z);
 
-  // --- Grade time ---
   if (gradePass) gradePass.uniforms.uTime.value = t;
 
   composer.render();
 
-  // FPS
   fpsAccum += delta; fpsFrames++;
   if (fpsAccum >= 0.5) {
     hud.textContent = Math.round(fpsFrames / fpsAccum) + ' FPS';
@@ -1249,7 +1447,6 @@ function updatePlayer(delta, active, t) {
     player.grounded = false;
   }
 
-  // Head bob + idle breathing
   const hSpeed = Math.hypot(player.vel.x, player.vel.z);
   const wantBob = (player.grounded && hSpeed > 0.35) ? 1 : 0;
   player.bobBlend = THREE.MathUtils.damp(player.bobBlend, wantBob, 6, delta);
@@ -1265,12 +1462,10 @@ function updatePlayer(delta, active, t) {
   camera.position.z += right.z * sway;
   camera.position.y += bobY + idle;
 
-  // Camera roll — now safe because camera.rotation.order === 'YXZ'
   const rollTarget = -mx * 0.009 * (running ? 1.35 : 1.0);
   player.roll = THREE.MathUtils.damp(player.roll, rollTarget, 6, delta);
   camera.rotation.z = player.roll;
 
-  // FOV kick when sprinting
   const targetFov = 70 + (running && hSpeed > 4.2 ? 5.5 : 0.0);
   if (Math.abs(camera.fov - targetFov) > 0.02) {
     camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
