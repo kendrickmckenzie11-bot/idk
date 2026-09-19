@@ -3,23 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baseplate</title>
+<title>Baseplate — AAA</title>
 <style>
-  html, body {
-    margin: 0; height: 100%; overflow: hidden;
-    background: #9ab8d8;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #050810;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   canvas { display: block; }
 
   #crosshair {
     position: fixed; left: 50%; top: 50%;
-    width: 4px; height: 4px; margin: -2px 0 0 -2px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.85);
+    width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%;
+    background: rgba(255,255,255,.8);
     box-shadow: 0 0 4px rgba(0,0,0,.7);
-    pointer-events: none;
-    opacity: 0; transition: opacity .25s ease;
+    pointer-events: none; opacity: 0; transition: opacity .25s ease;
   }
   #crosshair.show { opacity: 1; }
 
@@ -27,48 +22,59 @@
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 14px;
-    background: rgba(10, 18, 30, .55);
-    backdrop-filter: blur(4px);
+    background: radial-gradient(ellipse at center, rgba(10,18,30,.5) 0%, rgba(4,8,16,.82) 100%);
+    backdrop-filter: blur(6px);
     color: #fff; text-align: center; cursor: pointer;
-    user-select: none; transition: opacity .3s ease;
-    text-shadow: 0 2px 20px rgba(0,0,0,.6);
+    user-select: none; transition: opacity .35s ease;
+    text-shadow: 0 2px 24px rgba(0,0,0,.75);
   }
   #overlay.hidden { opacity: 0; pointer-events: none; }
-  #overlay h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: .3px; }
-  #overlay .play { font-size: 17px; font-weight: 600; opacity: .95; }
-  #overlay .keys { font-size: 13px; opacity: .72; line-height: 2.3; }
+  #overlay h1 {
+    margin: 0; font-size: 42px; font-weight: 200; letter-spacing: 12px;
+    text-transform: uppercase; opacity: .9;
+  }
+  #overlay .play { font-size: 15px; font-weight: 500; opacity: .85; letter-spacing: 2px; text-transform: uppercase; }
+  #overlay .keys { font-size: 12px; opacity: .5; line-height: 2.4; letter-spacing: 1px; }
   kbd {
-    background: rgba(255,255,255,.13);
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 5px; padding: 2px 7px;
-    font-family: inherit; font-size: 12px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 4px; padding: 2px 7px;
+    font-family: inherit; font-size: 11px;
   }
   #loading {
     position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: #0c1420; color: #c8d8e8;
-    font-size: 14px; letter-spacing: .1em; text-transform: uppercase;
-    transition: opacity .5s ease; z-index: 100;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    background: #050810; color: #7a8fa8;
+    font-size: 11px; letter-spacing: .35em; text-transform: uppercase;
+    transition: opacity .6s ease; z-index: 100;
   }
   #loading.hidden { opacity: 0; pointer-events: none; }
-  #loading .err {
-    color: #ff8888; text-transform: none; letter-spacing: 0;
-    font-size: 12px; max-width: 70vw; text-align: center;
-    margin-top: 12px;
+  #loading .bar { width: 180px; height: 1px; background: rgba(255,255,255,.08); position: relative; overflow: hidden; }
+  #loading .bar::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, #7ab0ff, transparent);
+    animation: sweep 1.6s ease-in-out infinite;
   }
+  @keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+  #loading .err { color: #ff8888; text-transform: none; letter-spacing: 0;
+    font-size: 12px; max-width: 70vw; text-align: center; margin-top: 10px; }
   #hud {
-    position: fixed; top: 10px; left: 12px;
-    color: rgba(255,255,255,.55); font-size: 11px;
+    position: fixed; top: 12px; right: 14px;
+    color: rgba(255,255,255,.45); font-size: 10px;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    text-shadow: 0 1px 3px rgba(0,0,0,.8);
     pointer-events: none; user-select: none;
-    letter-spacing: .05em;
+    letter-spacing: .15em;
   }
 </style>
 </head>
 <body>
 
-<div id="loading">Building world…</div>
+<div id="loading">
+  <div>Generating world</div>
+  <div class="bar"></div>
+</div>
 <div id="hud"></div>
 <div id="crosshair"></div>
 
@@ -76,11 +82,11 @@
   <h1>Baseplate</h1>
   <div class="play">Click to play</div>
   <div class="keys">
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;·&nbsp;
-    <kbd>Mouse</kbd> look &nbsp;·&nbsp;
-    <kbd>Space</kbd> jump &nbsp;·&nbsp;
-    <kbd>Shift</kbd> run &nbsp;·&nbsp;
-    <kbd>Esc</kbd> release
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &nbsp;move &nbsp;·&nbsp;
+    <kbd>Mouse</kbd> &nbsp;look &nbsp;·&nbsp;
+    <kbd>Space</kbd> &nbsp;jump &nbsp;·&nbsp;
+    <kbd>Shift</kbd> &nbsp;sprint &nbsp;·&nbsp;
+    <kbd>Esc</kbd> &nbsp;release
   </div>
 </div>
 
@@ -96,18 +102,24 @@
 <script type="module">
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { EffectComposer }     from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass }         from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass }    from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass }         from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass }         from 'three/addons/postprocessing/ShaderPass.js';
+import { SMAAPass }           from 'three/addons/postprocessing/SMAAPass.js';
 
 /* ===================================================================== */
 /*  Tunables                                                             */
 /* ===================================================================== */
-const EYE_HEIGHT = 1.70;
-const WALK_SPEED = 3.4;
-const RUN_SPEED  = 6.8;
+const EYE_HEIGHT = 1.68;
+const WALK_SPEED = 3.2;
+const RUN_SPEED  = 6.6;
 const GRAVITY    = 24.0;
-const JUMP_SPEED = 7.0;
+const JUMP_SPEED = 6.8;
 
-// Sun: 25° elevation, 135° azimuth
-const SUN_ELEV = 25 * Math.PI / 180;
+// Sun: 26° elevation, 135° azimuth — warm afternoon
+const SUN_ELEV = 26 * Math.PI / 180;
 const SUN_AZIM = 135 * Math.PI / 180;
 const SUN_DIR = new THREE.Vector3(
   Math.cos(SUN_ELEV) * Math.sin(SUN_AZIM),
@@ -115,12 +127,16 @@ const SUN_DIR = new THREE.Vector3(
   Math.cos(SUN_ELEV) * Math.cos(SUN_AZIM)
 ).normalize();
 
+// Horizon colour, linear HDR (matches sky shader horizon)
+const HORIZON_LIN = new THREE.Color().setRGB(0.72, 0.82, 0.92, THREE.LinearSRGBColorSpace);
+
 const UP = new THREE.Vector3(0, 1, 0);
 
 /* ===================================================================== */
 /*  State                                                                */
 /* ===================================================================== */
-let scene, camera, renderer, controls, sky;
+let scene, camera, renderer, composer, controls, sky, gradePass;
+let pmremRT = null;
 let ready = false;
 
 const clock  = new THREE.Clock();
@@ -133,15 +149,16 @@ const player = {
   vel: new THREE.Vector3(),
   grounded: true,
   bobPhase: 0,
-  bobBlend: 0
+  bobBlend: 0,
+  idlePhase: 0
 };
 
 const forward = new THREE.Vector3();
 const right   = new THREE.Vector3();
 const wish    = new THREE.Vector3();
 
-let fpsAccum = 0, fpsFrames = 0;
 const hud = document.getElementById('hud');
+let fpsAccum = 0, fpsFrames = 0;
 
 /* ===================================================================== */
 /*  Boot                                                                 */
@@ -164,86 +181,126 @@ function hideLoading() {
 function showError(err) {
   const el = document.getElementById('loading');
   el.innerHTML = '';
-  const msg = document.createElement('div');
-  msg.textContent = 'Failed to start';
-  const detail = document.createElement('div');
-  detail.className = 'err';
-  detail.textContent = String(err && err.message ? err.message : err);
-  el.appendChild(msg);
-  el.appendChild(detail);
+  const m = document.createElement('div'); m.textContent = 'Failed to start';
+  const d = document.createElement('div'); d.className = 'err';
+  d.textContent = String(err && err.message ? err.message : err);
+  el.appendChild(m); el.appendChild(d);
 }
 
 /* ===================================================================== */
 /*  Init                                                                 */
 /* ===================================================================== */
 function init() {
-  /* ---------- renderer (with MSAA, no post-processing) ---------- */
+  /* ---------- renderer ---------- */
   renderer = new THREE.WebGLRenderer({
-    antialias: true,
+    antialias: false,          // SMAA handles this
     powerPreference: 'high-performance',
-    stencil: false
+    stencil: false,
+    alpha: false
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  const pixelRatio = Math.min(window.devicePixelRatio, 1.5);
+  renderer.setPixelRatio(pixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.0;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
   /* ---------- scene ---------- */
   scene = new THREE.Scene();
-  // Fog matches the horizon colour exactly so the ground fades into the sky.
-  scene.fog = new THREE.FogExp2(0xc7d7e6, 0.00035);
+  scene.fog = new THREE.FogExp2(HORIZON_LIN, 0.00042);
 
   /* ---------- camera ---------- */
   camera = new THREE.PerspectiveCamera(
-    72, window.innerWidth / window.innerHeight, 0.1, 30000
+    70, window.innerWidth / window.innerHeight, 0.1, 30000
   );
   camera.position.copy(player.pos);
 
-  /* ---------- lights ---------- */
-  scene.add(new THREE.HemisphereLight(0xbdd6f2, 0x5a5750, 1.35));
-
-  const sun = new THREE.DirectionalLight(0xfff1d8, 2.7);
-  sun.position.copy(SUN_DIR).multiplyScalar(500);
+  /* ---------- sun (directional + shadow) ---------- */
+  const sun = new THREE.DirectionalLight(0xfff1d6, 3.4);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left   = -70;
+  sun.shadow.camera.right  =  70;
+  sun.shadow.camera.top    =  70;
+  sun.shadow.camera.bottom = -70;
+  sun.shadow.camera.near   = 1;
+  sun.shadow.camera.far    = 500;
+  sun.shadow.bias = -0.00015;
+  sun.shadow.normalBias = 0.022;
   scene.add(sun);
+  scene.add(sun.target);
+  scene.userData.sun = sun;
 
-  const fill = new THREE.DirectionalLight(0xc8d8ee, 0.22);
-  fill.position.copy(SUN_DIR).multiplyScalar(-500);
-  scene.add(fill);
+  /* ---------- ground baseplate ---------- */
+  const groundMaps = generateConcreteTextures(512, maxAniso);
+  const detailTex   = generateDetailTexture(256, maxAniso);
 
-  /* ---------- ground ---------- */
-  const { albedoTex, normalTex, roughTex } = generateConcreteTextures(512, maxAniso);
-  const GROUND_SIZE = 20000;
-  const TILE = 20;
-  const reps = GROUND_SIZE / TILE;
-
-  albedoTex.repeat.set(reps, reps);
-  normalTex.repeat.set(reps, reps);
-  roughTex.repeat.set(reps, reps);
-
-  const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, 1, 1);
-  groundGeo.rotateX(-Math.PI / 2);
+  const GROUND_SIZE = 6000;
+  const TILE = 6;
+  groundMaps.albedo.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
+  groundMaps.normal.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
+  groundMaps.rough.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
+  groundMaps.ao.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
 
   const groundMat = new THREE.MeshStandardMaterial({
-    map: albedoTex,
-    normalMap: normalTex,
-    normalScale: new THREE.Vector2(0.7, 0.7),
-    roughnessMap: roughTex,
+    map: groundMaps.albedo,
+    normalMap: groundMaps.normal,
+    normalScale: new THREE.Vector2(0.85, 0.85),
+    roughnessMap: groundMaps.rough,
+    aoMap: groundMaps.ao,
+    aoMapIntensity: 0.8,
     roughness: 1.0,
     metalness: 0.0,
+    envMapIntensity: 1.0,
     dithering: true
   });
 
-  scene.add(new THREE.Mesh(groundGeo, groundMat));
+  // Two-scale detail blending via shader injection
+  groundMat.onBeforeCompile = (shader) => {
+    shader.uniforms.detailMap = { value: detailTex };
+    shader.fragmentShader = `
+      uniform sampler2D detailMap;
+    ` + shader.fragmentShader;
 
-  /* ---------- sky dome (gradient only — cheap) ---------- */
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      /* glsl */`
+        #include <map_fragment>
+        vec2 detailUv = vMapUv * 24.0;
+        float detail = texture2D(detailMap, detailUv).r;
+        diffuseColor.rgb *= 0.78 + 0.44 * detail;
+      `
+    );
+  };
+
+  const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, 1, 1);
+  groundGeo.rotateX(-Math.PI / 2);
+  groundGeo.setAttribute('uv2', groundGeo.attributes.uv); // for aoMap
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  /* ---------- distant terrain (hills fading into fog) ---------- */
+  const terrain = makeDistantTerrain();
+  scene.add(terrain);
+
+  /* ---------- scattered rocks ---------- */
+  const rocks = makeRocks(420, maxAniso);
+  scene.add(rocks);
+
+  /* ---------- sky dome ---------- */
   sky = makeSky();
   scene.add(sky);
 
-  /* ---------- clouds (sprites — cheap) ---------- */
+  /* ---------- bake environment map from sky for IBL ---------- */
+  bakeEnvironment();
+
+  /* ---------- clouds ---------- */
   scene.add(cloudGroup);
   buildClouds(maxAniso);
 
@@ -273,20 +330,50 @@ function init() {
   window.addEventListener('keyup', (e) => { keys[e.code] = false; });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
+  /* ---------- post-processing pipeline ---------- */
+  composer = new EffectComposer(renderer);
+  composer.setPixelRatio(pixelRatio);
+  composer.setSize(window.innerWidth, window.innerHeight);
+
+  composer.addPass(new RenderPass(scene, camera));
+
+  // Subtle bloom — only the sun disc and bright cloud edges should trigger it
+  const bloom = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    0.42,   // strength
+    0.55,   // radius
+    0.86    // threshold (HDR)
+  );
+  composer.addPass(bloom);
+
+  // Tone map + colorspace (ACES → sRGB)
+  composer.addPass(new OutputPass());
+
+  // Filmic grade: vignette + chromatic aberration + grain + colour grade
+  gradePass = new ShaderPass(GradeShader);
+  gradePass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+  composer.addPass(gradePass);
+
+  // Antialiasing on the final LDR image
+  composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+
   /* ---------- resize ---------- */
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
+    if (gradePass) {
+      gradePass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+    }
   });
 }
 
 /* ===================================================================== */
-/*  Sky — analytic gradient + sun disc + Mie glow (no clouds in shader)  */
+/*  Sky dome — analytic atmosphere gradient + sun disc + Mie glow        */
 /* ===================================================================== */
 function makeSky() {
-  // Low segment count: gradient doesn't need geometry detail.
-  const geo = new THREE.SphereGeometry(14000, 24, 16);
+  const geo = new THREE.SphereGeometry(14000, 32, 20);
 
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
@@ -305,44 +392,47 @@ function makeSky() {
     `,
     fragmentShader: /* glsl */`
       precision highp float;
+
       uniform vec3 uSunDir;
       varying vec3 vWorldPos;
 
+      // Analytic sky: three-stop gradient + sun disc + Mie halo.
+      // Output is LINEAR HDR (tone mapping is applied later by the composer).
       void main() {
         vec3 rayDir = normalize(vWorldPos - cameraPosition);
         vec3 sunDir = normalize(uSunDir);
         float sunDot = dot(rayDir, sunDir);
         float h = max(rayDir.y, 0.0);
 
-        // three-stop vertical gradient
-        vec3 zenith  = vec3(0.055, 0.175, 0.520);
-        vec3 mid     = vec3(0.240, 0.480, 0.830);
-        vec3 horizon = vec3(0.700, 0.800, 0.900);
+        // Sky colours in linear-HDR space, tuned to survive ACES
+        vec3 zenith  = vec3(0.085, 0.255, 0.780);
+        vec3 mid     = vec3(0.320, 0.600, 1.020);
+        vec3 horizon = vec3(0.860, 0.960, 1.060);
 
-        vec3 sky;
+        vec3 col;
         if (h < 0.22) {
-          sky = mix(horizon, mid, smoothstep(0.0, 0.22, h));
+          col = mix(horizon, mid, smoothstep(0.0, 0.22, h));
         } else {
-          sky = mix(mid, zenith, pow(smoothstep(0.22, 1.0, h), 0.85));
+          col = mix(mid, zenith, pow(smoothstep(0.22, 1.0, h), 0.85));
         }
 
-        // Mie-ish glow around the sun
+        // Mie-like forward-scattering glow around the sun
         float mu = max(sunDot, 0.0);
-        sky += vec3(1.00, 0.93, 0.78) * pow(mu, 6.0)   * 0.30;
-        sky += vec3(1.00, 0.96, 0.88) * pow(mu, 64.0)  * 0.55;
-        sky += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 1.20;
+        col += vec3(1.00, 0.92, 0.74) * pow(mu, 5.0)   * 0.55;
+        col += vec3(1.00, 0.95, 0.85) * pow(mu, 48.0)  * 1.10;
+        col += vec3(1.00, 0.98, 0.94) * pow(mu, 400.0) * 3.20;
 
-        // sun disc
-        float disc = smoothstep(0.99975, 0.99990, sunDot);
-        sky += vec3(1.0, 0.97, 0.92) * disc * 20.0;
+        // Sun disc — extremely bright so bloom picks it up
+        float disc = smoothstep(0.99976, 0.99992, sunDot);
+        col += vec3(1.0, 0.97, 0.90) * disc * 32.0;
 
-        // haze below the horizon so nothing black shows through
+        // Below-horizon haze so nothing goes black
         if (rayDir.y < 0.0) {
-          float gt = clamp(-rayDir.y * 5.0, 0.0, 1.0);
-          sky = mix(horizon * 1.02, vec3(0.52, 0.53, 0.55), gt);
+          float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
+          col = mix(horizon, vec3(0.72, 0.78, 0.86), gt);
         }
 
-        gl_FragColor = vec4(sky, 1.0);
+        gl_FragColor = vec4(col, 1.0);
       }
     `
   });
@@ -354,28 +444,158 @@ function makeSky() {
 }
 
 /* ===================================================================== */
-/*  Cloud sprites                                                        */
+/*  Bake PMREM environment map from the sky (for IBL / reflections)      */
+/* ===================================================================== */
+function bakeEnvironment() {
+  // Temporarily isolate the sky in a fresh scene so nothing else pollutes
+  // the cubemap.
+  const tmpScene = new THREE.Scene();
+
+  // Save original sky transform, then re-add it to the temp scene
+  const parent = sky.parent;
+  scene.remove(sky);
+  tmpScene.add(sky);
+  sky.position.set(0, 0, 0);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+
+  pmremRT = pmrem.fromScene(tmpScene, 0, 0.1, 50000);
+
+  scene.environment = pmremRT.texture;
+
+  // Restore sky back to the main scene
+  tmpScene.remove(sky);
+  scene.add(sky);
+  sky.position.copy(camera.position);
+
+  pmrem.dispose();
+}
+
+/* ===================================================================== */
+/*  Distant terrain ring — cheap hills that fade into the fog            */
+/* ===================================================================== */
+function makeDistantTerrain() {
+  const SIZE = 24000;
+  const SEGS = 180;
+  const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEGS, SEGS);
+  geo.rotateX(-Math.PI / 2);
+
+  const pos = geo.attributes.position;
+  const FLAT_R = 900;
+
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const z = pos.getZ(i);
+    const r = Math.sqrt(x * x + z * z);
+
+    if (r < FLAT_R) {
+      pos.setY(i, -1.0);            // sink under the baseplate
+    } else {
+      const t = Math.min(1.0, (r - FLAT_R) / 7000);
+      // Multi-octave fake terrain
+      const h1 = Math.sin(x * 0.00055) * Math.cos(z * 0.00072) * 520;
+      const h2 = Math.sin(x * 0.00140 + 1.7) * Math.sin(z * 0.00118 + 0.4) * 240;
+      const h3 = Math.sin(x * 0.00350 + 0.9) * Math.cos(z * 0.00310) * 90;
+      pos.setY(i, (h1 + h2 + h3) * t * t);
+    }
+  }
+  geo.computeVertexNormals();
+
+  // Flat-shaded hazy grey-blue material that fogs nicely into the sky
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x6b7686,
+    roughness: 1.0,
+    metalness: 0.0,
+    flatShading: true,
+    fog: true,
+    envMapIntensity: 0.6
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = -0.5;
+  return mesh;
+}
+
+/* ===================================================================== */
+/*  Scattered instanced rocks                                            */
+/* ===================================================================== */
+function makeRocks(count, maxAniso) {
+  // A rough, chunky rock silhouette
+  const geo = new THREE.DodecahedronGeometry(1.0, 0);
+  // Squash slightly along Y so it looks like a stone rather than a ball
+  geo.scale(1.0, 0.68, 1.0);
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x707478,
+    roughness: 0.94,
+    metalness: 0.0,
+    flatShading: true,
+    envMapIntensity: 1.0
+  });
+
+  const mesh = new THREE.InstancedMesh(geo, mat, count);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+
+  const rng = mulberry32(0xDEADBEEF);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  const v = new THREE.Vector3();
+  const s = new THREE.Vector3();
+
+  for (let i = 0; i < count; i++) {
+    // Concentrate small rocks near the origin; sparser out to ~400 m
+    const t = rng();
+    const radius = 4 + Math.pow(t, 2.4) * 400;
+    const ang = rng() * Math.PI * 2;
+
+    v.set(Math.cos(ang) * radius, 0, Math.sin(ang) * radius);
+
+    // Size: mostly small pebbles, a few larger stones
+    const sizeClass = rng();
+    let base;
+    if (sizeClass < 0.78)      base = 0.05 + rng() * 0.10;   // pebbles
+    else if (sizeClass < 0.96) base = 0.18 + rng() * 0.22;   // stones
+    else                        base = 0.42 + rng() * 0.40;  // boulders
+
+    s.set(base * (0.85 + rng() * 0.35),
+          base * (0.75 + rng() * 0.35),
+          base * (0.85 + rng() * 0.35));
+
+    e.set(rng() * 0.35, rng() * Math.PI * 2, rng() * 0.35);
+    q.setFromEuler(e);
+
+    v.y = s.y * 0.45;    // sink into the ground so nothing floats
+
+    m.compose(v, q, s);
+    mesh.setMatrixAt(i, m);
+  }
+
+  mesh.instanceMatrix.needsUpdate = true;
+  return mesh;
+}
+
+/* ===================================================================== */
+/*  Clouds — layered sprite billboards                                   */
 /* ===================================================================== */
 function buildClouds(maxAniso) {
-  // Bake ~8 distinct cloud textures up front, then reuse them.
-  const texRng = mulberry32(0xC10D);
+  const texRng = mulberry32(0xC10D0C10);
   const textures = [];
-  for (let i = 0; i < 8; i++) textures.push(makeCloudTexture(texRng, 512, maxAniso));
+  for (let i = 0; i < 9; i++) textures.push(makeCloudTexture(texRng, 512, maxAniso));
 
-  const rng = mulberry32(0xBEEF);
+  const rng = mulberry32(0xBEEFCAFE);
 
-  // Three atmospheric layers, each with its own character.
-  // [minDist, maxDist, minY, maxY, minScale, maxScale, count, baseOpacity]
+  // [minDist, maxDist, minY, maxY, minScale, maxScale, count, opacity]
   const layers = [
-    // low, small, crisp cumulus
-    [ 280, 900,  220, 380, 130, 260, 16, 0.72],
-    // mid cumulus — the "hero" layer
-    [ 700, 2000, 380, 700, 260, 520, 22, 0.68],
-    // high, large, hazy cirrus
-    [1400, 4200, 700, 1300, 500, 1100, 14, 0.50]
+    [ 320, 1100,  180,  340,  120,  260, 20, 0.78],  // low cumulus
+    [ 800, 2400,  380,  720,  280,  560, 26, 0.72],  // mid cumulus (hero)
+    [1600, 4600,  750, 1350,  520, 1150, 16, 0.55]   // high cirrus
   ];
 
-  for (const [minD, maxD, minY, maxY, minS, maxS, count, baseOpacity] of layers) {
+  for (const [minD, maxD, minY, maxY, minS, maxS, count, baseOp] of layers) {
     for (let i = 0; i < count; i++) {
       const tex = textures[(rng() * textures.length) | 0];
 
@@ -385,7 +605,7 @@ function buildClouds(maxAniso) {
         depthWrite: false,
         depthTest: true,
         fog: true,
-        opacity: baseOpacity * (0.85 + rng() * 0.30)
+        opacity: baseOp * (0.85 + rng() * 0.30)
       });
 
       const sprite = new THREE.Sprite(mat);
@@ -395,9 +615,9 @@ function buildClouds(maxAniso) {
       const y   = minY + rng() * (maxY - minY);
       const w   = minS + rng() * (maxS - minS);
 
-      sprite.scale.set(w, w * 0.5, 1);      // textures are 2:1
+      sprite.scale.set(w, w * 0.5, 1);
       sprite.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
-      sprite.userData.speed = 2.5 + rng() * 4.5;   // m/s drift
+      sprite.userData.speed = 2.0 + rng() * 4.0;
 
       cloudGroup.add(sprite);
       clouds.push(sprite);
@@ -405,32 +625,31 @@ function buildClouds(maxAniso) {
   }
 }
 
-/* Draws a fluffy cumulus cloud into a canvas and returns it as a texture. */
+/* Draws a fluffy sunlit cloud into a canvas and returns it as a texture. */
 function makeCloudTexture(rand, size, maxAniso) {
   const W = size;
   const H = Math.round(size * 0.5);
   const cvs = document.createElement('canvas');
-  cvs.width = W;
-  cvs.height = H;
+  cvs.width = W; cvs.height = H;
   const ctx = cvs.getContext('2d');
   ctx.clearRect(0, 0, W, H);
 
-  // ---- 1. Silhouette: lots of soft radial puffs along a horizontal band ----
-  const puffCount = 26 + Math.floor(rand() * 12);
+  // ---- silhouette: overlapping soft puffs along a horizontal band ----
+  const puffCount = 30 + Math.floor(rand() * 14);
   for (let i = 0; i < puffCount; i++) {
     const t = i / (puffCount - 1);
-    const bell = Math.sin(t * Math.PI);                 // 0 → 1 → 0
+    const bell = Math.sin(t * Math.PI);
 
     const x = W * 0.10 + t * W * 0.80 + (rand() - 0.5) * W * 0.05;
-    const r = W * (0.045 + 0.095 * bell * (0.55 + rand() * 0.85));
-    const y = H * 0.66
-            - bell * H * 0.26 * (0.5 + rand() * 0.9)
+    const r = W * (0.045 + 0.100 * bell * (0.55 + rand() * 0.85));
+    const y = H * 0.68
+            - bell * H * 0.27 * (0.5 + rand() * 0.9)
             - rand() * H * 0.05;
 
     const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
     g.addColorStop(0.00, 'rgba(255,255,255,1)');
     g.addColorStop(0.40, 'rgba(255,255,255,0.95)');
-    g.addColorStop(0.72, 'rgba(255,255,255,0.42)');
+    g.addColorStop(0.72, 'rgba(255,255,255,0.40)');
     g.addColorStop(1.00, 'rgba(255,255,255,0)');
 
     ctx.fillStyle = g;
@@ -439,44 +658,42 @@ function makeCloudTexture(rand, size, maxAniso) {
     ctx.fill();
   }
 
-  // ---- 2. Restrict subsequent passes to the cloud silhouette ----
+  // Restrict further passes to the cloud silhouette
   ctx.globalCompositeOperation = 'source-atop';
 
-  // Sunlit top: warm white highlight
-  const topLight = ctx.createLinearGradient(0, H * 0.08, 0, H * 0.55);
-  topLight.addColorStop(0.00, 'rgba(255, 252, 240, 0.55)');
-  topLight.addColorStop(1.00, 'rgba(255, 252, 240, 0.00)');
+  // Sunlit top — warm white
+  const topLight = ctx.createLinearGradient(0, H * 0.04, 0, H * 0.55);
+  topLight.addColorStop(0.00, 'rgba(255, 252, 235, 0.62)');
+  topLight.addColorStop(1.00, 'rgba(255, 252, 235, 0.00)');
   ctx.fillStyle = topLight;
   ctx.fillRect(0, 0, W, H);
 
-  // Shadowed base: cool grey-blue (simulates ambient sky + self-shadow)
-  const baseShadow = ctx.createLinearGradient(0, H * 0.35, 0, H * 0.85);
-  baseShadow.addColorStop(0.00, 'rgba(190, 204, 224, 0.00)');
-  baseShadow.addColorStop(0.50, 'rgba(170, 188, 214, 0.42)');
-  baseShadow.addColorStop(1.00, 'rgba(130, 152, 186, 0.85)');
+  // Shadowed base — cool blue-grey (ambient sky bounce)
+  const baseShadow = ctx.createLinearGradient(0, H * 0.34, 0, H * 0.88);
+  baseShadow.addColorStop(0.00, 'rgba(180, 198, 224, 0.00)');
+  baseShadow.addColorStop(0.50, 'rgba(160, 182, 214, 0.42)');
+  baseShadow.addColorStop(1.00, 'rgba(110, 138, 178, 0.92)');
   ctx.fillStyle = baseShadow;
   ctx.fillRect(0, 0, W, H);
 
-  // ---- 3. Soft internal detail (breaks up the smooth blobs) ----
-  ctx.globalCompositeOperation = 'source-atop';
+  // Internal soft detail
   ctx.globalAlpha = 0.10;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 46; i++) {
     const x = rand() * W;
-    const y = H * 0.35 + rand() * H * 0.5;
-    const r = 8 + rand() * 26;
+    const y = H * 0.32 + rand() * H * 0.55;
+    const r = 8 + rand() * 28;
     const dark = rand() < 0.55;
-    ctx.fillStyle = dark ? 'rgba(120,140,170,1)' : 'rgba(255,255,255,1)';
+    ctx.fillStyle = dark ? 'rgba(110,132,166,1)' : 'rgba(255,255,255,1)';
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // ---- 4. Silver lining: bright rim along the top edges ----
-  ctx.globalCompositeOperation = 'source-atop';
-  const rim = ctx.createLinearGradient(0, H * 0.10, 0, H * 0.42);
+  // Silver lining along the top edges
+  const rim = ctx.createLinearGradient(0, H * 0.08, 0, H * 0.44);
   rim.addColorStop(0.00, 'rgba(255, 255, 255, 0.00)');
-  rim.addColorStop(0.55, 'rgba(255, 253, 245, 0.55)');
+  rim.addColorStop(0.55, 'rgba(255, 254, 244, 0.60)');
   rim.addColorStop(1.00, 'rgba(255, 255, 255, 0.00)');
   ctx.fillStyle = rim;
   ctx.fillRect(0, 0, W, H);
@@ -493,7 +710,7 @@ function makeCloudTexture(rand, size, maxAniso) {
 }
 
 /* ===================================================================== */
-/*  Procedural concrete textures                                         */
+/*  Procedural ground textures                                           */
 /* ===================================================================== */
 function generateConcreteTextures(size, maxAniso) {
   function hash2(ix, iy) {
@@ -511,16 +728,14 @@ function generateConcreteTextures(size, maxAniso) {
     const y0 = ((yi % period) + period) % period;
     const x1 = (x0 + 1) % period;
     const y1 = (y0 + 1) % period;
-    const a = hash2(x0, y0), b = hash2(x1, y0);
-    const c = hash2(x0, y1), d = hash2(x1, y1);
-    return a*(1-u)*(1-v) + b*u*(1-v) + c*(1-u)*v + d*u*v;
+    return hash2(x0,y0)*(1-u)*(1-v) + hash2(x1,y0)*u*(1-v)
+         + hash2(x0,y1)*(1-u)*v   + hash2(x1,y1)*u*v;
   }
   function fbm(u, v, baseFreq, octaves) {
     let val = 0, amp = 0.5, freq = baseFreq;
     for (let i = 0; i < octaves; i++) {
       val += amp * vnoise(u * freq, v * freq, freq);
-      freq *= 2;
-      amp *= 0.5;
+      freq *= 2; amp *= 0.5;
     }
     return val;
   }
@@ -536,47 +751,41 @@ function generateConcreteTextures(size, maxAniso) {
     }
   }
 
-  // Albedo
+  // --- Albedo ---
   const albedoCv = document.createElement('canvas');
   albedoCv.width = albedoCv.height = size;
   const actx = albedoCv.getContext('2d');
   const albedoImg = actx.createImageData(size, size);
   const ad = albedoImg.data;
-
   for (let i = 0, p = 0; i < size * size; i++, p += 4) {
     const h = height[i];
-    const base = 0.46 + (h - 0.5) * 0.30;
-    const n1 = (Math.random() - 0.5) * 0.030;
-    const n2 = (Math.random() - 0.5) * 0.026;
-    const n3 = (Math.random() - 0.5) * 0.022;
-    ad[p    ] = Math.max(0, Math.min(255, (base + n1) * 255));
+    const base = 0.50 + (h - 0.5) * 0.34;
+    const n1 = (Math.random() - 0.5) * 0.028;
+    const n2 = (Math.random() - 0.5) * 0.024;
+    const n3 = (Math.random() - 0.5) * 0.020;
+    ad[p]     = Math.max(0, Math.min(255, (base + n1) * 255));
     ad[p + 1] = Math.max(0, Math.min(255, (base + n2) * 255));
-    ad[p + 2] = Math.max(0, Math.min(255, (base * 1.015 + n3) * 255));
+    ad[p + 2] = Math.max(0, Math.min(255, (base * 1.010 + n3) * 255));
     ad[p + 3] = 255;
   }
   actx.putImageData(albedoImg, 0, 0);
 
-  // Normal
+  // --- Normal ---
   const normalCv = document.createElement('canvas');
   normalCv.width = normalCv.height = size;
   const nctx = normalCv.getContext('2d');
   const normalImg = nctx.createImageData(size, size);
   const nd = normalImg.data;
-  const strength = 5.5;
-
+  const strength = 5.2;
   for (let y = 0; y < size; y++) {
     const y0 = (y - 1 + size) % size;
     const y1 = (y + 1) % size;
     for (let x = 0; x < size; x++) {
       const x0 = (x - 1 + size) % size;
       const x1 = (x + 1) % size;
-      const hL = height[y  * size + x0];
-      const hR = height[y  * size + x1];
-      const hD = height[y0 * size + x ];
-      const hU = height[y1 * size + x ];
-      const dx = (hR - hL) * strength;
-      const dy = (hU - hD) * strength;
-      const len = Math.sqrt(dx*dx + dy*dy + 1.0);
+      const dx = (height[y * size + x1] - height[y * size + x0]) * strength;
+      const dy = (height[y1 * size + x] - height[y0 * size + x]) * strength;
+      const len = Math.sqrt(dx * dx + dy * dy + 1.0);
       const i = (y * size + x) * 4;
       nd[i    ] = ((-dx / len) * 0.5 + 0.5) * 255;
       nd[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255;
@@ -586,22 +795,35 @@ function generateConcreteTextures(size, maxAniso) {
   }
   nctx.putImageData(normalImg, 0, 0);
 
-  // Roughness
+  // --- Roughness ---
   const roughCv = document.createElement('canvas');
   roughCv.width = roughCv.height = size;
   const rctx = roughCv.getContext('2d');
   const roughImg = rctx.createImageData(size, size);
   const rd = roughImg.data;
-
   for (let i = 0, p = 0; i < size * size; i++, p += 4) {
     const h = height[i];
-    let r = 0.88 + (h - 0.5) * 0.14;
-    r = Math.max(0.6, Math.min(1.0, r));
-    const v = r * 255;
-    rd[p] = rd[p + 1] = rd[p + 2] = v;
+    let r = 0.90 + (h - 0.5) * 0.12;
+    r = Math.max(0.62, Math.min(1.0, r));
+    rd[p] = rd[p + 1] = rd[p + 2] = r * 255;
     rd[p + 3] = 255;
   }
   rctx.putImageData(roughImg, 0, 0);
+
+  // --- AO ---
+  const aoCv = document.createElement('canvas');
+  aoCv.width = aoCv.height = size;
+  const aoctx = aoCv.getContext('2d');
+  const aoImg = aoctx.createImageData(size, size);
+  const aod = aoImg.data;
+  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
+    const h = height[i];
+    // Concave areas are darker
+    const v = Math.min(1.0, Math.max(0.4, 0.72 + (h - 0.5) * 0.9));
+    aod[p] = aod[p + 1] = aod[p + 2] = v * 255;
+    aod[p + 3] = 255;
+  }
+  aoctx.putImageData(aoImg, 0, 0);
 
   const albedoTex = new THREE.CanvasTexture(albedoCv);
   albedoTex.colorSpace = THREE.SRGBColorSpace;
@@ -616,8 +838,130 @@ function generateConcreteTextures(size, maxAniso) {
   roughTex.wrapS = roughTex.wrapT = THREE.RepeatWrapping;
   roughTex.anisotropy = maxAniso;
 
-  return { albedoTex, normalTex, roughTex };
+  const aoTex = new THREE.CanvasTexture(aoCv);
+  aoTex.wrapS = aoTex.wrapT = THREE.RepeatWrapping;
+  aoTex.anisotropy = maxAniso;
+
+  return { albedo: albedoTex, normal: normalTex, rough: roughTex, ao: aoTex };
 }
+
+/* Small tileable detail texture used for two-scale blending. */
+function generateDetailTexture(size, maxAniso) {
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = size;
+  const ctx = cvs.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  const d = img.data;
+
+  // Wrap-safe value noise
+  function hash2(ix, iy) {
+    let h = (ix * 374761393 + iy * 668265263) | 0;
+    h = ((h ^ (h >>> 13)) * 1274126177) | 0;
+    h = (h ^ (h >>> 16)) >>> 0;
+    return h / 4294967295;
+  }
+  function vnoise(x, y, period) {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf);
+    const v = yf * yf * (3 - 2 * yf);
+    const x0 = ((xi % period) + period) % period;
+    const y0 = ((yi % period) + period) % period;
+    const x1 = (x0 + 1) % period;
+    const y1 = (y0 + 1) % period;
+    return hash2(x0,y0)*(1-u)*(1-v) + hash2(x1,y0)*u*(1-v)
+         + hash2(x0,y1)*(1-u)*v   + hash2(x1,y1)*u*v;
+  }
+  function fbm(u, v, baseFreq, octaves) {
+    let val = 0, amp = 0.5, freq = baseFreq;
+    for (let i = 0; i < octaves; i++) {
+      val += amp * vnoise(u * freq, v * freq, freq);
+      freq *= 2; amp *= 0.5;
+    }
+    return val;
+  }
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      let n = fbm(u, v, 32, 4);
+      n = Math.pow(n, 1.4);
+      const i = (y * size + x) * 4;
+      const val = 128 + (n - 0.5) * 240;
+      d[i] = d[i + 1] = d[i + 2] = Math.max(0, Math.min(255, val));
+      d[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = maxAniso;
+  return tex;
+}
+
+/* ===================================================================== */
+/*  Filmic grade pass (vignette + CA + grain + colour grade)             */
+/* ===================================================================== */
+const GradeShader = {
+  uniforms: {
+    tDiffuse:    { value: null },
+    uTime:       { value: 0 },
+    uResolution: { value: new THREE.Vector2(1, 1) }
+  },
+  vertexShader: /* glsl */`
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */`
+    precision highp float;
+    uniform sampler2D tDiffuse;
+    uniform float uTime;
+    uniform vec2  uResolution;
+    varying vec2 vUv;
+
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+
+    void main() {
+      vec2 uv = vUv;
+      vec2 cc = uv - 0.5;
+      float r2 = dot(cc, cc);
+
+      // Chromatic aberration — subtle, radial
+      float ca = r2 * 0.0024;
+      vec3 col;
+      col.r = texture2D(tDiffuse, uv + cc * ca).r;
+      col.g = texture2D(tDiffuse, uv).g;
+      col.b = texture2D(tDiffuse, uv - cc * ca).b;
+
+      // Vignette
+      float vig = smoothstep(0.95, 0.35, r2 * 1.9);
+      col *= mix(0.70, 1.0, vig);
+
+      // Split-tone grade: cool shadows, warm highlights
+      float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+      vec3 shadowTint    = vec3(0.94, 0.98, 1.06);
+      vec3 highlightTint = vec3(1.05, 1.00, 0.94);
+      col *= mix(shadowTint, highlightTint, smoothstep(0.0, 1.0, lum));
+
+      // Gentle contrast
+      col = (col - 0.5) * 1.035 + 0.5;
+
+      // Film grain (animated)
+      float grain = hash(uv * uResolution + uTime * 60.0) - 0.5;
+      col += grain * 0.014;
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `
+};
 
 /* ===================================================================== */
 /*  Main loop                                                            */
@@ -627,21 +971,31 @@ function animate() {
 
   const delta = Math.min(clock.getDelta(), 0.05);
   const active = controls.isLocked;
+  const t = clock.elapsedTime;
 
-  updatePlayer(delta, active);
+  updatePlayer(delta, active, t);
 
-  // Sky stays centred on the eye
+  // Sky follows the eye so the horizon never drifts
   sky.position.copy(camera.position);
 
-  // Cloud drift + horizontal wrap so the sky never empties out
+  // Sun follows the player so shadow cascades stay centred
+  const sun = scene.userData.sun;
+  sun.position.copy(camera.position).addScaledVector(SUN_DIR, 160);
+  sun.target.position.copy(camera.position);
+  sun.target.updateMatrixWorld();
+
+  // Clouds drift and wrap around the player
   for (let i = 0; i < clouds.length; i++) {
     const c = clouds[i];
     c.position.x += c.userData.speed * delta;
-    if (c.position.x > 5200) c.position.x = -5200;
+    if (c.position.x > 5600) c.position.x = -5600;
   }
   cloudGroup.position.set(camera.position.x, 0, camera.position.z);
 
-  renderer.render(scene, camera);
+  // Update grade pass time
+  if (gradePass) gradePass.uniforms.uTime.value = t;
+
+  composer.render();
 
   // FPS readout
   fpsAccum += delta; fpsFrames++;
@@ -654,7 +1008,7 @@ function animate() {
 /* ===================================================================== */
 /*  Player movement                                                      */
 /* ===================================================================== */
-function updatePlayer(delta, active) {
+function updatePlayer(delta, active, t) {
   camera.getWorldDirection(forward);
   forward.y = 0;
   if (forward.lengthSq() < 1e-8) forward.set(0, 0, -1);
@@ -695,20 +1049,30 @@ function updatePlayer(delta, active) {
     player.grounded = false;
   }
 
+  // Head bob + idle breathing
   const hSpeed = Math.hypot(player.vel.x, player.vel.z);
   const wantBob = (player.grounded && hSpeed > 0.35) ? 1 : 0;
   player.bobBlend = THREE.MathUtils.damp(player.bobBlend, wantBob, 6, delta);
   player.bobPhase += delta * (4.4 + hSpeed * 0.85);
+  player.idlePhase += delta * 1.15;
 
   const bobY = Math.sin(player.bobPhase * 2) * 0.032 * player.bobBlend;
   const sway = Math.cos(player.bobPhase)     * 0.022 * player.bobBlend;
 
+  // Idle breathing only when not moving
+  const idle = (1 - player.bobBlend) * Math.sin(player.idlePhase) * 0.008;
+
   camera.position.copy(player.pos);
   camera.position.x += right.x * sway;
   camera.position.z += right.z * sway;
-  camera.position.y += bobY;
+  camera.position.y += bobY + idle;
 
-  const targetFov = 72 + (running && hSpeed > 4.2 ? 5.0 : 0.0);
+  // Subtle camera roll while strafing (AAA feel)
+  const roll = -mx * 0.008 * (running ? 1.4 : 1.0);
+  camera.rotation.z = THREE.MathUtils.damp(camera.rotation.z, roll, 6, delta);
+
+  // FOV kick when sprinting
+  const targetFov = 70 + (running && hSpeed > 4.2 ? 5.5 : 0.0);
   if (Math.abs(camera.fov - targetFov) > 0.02) {
     camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
     camera.updateProjectionMatrix();
@@ -716,7 +1080,7 @@ function updatePlayer(delta, active) {
 }
 
 /* ===================================================================== */
-/*  Seeded RNG                                                           */
+/*  Helpers                                                              */
 /* ===================================================================== */
 function mulberry32(a) {
   return function () {
