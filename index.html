@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qwen3.8-27B · OpenRouter Chat</title>
+    <title>GLM 5.2 (free) · OpenRouter Chat</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -128,12 +128,13 @@
             border-left: 2px solid #4c1d95;
             background: #0f0f12;
             border-radius: 0 6px 6px 0;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>⚡ Qwen3.8-27B · OpenRouter</h1>
+        <h1>🧠 GLM 5.2 (free) · OpenRouter</h1>
         <div class="key-area">
             <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
             <span class="status" id="status"></span>
@@ -141,11 +142,11 @@
     </header>
 
     <div id="chat">
-        <div class="msg system">Enter your OpenRouter API key above, then start chatting.</div>
+        <div class="msg system">Enter your OpenRouter API key above, then start chatting with GLM 5.2.</div>
     </div>
 
     <div id="input-area">
-        <textarea id="prompt" rows="1" placeholder="Ask Qwen3.8 anything..."></textarea>
+        <textarea id="prompt" rows="1" placeholder="Ask GLM 5.2 anything..."></textarea>
         <button id="sendBtn">Send</button>
     </div>
 
@@ -158,7 +159,7 @@
 
         // ---- conversation history (sent on every request) ----
         let messages = [
-            { role: 'system', content: 'You are Qwen3.8, a helpful and harmless AI assistant.' }
+            { role: 'system', content: 'You are GLM 5.2, a helpful and harmless AI assistant.' }
         ];
 
         let isGenerating = false;
@@ -210,16 +211,14 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${apiKey}`,
-                        // optional attribution headers [citation:1]
+                        // optional attribution headers
                         'HTTP-Referer': 'https://localhost',
-                        'X-OpenRouter-Title': 'Qwen3.8-27B Chat'
+                        'X-OpenRouter-Title': 'GLM 5.2 Free Chat'
                     },
                     body: JSON.stringify({
-                        model: 'qwen/qwen3.8-27b:free',
+                        model: 'z-ai/glm-5.2:free',
                         messages: messages,
-                        stream: true,
-                        // optional: enable reasoning if supported
-                        // reasoning: { enabled: true }
+                        stream: true
                     })
                 });
 
@@ -254,7 +253,7 @@
                             const delta  = parsed.choices?.[0]?.delta;
                             if (!delta) continue;
 
-                            // reasoning tokens (if the model streams them)
+                            // reasoning tokens (GLM 5.2 supports reasoning effort)
                             if (delta.reasoning || delta.reasoning_content) {
                                 reasoningText += delta.reasoning || delta.reasoning_content || '';
                             }
@@ -278,8 +277,7 @@
                 if (reasoningText.trim()) {
                     const reasonDiv = document.createElement('div');
                     reasonDiv.className = 'reasoning';
-                    reasonDiv.textContent = '🧠 ' + reasoningText.trim().slice(0, 500) +
-                        (reasoningText.length > 500 ? '…' : '');
+                    reasonDiv.textContent = '🧠 ' + reasoningText.trim();
                     assistantDiv.appendChild(reasonDiv);
                 }
 
