@@ -131,13 +131,15 @@
 <script>
 /* =========================================================================
    NYXARA — Cosmic Islet with Castle
-   Performance-focused, clean crystalline base.
    ========================================================================= */
 
 /* ------------------------------ CANVAS ------------------------------ */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let DPR = 1, W = 0, H = 0;
+
+/* --- Sky cache vars MUST be declared before resize() uses them --- */
+let skyCache = null, skyCtx = null, skyFrameCounter = 0;
 
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -184,7 +186,13 @@ function initAudio() {
   if (audioStarted) return;
   audioStarted = true;
 
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (err) {
+    console.warn('Audio not supported:', err);
+    document.getElementById('audio-prompt').classList.add('hide');
+    return;
+  }
 
   castleGain = audioCtx.createGain();
   castleGain.gain.value = 0.0;
@@ -241,8 +249,6 @@ document.getElementById('audio-prompt').addEventListener('click', initAudio);
 canvas.addEventListener('pointerdown', initAudio, { once: true });
 
 /* ======================== SKY (cached offscreen) ======================== */
-let skyCache = null, skyCtx = null, skyFrameCounter = 0;
-
 const stars = (() => {
   const rnd = mulberry32(42);
   const out = [];
@@ -280,7 +286,6 @@ function drawSky(t) {
     s.setTransform(DPR, 0, 0, DPR, 0, 0);
     s.clearRect(0, 0, W, H);
 
-    // Deep space gradient
     const g = s.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0.0, '#05000a');
     g.addColorStop(0.3, '#0f0025');
@@ -289,7 +294,6 @@ function drawSky(t) {
     s.fillStyle = g;
     s.fillRect(0, 0, W, H);
 
-    // Nebulae
     s.save();
     s.globalCompositeOperation = 'lighter';
     for (const n of nebulae) {
@@ -302,7 +306,6 @@ function drawSky(t) {
     }
     s.restore();
 
-    // Stars
     for (const st of stars) {
       const sx = (st.x + W / 2) % (W + 1400) - 700;
       const sy = (st.y + H / 2) % (H + 1400) - 700;
@@ -327,7 +330,6 @@ const GRY = 240;
 const BOT = 520;
 
 /* ----------------------------- FAST CRYSTAL SPIKE ----------------------------- */
-/* Same visual language as before, but WITHOUT shadowBlur — uses a cheap glow layer instead. */
 function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.save();
   ctx.translate(x, y);
@@ -336,7 +338,6 @@ function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   const len = size * 2.3;
   const wid = size * 0.75;
 
-  // Soft glow halo (larger, low alpha) — cheap replacement for shadowBlur
   ctx.fillStyle = `hsla(${hue}, 100%, 62%, ${alpha * 0.28})`;
   ctx.beginPath();
   ctx.moveTo(-len * 0.1, -wid * 1.5);
@@ -345,7 +346,6 @@ function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.closePath();
   ctx.fill();
 
-  // Main body with gradient
   const grad = ctx.createLinearGradient(0, 0, len, 0);
   grad.addColorStop(0.0, `hsla(${hue}, 90%, 45%, ${alpha})`);
   grad.addColorStop(0.5, `hsla(${hue + 25}, 92%, 66%, ${alpha})`);
@@ -358,7 +358,6 @@ function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.closePath();
   ctx.fill();
 
-  // Inner highlight
   ctx.fillStyle = `hsla(${hue + 60}, 100%, 93%, ${alpha * 0.55})`;
   ctx.beginPath();
   ctx.moveTo(0, -wid * 0.35);
@@ -375,13 +374,11 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.save();
   ctx.translate(x, y);
 
-  // Ground shadow on the rim
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.beginPath();
   ctx.ellipse(0, 0, w * 0.85, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Soft glow halo (no shadowBlur)
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const halo = ctx.createRadialGradient(0, -h * 0.55, 5, 0, -h * 0.55, w * 2.4);
@@ -393,7 +390,6 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.fill();
   ctx.restore();
 
-  // Main body
   const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
   g.addColorStop(0.00, '#0a0016');
   g.addColorStop(0.30, `hsl(${hue}, 65%, 26%)`);
@@ -409,7 +405,6 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.closePath();
   ctx.fill();
 
-  // Bright lit edge
   ctx.strokeStyle = `hsla(${hue + 50}, 100%, 82%, ${0.9 * pulse})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -418,7 +413,6 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.lineTo(w / 2, 0);
   ctx.stroke();
 
-  // Bright tip
   ctx.fillStyle = `hsla(${hue + 60}, 100%, 95%, ${pulse})`;
   ctx.beginPath();
   ctx.arc(0, -h, 3 + pulse * 1.8, 0, Math.PI * 2);
@@ -435,7 +429,7 @@ function drawBackSpikes(t) {
     const bx = Math.cos(a) * (RX - 18);
     const by = Math.sin(a) * (RY - 18);
 
-    if (Math.abs(u) < 0.14) continue;   // keep space for castle
+    if (Math.abs(u) < 0.14) continue;
 
     const hFactor = Math.cos(u * 1.15);
     const h = 90 + hFactor * 130;
@@ -447,14 +441,13 @@ function drawBackSpikes(t) {
   }
 }
 
-/* ----------------------------- SIDE PLATFORMS (on void, near castle) ----------------------------- */
+/* ----------------------------- SIDE PLATFORMS ----------------------------- */
 const platforms = {
   left:  { cx: -370, cy: -150, rx: 140, ry: 68 },
   right: { cx:  370, cy: -150, rx: 140, ry: 68 },
 };
 
 function drawPlatformBase(p) {
-  // Shadow under platform
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#000';
@@ -463,7 +456,6 @@ function drawPlatformBase(p) {
   ctx.fill();
   ctx.restore();
 
-  // Base disc
   const g = ctx.createLinearGradient(0, p.cy - p.ry, 0, p.cy + p.ry + 40);
   g.addColorStop(0, '#0089aa');
   g.addColorStop(0.6, '#00b8d8');
@@ -473,7 +465,6 @@ function drawPlatformBase(p) {
   ctx.ellipse(p.cx, p.cy, p.rx, p.ry, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Underside shading
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#00232e';
@@ -482,7 +473,6 @@ function drawPlatformBase(p) {
   ctx.fill();
   ctx.restore();
 
-  // Small crystal spikes around the platform edge (no shadowBlur)
   const BUMPS = 22;
   for (let i = 0; i < BUMPS; i++) {
     const a = (i / BUMPS) * Math.PI * 2;
@@ -493,7 +483,6 @@ function drawPlatformBase(p) {
     drawCrystalSpikeFast(bx, by, a, size, hue, 0.85);
   }
 
-  // Soft glowing core
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const pg = ctx.createRadialGradient(p.cx, p.cy - 4, 4, p.cx, p.cy - 4, p.rx * 0.85);
@@ -517,7 +506,6 @@ function drawCastle(t) {
 
   const pulse = 0.85 + 0.15 * Math.sin(t * 1.4);
 
-  // Shadow
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#000';
@@ -526,7 +514,6 @@ function drawCastle(t) {
   ctx.fill();
   ctx.restore();
 
-  // Obsidian base plate
   ctx.fillStyle = '#0d0018';
   ctx.beginPath();
   ctx.ellipse(0, 26, 148, 32, 0, 0, Math.PI * 2);
@@ -536,7 +523,6 @@ function drawCastle(t) {
   ctx.ellipse(0, 22, 140, 28, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Glowing rune ring
   ctx.save();
   ctx.shadowColor = '#b44aff';
   ctx.shadowBlur = 14 * pulse;
@@ -547,7 +533,6 @@ function drawCastle(t) {
   ctx.stroke();
   ctx.restore();
 
-  // Towers
   const towers = [
     { x: -78, h: 120, w: 44, hue: 280 },
     { x:  78, h: 120, w: 44, hue: 280 },
@@ -558,7 +543,6 @@ function drawCastle(t) {
 
   drawMainSpire(0, 26, t, pulse);
 
-  // Floating crystals
   for (let i = 0; i < 3; i++) {
     const a = t * 0.6 + i * (Math.PI * 2 / 3);
     const orbitX = Math.cos(a) * 90;
@@ -580,7 +564,6 @@ function drawCastle(t) {
     ctx.restore();
   }
 
-  // Ground glow
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const gg = ctx.createRadialGradient(0, 26, 6, 0, 26, 220);
@@ -749,9 +732,8 @@ function drawBreedSynthesizer(t) {
   const p = platforms.left;
   ctx.save();
   ctx.translate(p.cx, p.cy - 6);
-  ctx.scale(0.85, 0.85);   // scale down to fit smaller platform
+  ctx.scale(0.85, 0.85);
 
-  // Pods
   const pods = [-52, 52];
   for (const px of pods) {
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
@@ -801,7 +783,6 @@ function drawBreedSynthesizer(t) {
     ctx.fill();
   }
 
-  // Central column
   ctx.fillStyle = '#1a0f30';
   roundRect(ctx, -14, -78, 28, 94, 8);
   ctx.fill();
@@ -816,7 +797,6 @@ function drawBreedSynthesizer(t) {
     ctx.stroke();
   }
 
-  // Top orb
   const topPulse = 0.75 + 0.25 * Math.sin(t * 2.2);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
@@ -834,7 +814,6 @@ function drawBreedSynthesizer(t) {
   ctx.arc(0, -92, 5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Connecting tubes
   ctx.strokeStyle = 'rgba(150,90,220,0.55)';
   ctx.lineWidth = 6;
   ctx.lineCap = 'round';
@@ -847,7 +826,6 @@ function drawBreedSynthesizer(t) {
 
   ctx.restore();
 
-  // Label
   ctx.save();
   ctx.font = 'bold 11px system-ui, sans-serif';
   ctx.textAlign = 'center';
@@ -865,7 +843,6 @@ function drawIncubationCenter(t) {
   ctx.translate(p.cx, p.cy - 6);
   ctx.scale(0.85, 0.85);
 
-  // Support arms
   ctx.strokeStyle = '#1a4a5a';
   ctx.lineWidth = 8;
   ctx.lineCap = 'round';
@@ -889,7 +866,6 @@ function drawIncubationCenter(t) {
   ctx.stroke();
   ctx.restore();
 
-  // Egg
   const pulse = 0.75 + 0.25 * Math.sin(t * 1.5);
   ctx.save();
   ctx.shadowColor = '#00e5ff';
@@ -920,14 +896,12 @@ function drawIncubationCenter(t) {
   ctx.closePath();
   ctx.stroke();
 
-  // Sparkle
   const sp = 0.5 + 0.5 * Math.sin(t * 3);
   ctx.fillStyle = `rgba(255,255,255,${0.9 * sp})`;
   ctx.beginPath();
   ctx.arc(-4, -50, 3.5 + sp * 1.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Orbiting ring
   ctx.save();
   ctx.translate(0, -44);
   ctx.rotate(t * 0.6);
@@ -940,7 +914,6 @@ function drawIncubationCenter(t) {
   ctx.setLineDash([]);
   ctx.restore();
 
-  // Pedestal
   ctx.fillStyle = '#0e4a5a';
   roundRect(ctx, -30, 6, 60, 12, 5);
   ctx.fill();
@@ -951,7 +924,6 @@ function drawIncubationCenter(t) {
 
   ctx.restore();
 
-  // Label
   ctx.save();
   ctx.font = 'bold 11px system-ui, sans-serif';
   ctx.textAlign = 'center';
@@ -963,10 +935,9 @@ function drawIncubationCenter(t) {
 }
 
 /* =====================================================
-   ISLAND BASE — completely redesigned bottom
+   ISLAND BASE — clean crystalline bottom
    ===================================================== */
 function drawIslandBase(t) {
-  // Build path as Path2D so we can reuse it for fill + clip + stroke
   const path = new Path2D();
   path.moveTo(-RX, 0);
   path.bezierCurveTo(-RX - 30, 200, -RX + 80, 420, -180, BOT - 30);
@@ -974,7 +945,6 @@ function drawIslandBase(t) {
   path.bezierCurveTo(RX - 80, 420, RX + 30, 200, RX, 0);
   path.closePath();
 
-  // ---- 1. Main gradient body ----
   const g = ctx.createLinearGradient(0, -50, 0, BOT + 30);
   g.addColorStop(0.00, '#0a3a5c');
   g.addColorStop(0.22, '#0e6083');
@@ -984,11 +954,9 @@ function drawIslandBase(t) {
   ctx.fillStyle = g;
   ctx.fill(path);
 
-  // ---- 2. Details clipped to the base ----
   ctx.save();
   ctx.clip(path);
 
-  // 2a. Soft vertical facets — alternating light/shadow columns
   for (let x = -RX - 60, i = 0; x < RX + 60; x += 90, i++) {
     if (i % 2 === 1) {
       ctx.fillStyle = 'rgba(0,20,45,0.14)';
@@ -999,7 +967,6 @@ function drawIslandBase(t) {
     }
   }
 
-  // 2b. Subtle horizontal strata
   ctx.globalAlpha = 0.10;
   ctx.fillStyle = '#000';
   for (let i = 0; i < 2; i++) {
@@ -1018,7 +985,6 @@ function drawIslandBase(t) {
   }
   ctx.globalAlpha = 1;
 
-  // 2c. Glowing window portals (clean, symmetric layout)
   const windows = [
     { x: -250, y: 240, w: 130, h: 82 },
     { x:  250, y: 240, w: 130, h: 82 },
@@ -1026,7 +992,6 @@ function drawIslandBase(t) {
     { x:   70, y: 370, w: 100, h: 62 },
   ];
   for (const w of windows) {
-    // Outer glow
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     const og = ctx.createRadialGradient(w.x, w.y, 4, w.x, w.y, w.w * 0.95);
@@ -1038,7 +1003,6 @@ function drawIslandBase(t) {
     ctx.fill();
     ctx.restore();
 
-    // Inner bright
     const ig = ctx.createRadialGradient(w.x, w.y - 6, 3, w.x, w.y, w.w * 0.4);
     ig.addColorStop(0, 'rgba(255,255,255,0.95)');
     ig.addColorStop(0.6, 'rgba(140,235,255,0.55)');
@@ -1048,14 +1012,12 @@ function drawIslandBase(t) {
     ctx.ellipse(w.x, w.y - 6, w.w * 0.34, w.h * 0.34, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rim line
     ctx.strokeStyle = 'rgba(180,250,255,0.65)';
     ctx.lineWidth = 2;
     roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 24);
     ctx.stroke();
   }
 
-  // 2d. Thin vertical glowing seams connecting the windows
   ctx.strokeStyle = 'rgba(140,240,255,0.22)';
   ctx.lineWidth = 1.5;
   for (const w of windows) {
@@ -1065,9 +1027,8 @@ function drawIslandBase(t) {
     ctx.stroke();
   }
 
-  ctx.restore(); // end clip
+  ctx.restore();
 
-  // ---- 3. Bottom tip glow ----
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   const bg = ctx.createRadialGradient(0, BOT - 40, 20, 0, BOT - 40, 400);
@@ -1080,7 +1041,6 @@ function drawIslandBase(t) {
   ctx.fill();
   ctx.restore();
 
-  // ---- 4. Bright rim edge ----
   ctx.strokeStyle = 'rgba(160,245,255,0.5)';
   ctx.lineWidth = 3;
   ctx.stroke(path);
@@ -1091,18 +1051,13 @@ function drawCrystalRim(t) {
   const BUMPS = 40;
   for (let i = 0; i < BUMPS; i++) {
     const a = (i / BUMPS) * Math.PI * 2 - Math.PI / 2;
-
-    // Skip crystals on the front / bottom of the rim so the base reads clean
     if (Math.sin(a) > 0.35) continue;
 
     const bx = Math.cos(a) * RX;
     const by = Math.sin(a) * RY;
-
-    // Taller at the back, shorter toward the sides
     const centerBias = Math.max(0, -Math.sin(a));
     const sizeMod = 0.55 + 0.75 * centerBias;
     const size = (16 + Math.sin(i * 1.7) * 6) * sizeMod;
-
     const hue = 280 + 60 * centerBias;
     drawCrystalSpikeFast(bx, by, a, size, hue, 0.9);
   }
@@ -1112,7 +1067,6 @@ function drawCrystalRim(t) {
 function drawVoidSurface(t) {
   ctx.save();
 
-  // Deep void gradient
   const voidGrad = ctx.createRadialGradient(-50, -50, 20, 0, 0, GRX);
   voidGrad.addColorStop(0, '#1a0033');
   voidGrad.addColorStop(0.6, '#0d001a');
@@ -1122,7 +1076,6 @@ function drawVoidSurface(t) {
   ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Rim glow rings (three strokes, NO shadowBlur)
   ctx.strokeStyle = 'rgba(140, 80, 220, 0.16)';
   ctx.lineWidth = 40;
   ctx.beginPath();
@@ -1141,7 +1094,6 @@ function drawVoidSurface(t) {
   ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Subtle void swirls
   ctx.globalAlpha = 0.07;
   ctx.strokeStyle = '#cc88ff';
   ctx.lineWidth = 14;
@@ -1153,7 +1105,6 @@ function drawVoidSurface(t) {
   }
   ctx.globalAlpha = 1;
 
-  // Small floating crystals on the void surface
   const rnd = mulberry32(777);
   for (let i = 0; i < 5; i++) {
     const a = rnd() * Math.PI * 2;
@@ -1246,7 +1197,6 @@ function drawIsland(t) {
   ctx.save();
   ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
 
-  // Ground shadow
   ctx.save();
   ctx.globalAlpha = 0.14;
   ctx.fillStyle = '#000';
@@ -1255,7 +1205,6 @@ function drawIsland(t) {
   ctx.fill();
   ctx.restore();
 
-  // Back to front
   drawIslandBase(t);
   drawCrystalRim(t);
   drawVoidSurface(t);
@@ -1266,7 +1215,6 @@ function drawIsland(t) {
   drawBreedSynthesizer(t);
   drawIncubationCenter(t);
 
-  // Final rim accent
   ctx.strokeStyle = 'rgba(255, 150, 255, 0.3)';
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -1332,7 +1280,6 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerup',    () => { isDragging = false; });
 canvas.addEventListener('pointercancel',() => { isDragging = false; });
 
-/* Smooth cursor-pivoted zoom */
 const ZOOM_STEP = 0.08;
 
 canvas.addEventListener('wheel', (e) => {
@@ -1355,9 +1302,7 @@ canvas.addEventListener('wheel', (e) => {
   clampCamera();
 }, { passive: false });
 
-/* ------------------------- INITIAL CAMERA FIT ------------------------- */
 function fitCamera() {
-  // Scene bounding box ≈ 1240 wide × 1180 tall
   const zoomX = (W * 0.92) / 1240;
   const zoomY = (H * 0.90) / 1180;
   state.cam.zoom = Math.max(CAM_LIMITS.zoomMin,
