@@ -220,7 +220,6 @@
   }
   #market-screen.open { opacity:1; pointer-events:auto; }
 
-  /* Ambient glows */
   #market-screen::before {
     content:""; position:absolute; inset:0; pointer-events:none;
     background:
@@ -228,39 +227,25 @@
       radial-gradient(ellipse 40% 60% at 92% 100%, rgba(0,200,255,.14), transparent 70%);
   }
 
-  /* ---- Header (like MSM top bar) ---- */
+  /* ---- Header (no level badge) ---- */
   .market-header {
     position:relative; z-index:3;
-    padding:14px 22px;
+    padding:18px 22px 14px;
     display:flex; align-items:center; justify-content:space-between;
     flex-shrink:0;
   }
-
-  .level-badge {
+  .market-title {
+    font-size:22px; font-weight:900; letter-spacing:2px; color:#fff;
+    text-shadow:0 0 20px rgba(180,100,255,.7), 0 2px 0 rgba(0,0,0,.4);
     display:flex; align-items:center; gap:12px;
   }
-  .level-star {
-    width:44px; height:44px;
-    background:radial-gradient(circle at 40% 35%, #b8ff8a, #4fae2a 55%, #2a6e10);
-    clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    box-shadow:0 0 18px rgba(120,255,80,.6);
-    filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));
+  .market-title .title-dot {
+    width:34px; height:34px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #e9d5ff, #a855f7 55%, #6b21a8);
+    box-shadow:0 0 22px rgba(180,110,255,.85), inset 0 -2px 6px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
   }
-  .level-bar {
-    background:linear-gradient(180deg, rgba(70,140,40,.95), rgba(40,90,20,.95));
-    border:2px solid rgba(180,255,140,.5);
-    border-radius:10px;
-    padding:6px 16px;
-    color:#fff; font-size:15px; font-weight:900; letter-spacing:1px;
-    text-shadow:0 1px 2px rgba(0,0,0,.6);
-    box-shadow:0 4px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15);
-    display:flex; align-items:center; gap:8px;
-  }
-  .level-bar .lv-label {
-    font-size:10px; letter-spacing:2px; opacity:.85;
-    text-transform:uppercase;
-  }
-  .level-bar .lv-num { font-size:18px; font-variant-numeric:tabular-nums; }
 
   .market-header .header-right {
     display:flex; align-items:center; gap:10px;
@@ -289,33 +274,6 @@
     box-shadow:0 2px 0 rgba(80,10,30,.9), 0 4px 10px rgba(220,60,120,.4);
   }
 
-  /* ---- Secondary top row (small icon pips like MSM) ---- */
-  .market-subrow {
-    position:relative; z-index:3;
-    padding:0 22px 12px;
-    display:flex; align-items:center; justify-content:space-between;
-    flex-shrink:0;
-  }
-  .pip-row { display:flex; gap:8px; }
-  .pip {
-    display:flex; align-items:center; gap:6px;
-    background:linear-gradient(180deg, rgba(60,30,25,.85), rgba(30,15,12,.9));
-    border:1.5px solid rgba(255,190,90,.35);
-    border-radius:10px; padding:5px 12px;
-    color:#ffe9a0; font-size:13px; font-weight:900;
-    box-shadow:0 3px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1);
-    font-variant-numeric:tabular-nums;
-  }
-  .pip .pip-icon {
-    width:16px; height:16px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #ffe9a0, #f59e0b 60%, #92400e);
-    box-shadow:inset 0 -1px 2px rgba(0,0,0,.4);
-    flex-shrink:0;
-  }
-  .pip .pip-icon.wrench {
-    background:radial-gradient(circle at 35% 30%, #d0d8e0, #6b7280 60%, #1f2937);
-  }
-
   /* ---- Main monster grid ---- */
   .market-main {
     position:relative; z-index:3;
@@ -339,7 +297,6 @@
   @media (max-width:900px) { .monster-grid { grid-template-columns:repeat(2, 1fr); } }
   @media (max-width:520px) { .monster-grid { grid-template-columns:1fr; } }
 
-  /* ---- Monster card ---- */
   .m-card {
     position:relative; cursor:pointer;
     display:flex; flex-direction:column;
@@ -356,10 +313,9 @@
       0 0 0 3px rgba(250,204,21,.4);
   }
 
-  /* Name banner on top (like MSM) */
   .m-card-name {
     position:relative; z-index:2;
-    margin:0 auto -8px; /* overlaps the body slightly */
+    margin:0 auto -8px;
     padding:7px 20px;
     background:linear-gradient(180deg, #4a2a80, #2c1655);
     border:2px solid #7a4ec0;
@@ -377,7 +333,6 @@
     color:#ffe9a0;
   }
 
-  /* Body — the monster portrait box */
   .m-card-body {
     position:relative;
     flex:1;
@@ -396,7 +351,6 @@
     display:block; width:100%; height:100%;
   }
 
-  /* Element badge row (top-left inside body) */
   .m-elements {
     position:absolute; top:8px; left:8px;
     display:flex; gap:4px; z-index:2;
@@ -411,7 +365,6 @@
   .m-elem svg { width:16px; height:16px; }
   .m-elem.star svg { fill:#ffe066; filter:drop-shadow(0 0 3px #ffd76a); }
 
-  /* Cost row (bottom of body) */
   .m-cost {
     position:absolute; bottom:0; left:0; right:0; z-index:2;
     padding:7px 10px;
@@ -441,7 +394,6 @@
   }
   .m-unaffordable .m-cost-left { color:#ff8080; }
 
-  /* ---- Empty state ---- */
   .market-empty {
     grid-column: 1 / -1;
     padding: 60px 20px;
@@ -451,7 +403,7 @@
     letter-spacing: .5px;
   }
 
-  /* ---- Bottom action bar (MSM style) ---- */
+  /* ---- Bottom action bar ---- */
   .market-action-bar {
     position:relative; z-index:3;
     padding:12px 22px 18px;
@@ -520,9 +472,100 @@
     box-shadow:0 0 18px rgba(250,204,21,.5);
   }
 
+  /* ---------- Incubator status pill ---------- */
+  #incubator-status {
+    position:fixed; top:84px; left:50%; transform:translateX(-50%) translateY(-20px);
+    display:flex; align-items:center; gap:12px;
+    padding:10px 18px 10px 10px; border-radius:999px;
+    background:linear-gradient(180deg, rgba(60,25,105,.96), rgba(25,8,50,.98));
+    border:1.5px solid rgba(200,150,255,.5);
+    box-shadow:0 10px 26px rgba(120,60,220,.55), inset 0 1px 0 rgba(255,255,255,.12);
+    z-index:45; pointer-events:none;
+    opacity:0; transition:opacity .3s ease, transform .3s ease;
+  }
+  #incubator-status.show {
+    opacity:1; transform:translateX(-50%) translateY(0);
+  }
+  #incubator-status.ready {
+    background:linear-gradient(180deg, rgba(50,160,80,.96), rgba(20,80,30,.98));
+    border-color:rgba(180,255,140,.7);
+    box-shadow:0 10px 26px rgba(100,220,80,.55), 0 0 24px rgba(180,255,140,.4);
+  }
+  .inc-egg {
+    width:40px; height:46px; position:relative; flex-shrink:0;
+    background:radial-gradient(ellipse at 40% 30%, rgba(255,240,180,.5), rgba(180,120,255,.6) 55%, rgba(60,20,110,.8));
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    border:1.5px solid rgba(255,220,140,.7);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 16px rgba(255,200,80,.5), inset 0 -6px 12px rgba(0,0,0,.3);
+  }
+  .inc-egg .inc-star {
+    font-size:18px;
+    color:#ffe066;
+    text-shadow:0 0 8px rgba(255,220,100,.9);
+    animation:incStarPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes incStarPulse {
+    0%,100% { transform:scale(1); opacity:.85; }
+    50%     { transform:scale(1.15); opacity:1; }
+  }
+  .inc-info { display:flex; flex-direction:column; line-height:1.15; }
+  .inc-title {
+    font-size:11px; font-weight:800; letter-spacing:1.5px;
+    color:rgba(220,190,255,.85); text-transform:uppercase;
+  }
+  .inc-timer {
+    font-size:16px; font-weight:900; color:#fff;
+    font-variant-numeric:tabular-nums;
+    text-shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+  #incubator-status.ready .inc-title { color:rgba(200,255,200,.9); }
+  #incubator-status.ready .inc-timer { color:#e0ffd0; }
+
+  /* ---------- Placement panel ---------- */
+  #placement-panel {
+    position:fixed; bottom:110px; left:50%; transform:translateX(-50%) translateY(20px);
+    display:flex; align-items:center; gap:14px;
+    padding:14px 22px; border-radius:20px;
+    background:linear-gradient(180deg, rgba(60,25,105,.98), rgba(25,8,50,.99));
+    border:1.5px solid rgba(220,170,255,.6);
+    box-shadow:0 12px 32px rgba(120,60,220,.6), inset 0 1px 0 rgba(255,255,255,.12);
+    z-index:45; pointer-events:none;
+    opacity:0; transition:opacity .3s ease, transform .3s ease;
+  }
+  #placement-panel.show { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+  .placement-text {
+    color:#fff; font-size:14px; font-weight:800; letter-spacing:.5px;
+    text-shadow:0 1px 3px rgba(0,0,0,.5);
+  }
+  .placement-text small {
+    display:block; font-size:11px; font-weight:600; letter-spacing:.3px;
+    color:rgba(220,200,255,.75); margin-top:3px;
+  }
+  .placement-btns { display:flex; gap:8px; margin-left:6px; }
+  .placement-btn {
+    padding:10px 18px; border-radius:12px; cursor:pointer;
+    font-family:inherit; font-size:13px; font-weight:900; letter-spacing:.8px;
+    border:1.5px solid; transition:transform .1s, filter .15s;
+  }
+  .placement-btn:hover { filter:brightness(1.12); }
+  .placement-btn:active { transform:translateY(2px); }
+  .placement-btn.confirm-place {
+    background:linear-gradient(180deg, rgba(120,220,90,.95), rgba(60,150,40,.98));
+    border-color:rgba(180,255,140,.7);
+    color:#fff;
+    box-shadow:0 4px 0 rgba(20,80,20,.9), 0 8px 16px rgba(100,220,80,.5);
+  }
+  .placement-btn.cancel-place {
+    background:linear-gradient(180deg, rgba(200,60,80,.92), rgba(120,20,40,.95));
+    border-color:rgba(255,150,170,.6);
+    color:#fff;
+    box-shadow:0 4px 0 rgba(80,10,20,.9), 0 8px 16px rgba(200,50,80,.4);
+  }
+
   /* ---------- Toast ---------- */
   #toast {
-    position:fixed; top:100px; left:50%; transform:translateX(-50%) translateY(-20px);
+    position:fixed; top:170px; left:50%; transform:translateX(-50%) translateY(-20px);
     padding:14px 26px; border-radius:16px;
     background:linear-gradient(180deg, rgba(80,35,140,.98), rgba(35,12,70,.98));
     border:1.5px solid rgba(210,160,255,.6);
@@ -581,6 +624,27 @@
         <div class="res-value" id="gem-value">47</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Incubator status pill -->
+<div id="incubator-status">
+  <div class="inc-egg"><span class="inc-star">✦</span></div>
+  <div class="inc-info">
+    <div class="inc-title" id="inc-title">Incubating</div>
+    <div class="inc-timer" id="inc-timer">1:00</div>
+  </div>
+</div>
+
+<!-- Placement panel -->
+<div id="placement-panel">
+  <div class="placement-text">
+    Place Stellarius
+    <small>Tap anywhere on the void to position him</small>
+  </div>
+  <div class="placement-btns">
+    <button class="placement-btn cancel-place" id="place-cancel">Cancel</button>
+    <button class="placement-btn confirm-place" id="place-confirm">Place</button>
   </div>
 </div>
 
@@ -650,17 +714,12 @@
   </div>
 </div>
 
-<!-- ================= FULL-SCREEN MARKET (MSM style) ================= -->
+<!-- ================= FULL-SCREEN MARKET ================= -->
 <div id="market-screen">
 
-  <!-- Top bar: Level + Currency + Close -->
   <div class="market-header">
-    <div class="level-badge">
-      <div class="level-star"></div>
-      <div class="level-bar">
-        <span class="lv-label">Level</span>
-        <span class="lv-num">16</span>
-      </div>
+    <div class="market-title">
+      <span class="title-dot">🛒</span>Market
     </div>
     <div class="header-right">
       <div class="resource">
@@ -679,22 +738,10 @@
     </div>
   </div>
 
-  <!-- Small icon pips row (like MSM) -->
-  <div class="market-subrow">
-    <div class="pip-row">
-      <div class="pip"><span class="pip-icon"></span>3</div>
-    </div>
-    <div class="pip-row">
-      <div class="pip"><span class="pip-icon wrench"></span>34</div>
-    </div>
-  </div>
-
-  <!-- Monster grid -->
   <div class="market-main">
     <div class="monster-grid" id="monster-grid"></div>
   </div>
 
-  <!-- Bottom action bar -->
   <div class="market-action-bar">
     <div class="action-left">
       <button class="action-btn cancel" id="market-cancel" title="Cancel">✕</button>
@@ -722,7 +769,7 @@
 
 <script>
 /* =========================================================================
-   NYXARA — Cosmic Islet with Stellarius
+   NYXARA — Cosmic Islet with Stellarius + Incubator flow
    ========================================================================= */
 
 /* ------------------------------ CANVAS ------------------------------ */
@@ -754,8 +801,11 @@ const state = {
   lowDetail: false,
   shards: 1250,
   gems: 47,
-  monsters: [],
+  monsters: [],      // placed monsters on the island
   ownedIds: new Set(),
+  incubating: null,  // { item, startTime, duration }
+  placingItem: null, // { item, offsetX, offsetY } while positioning
+  hoverIsland: null, // { x, y } world coords of cursor on island
 };
 
 /* --------------------------- HELPERS --------------------------- */
@@ -793,6 +843,12 @@ function updateCurrencyUI() {
   const mg = document.getElementById('market-gem-value');
   if (ms) ms.textContent = s;
   if (mg) mg.textContent = g;
+}
+function formatTime(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 /* =========================================================================
@@ -1560,13 +1616,21 @@ function drawBreedSynthesizer(t) {
   ctx.restore();
 }
 
-/* ----------------------------- INCUBATION CENTER ----------------------------- */
+/* ----------------------------- INCUBATION CENTER -----------------------------
+   Now displays the actual incubating egg + timer when active,
+   or a "ready to place" glow when the egg has hatched.
+   ----------------------------------------------------------------------- */
 function drawIncubationCenter(t) {
   const p = platforms.right;
   ctx.save();
   ctx.translate(p.cx, p.cy - 6);
   ctx.scale(0.95, 0.95);
 
+  const isActive = !!state.incubating;
+  const isReady  = state.incubating && state.incubating.ready;
+  const pulse    = 0.75 + 0.25 * Math.sin(t * 1.5);
+
+  // Support arms
   ctx.strokeStyle = '#1a4a5a';
   ctx.lineWidth = 8;
   ctx.lineCap = 'round';
@@ -1579,9 +1643,9 @@ function drawIncubationCenter(t) {
 
   if (!state.lowDetail) {
     ctx.save();
-    ctx.shadowColor = '#00d5ff';
+    ctx.shadowColor = isReady ? '#b8ff8a' : '#00d5ff';
     ctx.shadowBlur = 10;
-    ctx.strokeStyle = 'rgba(120,240,255,0.7)';
+    ctx.strokeStyle = isReady ? 'rgba(200,255,150,0.85)' : 'rgba(120,240,255,0.7)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(-52, 12);
@@ -1592,56 +1656,168 @@ function drawIncubationCenter(t) {
     ctx.restore();
   }
 
-  const pulse = 0.75 + 0.25 * Math.sin(t * 1.5);
-  ctx.save();
-  if (!state.lowDetail) {
-    ctx.shadowColor = '#00e5ff';
-    ctx.shadowBlur = 24 * pulse;
+  if (isActive) {
+    // Draw the actual incubating egg with a custom star pattern
+    const beatPulse = isReady
+      ? (0.85 + 0.15 * Math.sin(t * 6))    // faster pulse when ready
+      : (0.7 + 0.3 * Math.sin(t * 1.8));
+
+    ctx.save();
+    if (!state.lowDetail) {
+      ctx.shadowColor = isReady ? '#b8ff8a' : '#ffd76a';
+      ctx.shadowBlur = 26 * beatPulse;
+    }
+
+    // Egg base
+    const eg = ctx.createRadialGradient(-6, -50, 4, 0, -46, 42);
+    if (isReady) {
+      eg.addColorStop(0, `rgba(220,255,180,${0.9 * beatPulse})`);
+      eg.addColorStop(0.5, `rgba(140,240,90,${0.7 * beatPulse})`);
+      eg.addColorStop(1, `rgba(40,140,30,${0.5 * beatPulse})`);
+    } else {
+      eg.addColorStop(0, `rgba(255,240,180,${0.9 * beatPulse})`);
+      eg.addColorStop(0.5, `rgba(200,140,255,${0.7 * beatPulse})`);
+      eg.addColorStop(1, `rgba(80,30,150,${0.5 * beatPulse})`);
+    }
+    ctx.fillStyle = eg;
+    ctx.beginPath();
+    ctx.moveTo(0, -88);
+    ctx.bezierCurveTo(28, -88, 34, -56, 34, -42);
+    ctx.bezierCurveTo(34, -12, 16, 8, 0, 8);
+    ctx.bezierCurveTo(-16, 8, -34, -12, -34, -42);
+    ctx.bezierCurveTo(-34, -56, -28, -88, 0, -88);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Egg rim
+    ctx.strokeStyle = isReady
+      ? `rgba(220,255,180,${0.8 * beatPulse})`
+      : `rgba(255,230,170,${0.8 * beatPulse})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -84);
+    ctx.bezierCurveTo(24, -84, 30, -56, 30, -42);
+    ctx.bezierCurveTo(30, -14, 14, 4, 0, 4);
+    ctx.bezierCurveTo(-14, 4, -30, -14, -30, -42);
+    ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Custom star pattern on the egg — 3 small stars + a big central star
+    const innerGlow = isReady ? '#e0ffd0' : '#ffe9a0';
+    ctx.save();
+    if (!state.lowDetail) {
+      ctx.shadowColor = innerGlow;
+      ctx.shadowBlur = 12 * beatPulse;
+    }
+    ctx.fillStyle = innerGlow;
+
+    // Big central star
+    const spin = t * (isReady ? 1.4 : 0.6);
+    ctx.save();
+    ctx.translate(0, -46);
+    ctx.rotate(spin);
+    drawStarPath(ctx, 0, 0, 12, 5);
+    ctx.fill();
+    ctx.restore();
+
+    // Small satellite stars
+    const smallStars = [
+      { a: 0.6, r: 18, size: 5 },
+      { a: 2.6, r: 16, size: 4.5 },
+      { a: 4.6, r: 17, size: 5 },
+    ];
+    for (const s of smallStars) {
+      const sx = Math.cos(s.a + spin * 0.5) * s.r;
+      const sy = -52 + Math.sin(s.a + spin * 0.5) * s.r * 0.7;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.rotate(-spin);
+      drawStarPath(ctx, 0, 0, s.size, 5);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Ready glow rays when hatched
+    if (isReady && !state.lowDetail) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const rays = 6;
+      for (let i = 0; i < rays; i++) {
+        const a = t * 0.8 + i * (Math.PI * 2 / rays);
+        const len = 60 + Math.sin(t * 3 + i) * 10;
+        const gx = Math.cos(a) * len * 0.6;
+        const gy = -46 + Math.sin(a) * len * 0.4;
+        const rg = ctx.createRadialGradient(gx, gy, 2, gx, gy, 22);
+        rg.addColorStop(0, 'rgba(220,255,180,0.5)');
+        rg.addColorStop(1, 'rgba(180,255,140,0)');
+        ctx.fillStyle = rg;
+        ctx.beginPath();
+        ctx.arc(gx, gy, 22, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+  } else {
+    // Idle state — original empty egg silhouette
+    ctx.save();
+    if (!state.lowDetail) {
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 24 * pulse;
+    }
+    const eg = ctx.createRadialGradient(-6, -50, 4, 0, -46, 42);
+    eg.addColorStop(0, `rgba(220,255,255,${0.55 * pulse})`);
+    eg.addColorStop(0.5, `rgba(80,200,255,${0.35 * pulse})`);
+    eg.addColorStop(1, `rgba(20,90,150,${0.25 * pulse})`);
+    ctx.fillStyle = eg;
+    ctx.beginPath();
+    ctx.moveTo(0, -88);
+    ctx.bezierCurveTo(28, -88, 34, -56, 34, -42);
+    ctx.bezierCurveTo(34, -12, 16, 8, 0, 8);
+    ctx.bezierCurveTo(-16, 8, -34, -12, -34, -42);
+    ctx.bezierCurveTo(-34, -56, -28, -88, 0, -88);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = `rgba(200,250,255,${0.6 * pulse})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -84);
+    ctx.bezierCurveTo(24, -84, 30, -56, 30, -42);
+    ctx.bezierCurveTo(30, -14, 14, 4, 0, 4);
+    ctx.bezierCurveTo(-14, 4, -30, -14, -30, -42);
+    ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Faint sparkle
+    const sp = 0.5 + 0.5 * Math.sin(t * 3);
+    ctx.fillStyle = `rgba(255,255,255,${0.6 * sp})`;
+    ctx.beginPath();
+    ctx.arc(-4, -50, 3 + sp * 1.2, 0, Math.PI * 2);
+    ctx.fill();
   }
-  const eg = ctx.createRadialGradient(-6, -50, 4, 0, -46, 42);
-  eg.addColorStop(0, `rgba(220,255,255,${0.85 * pulse})`);
-  eg.addColorStop(0.5, `rgba(80,200,255,${0.6 * pulse})`);
-  eg.addColorStop(1, `rgba(20,90,150,${0.4 * pulse})`);
-  ctx.fillStyle = eg;
-  ctx.beginPath();
-  ctx.moveTo(0, -88);
-  ctx.bezierCurveTo(28, -88, 34, -56, 34, -42);
-  ctx.bezierCurveTo(34, -12, 16, 8, 0, 8);
-  ctx.bezierCurveTo(-16, 8, -34, -12, -34, -42);
-  ctx.bezierCurveTo(-34, -56, -28, -88, 0, -88);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
 
-  ctx.strokeStyle = `rgba(200,250,255,${0.7 * pulse})`;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, -84);
-  ctx.bezierCurveTo(24, -84, 30, -56, 30, -42);
-  ctx.bezierCurveTo(30, -14, 14, 4, 0, 4);
-  ctx.bezierCurveTo(-14, 4, -30, -14, -30, -42);
-  ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
-  ctx.closePath();
-  ctx.stroke();
+  // Orbiting dashed ring (only when idle, otherwise the egg dominates)
+  if (!isActive) {
+    ctx.save();
+    ctx.translate(0, -44);
+    ctx.rotate(t * 0.6);
+    ctx.strokeStyle = 'rgba(120,230,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 12]);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 52, 18, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
 
-  const sp = 0.5 + 0.5 * Math.sin(t * 3);
-  ctx.fillStyle = `rgba(255,255,255,${0.9 * sp})`;
-  ctx.beginPath();
-  ctx.arc(-4, -50, 3.5 + sp * 1.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.save();
-  ctx.translate(0, -44);
-  ctx.rotate(t * 0.6);
-  ctx.strokeStyle = 'rgba(120,230,255,0.55)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([10, 12]);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 52, 18, 0, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-
+  // Pedestal
   ctx.fillStyle = '#0e4a5a';
   roundRect(ctx, -30, 6, 60, 12, 5);
   ctx.fill();
@@ -1652,16 +1828,48 @@ function drawIncubationCenter(t) {
 
   ctx.restore();
 
+  // Label
   ctx.save();
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(140,240,255,0.9)';
-  if (!state.lowDetail) {
-    ctx.shadowColor = '#00d5ff';
-    ctx.shadowBlur = 8;
+  if (isReady) {
+    ctx.fillStyle = 'rgba(200,255,150,0.95)';
+    if (!state.lowDetail) {
+      ctx.shadowColor = '#b8ff8a';
+      ctx.shadowBlur = 12;
+    }
+    ctx.fillText('✦ READY TO HATCH ✦', p.cx, p.cy + 82);
+  } else if (isActive) {
+    ctx.fillStyle = 'rgba(255,220,140,0.95)';
+    if (!state.lowDetail) {
+      ctx.shadowColor = '#ffd76a';
+      ctx.shadowBlur = 10;
+    }
+    ctx.fillText('◈ INCUBATING ◈', p.cx, p.cy + 82);
+  } else {
+    ctx.fillStyle = 'rgba(140,240,255,0.9)';
+    if (!state.lowDetail) {
+      ctx.shadowColor = '#00d5ff';
+      ctx.shadowBlur = 8;
+    }
+    ctx.fillText('◈ INCUBATION CENTER ◈', p.cx, p.cy + 82);
   }
-  ctx.fillText('◈ INCUBATION CENTER ◈', p.cx, p.cy + 82);
   ctx.restore();
+}
+
+/* Helper: 5-pointed star path */
+function drawStarPath(g, cx, cy, r, points) {
+  const inner = r * 0.42;
+  g.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const rad = i % 2 === 0 ? r : inner;
+    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+    const px = cx + Math.cos(a) * rad;
+    const py = cy + Math.sin(a) * rad;
+    if (i === 0) g.moveTo(px, py);
+    else         g.lineTo(px, py);
+  }
+  g.closePath();
 }
 
 /* =====================================================
@@ -1922,11 +2130,7 @@ function drawDebris(t) {
 }
 
 /* =========================================================================
-   STELLARIUS — reusable draw (used on island AND in market previews)
-   -----------------------------------------------------------------------
-   ctx is the target 2D context. cx/cy is the center. scale controls size.
-   t is time (seconds). beatPhase is 0..1 for hit animation.
-   previewMode shrinks certain details for small card renders.
+   STELLARIUS SHAPE — shared between island and market previews
    ========================================================================= */
 function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false) {
   const hitPhase = Math.max(0, 1 - beatPhase * 3);
@@ -1939,7 +2143,6 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
   g.translate(cx, cy + idleBob);
   g.scale(scale, scale);
 
-  // Halo (skip in previewMode to save perf, or if lowDetail)
   if (!state.lowDetail && !previewMode) {
     g.save();
     g.globalCompositeOperation = 'lighter';
@@ -2022,7 +2225,7 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
   // Star badge
   drawStarBadgeOn(g, 0, 8, t, glow, previewMode);
 
-  // Drum + sticks
+  // Drum
   const drumY = 18;
   const drumW = 34;
   const drumH = 20;
@@ -2062,7 +2265,7 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
   g.lineTo( drumW * 0.35 + stickTilt * 6, drumY - 6);
   g.stroke();
 
-  // Orbiting shards (only in full mode)
+  // Orbiting shards
   if (!previewMode) {
     const shardCount = state.lowDetail ? 3 : 5;
     for (let i = 0; i < shardCount; i++) {
@@ -2137,7 +2340,6 @@ function drawStellarius(m, t) {
   const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
   const beat = (t * (STELL_BPM / 60)) % 1;
 
-  // Ground shadow
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#000';
@@ -2146,13 +2348,58 @@ function drawStellarius(m, t) {
   ctx.fill();
   ctx.restore();
 
+  // 2x2 grid footprint overlay (only visible when placing)
+  if (state.placingItem && state.placingItem.item.id === m.id) {
+    drawFootprintOverlay(wx, wy, 2);
+  }
+
   drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
+}
+
+/* Draw a 2×2 grid footprint helper (for the placement preview) */
+function drawFootprintOverlay(wx, wy, size) {
+  const TW = 72 * (RX / 780) * state.cam.zoom * 0.5;
+  const TH = 36 * (RY / 390) * state.cam.zoom * 0.5;
+  ctx.save();
+  ctx.translate(wx, wy + 6);
+  ctx.globalAlpha = 0.4;
+  ctx.strokeStyle = '#7cffa0';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(120,255,160,0.18)';
+  for (let gx = 0; gx < size; gx++) {
+    for (let gy = 0; gy < size; gy++) {
+      const tx = (gx - gy) * (TW / 2);
+      const ty = (gx + gy) * (TH / 2) - size * TH / 2;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty - TH / 2);
+      ctx.lineTo(tx + TW / 2, ty);
+      ctx.lineTo(tx, ty + TH / 2);
+      ctx.lineTo(tx - TW / 2, ty);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 function drawMonsters(t) {
   const sorted = [...state.monsters].sort((a, b) => a.offsetY - b.offsetY);
   for (const m of sorted) {
     if (m.id === 'stellarius') drawStellarius(m, t);
+  }
+
+  // Draw ghost preview while placing
+  if (state.placingItem && state.hoverIsland) {
+    const m = state.placingItem;
+    const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
+    const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
+    const beat = (t * (STELL_BPM / 60)) % 1;
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    drawFootprintOverlay(wx, wy, 2);
+    drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
+    ctx.restore();
   }
 }
 
@@ -2214,11 +2461,51 @@ function render(now) {
   }
 
   tickStellariusAudio(t);
-
-  // Update all market card preview canvases
+  updateIncubation(t);
   updateMonsterCardPreviews(t);
 
   requestAnimationFrame(render);
+}
+
+/* ============================ INCUBATION TIMER ============================ */
+const INCUBATE_DURATION = 60; // seconds
+
+function startIncubation(item) {
+  state.incubating = {
+    item,
+    startTime: performance.now() / 1000,
+    duration: INCUBATE_DURATION,
+    ready: false,
+  };
+}
+
+function updateIncubation(t) {
+  const inc = state.incubating;
+  if (!inc) {
+    document.getElementById('incubator-status').classList.remove('show');
+    return;
+  }
+
+  const elapsed = t - inc.startTime;
+  const remaining = inc.duration - elapsed;
+
+  if (remaining <= 0 && !inc.ready) {
+    inc.ready = true;
+    showToast(`${inc.item.name} is ready to hatch!`, 'success');
+    // Update the incubation center visually to show it's ready
+    document.getElementById('incubator-status').classList.add('ready');
+    document.getElementById('inc-title').textContent = 'Ready to Hatch!';
+    document.getElementById('inc-timer').textContent = 'Tap the Incubator';
+  }
+
+  const statusEl = document.getElementById('incubator-status');
+  statusEl.classList.add('show');
+
+  if (!inc.ready) {
+    statusEl.classList.remove('ready');
+    document.getElementById('inc-title').textContent = `Incubating ${inc.item.name}`;
+    document.getElementById('inc-timer').textContent = formatTime(remaining);
+  }
 }
 
 /* ============================ INTERACTION ============================ */
@@ -2253,6 +2540,18 @@ canvas.addEventListener('pointerdown', (e) => {
   lastX = e.clientX; lastY = e.clientY;
 });
 canvas.addEventListener('pointermove', (e) => {
+  // Always track island hover position for placement preview
+  const w = screenToIslandWorld(e.clientX, e.clientY);
+  state.hoverIsland = w;
+
+  if (state.placingItem) {
+    // Snap to integer grid coords in island-space
+    const gx = Math.round(w.x / (RX / 780) / 40) * 40;
+    const gy = Math.round(w.y / (RY / 390) / 20) * 20;
+    state.placingItem.offsetX = gx;
+    state.placingItem.offsetY = gy;
+  }
+
   if (!isDragging) return;
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
@@ -2264,19 +2563,37 @@ canvas.addEventListener('pointermove', (e) => {
 });
 canvas.addEventListener('pointerup', (e) => {
   isDragging = false;
-  if (!dragMoved) {
-    const w = screenToIslandWorld(e.clientX, e.clientY);
-    const rx = w.x / (RX / 780);
-    const ry = w.y / (RY / 390);
-    for (const m of state.monsters) {
-      const dx = rx - m.offsetX;
-      const dy = ry - m.offsetY;
-      if (dx * dx + dy * dy < 60 * 60) {
-        if (m.id === 'stellarius') {
-          showToast('♪ Stellarius drums to the beat ♪');
-        }
-        break;
+  if (dragMoved) return;
+
+  const w = screenToIslandWorld(e.clientX, e.clientY);
+
+  // If placing a monster, tap confirms position
+  if (state.placingItem) {
+    confirmPlacement();
+    return;
+  }
+
+  // Check if the incubation center was tapped while an egg is ready
+  const incX = W / 2 + state.cam.x + platforms.right.cx * (RX / 780) * state.cam.zoom;
+  const incY = H * 0.45 + state.cam.y + (platforms.right.cy - 6) * (RY / 390) * state.cam.zoom;
+  const dxInc = e.clientX - incX;
+  const dyInc = e.clientY - incY;
+  if (state.incubating && state.incubating.ready && dxInc * dxInc + dyInc * dyInc < 90 * 90) {
+    beginPlacement(state.incubating.item);
+    return;
+  }
+
+  // Check if any placed monster was tapped
+  const rx = w.x / (RX / 780);
+  const ry = w.y / (RY / 390);
+  for (const m of state.monsters) {
+    const dx = rx - m.offsetX;
+    const dy = ry - m.offsetY;
+    if (dx * dx + dy * dy < 60 * 60) {
+      if (m.id === 'stellarius') {
+        showToast('♪ Stellarius drums to the beat ♪');
       }
+      break;
     }
   }
 });
@@ -2311,6 +2628,45 @@ function fitCamera() {
 }
 fitCamera();
 
+/* ============================ PLACEMENT FLOW ============================ */
+function beginPlacement(item) {
+  state.placingItem = {
+    item,
+    offsetX: 0,
+    offsetY: 40,
+  };
+  document.getElementById('placement-panel').classList.add('show');
+}
+
+function confirmPlacement() {
+  if (!state.placingItem) return;
+  const { item, offsetX, offsetY } = state.placingItem;
+
+  // Place the actual monster
+  state.monsters.push({
+    id: item.id,
+    name: item.name,
+    offsetX,
+    offsetY,
+  });
+
+  // Clear incubation
+  state.incubating = null;
+  state.placingItem = null;
+  document.getElementById('incubator-status').classList.remove('show', 'ready');
+  document.getElementById('placement-panel').classList.remove('show');
+
+  showToast(`${item.name} placed on Nyxara!`, 'success');
+}
+
+function cancelPlacement() {
+  state.placingItem = null;
+  document.getElementById('placement-panel').classList.remove('show');
+}
+
+document.getElementById('place-confirm').addEventListener('click', confirmPlacement);
+document.getElementById('place-cancel').addEventListener('click', cancelPlacement);
+
 /* =========================================================================
    SETTINGS UI
    ========================================================================= */
@@ -2333,7 +2689,8 @@ document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
-    closeMarket();
+    if (marketOpen) closeMarket();
+    if (state.placingItem) cancelPlacement();
   }
 });
 
@@ -2368,14 +2725,13 @@ wireSlider('slider-sfx', 'slider-sfx-val', (v) => {
 });
 
 /* =========================================================================
-   MARKET — MSM-style monster select
+   MARKET
    ========================================================================= */
 const marketScreen = document.getElementById('market-screen');
 const monsterGrid  = document.getElementById('monster-grid');
 const confirmBtn   = document.getElementById('market-confirm');
 const cancelBtn    = document.getElementById('market-cancel');
 
-/* Catalogue */
 const CATALOGUE = [
   {
     id: 'stellarius',
@@ -2385,12 +2741,11 @@ const CATALOGUE = [
     currency: 'shards',
     available: true,
     description: 'A cosmic percussionist born from a fallen star.',
+    size: 2,
   },
 ];
 
-/* Track dynamically created preview canvases */
 const previewCanvases = [];
-
 let selectedItem = null;
 
 function openMarket() {
@@ -2411,7 +2766,6 @@ document.getElementById('btn-market').addEventListener('click', openMarket);
 document.getElementById('market-close').addEventListener('click', closeMarket);
 cancelBtn.addEventListener('click', closeMarket);
 
-/* Element SVG */
 function starElementSVG() {
   return `<svg viewBox="0 0 24 24">
     <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
@@ -2435,14 +2789,18 @@ function buildMonsterGrid() {
     card.className = 'm-card';
     card.dataset.id = item.id;
     const owned = state.ownedIds.has(item.id);
+    const incubating = state.incubating && state.incubating.item.id === item.id;
+    const placed = state.monsters.some(m => m.id === item.id);
     const affordable = item.currency === 'gems'
       ? state.gems >= item.price
       : state.shards >= item.price;
-    if (!affordable && !owned) card.classList.add('m-unaffordable');
+    if (!affordable && !owned && !incubating) card.classList.add('m-unaffordable');
 
     const costIcon = item.currency === 'gems'
       ? '<span class="mini-gem"></span>'
       : '<span class="mini-shard"></span>';
+
+    const tag = placed ? 'Placed' : (incubating ? 'Incubating' : (owned ? 'Owned' : ''));
 
     card.innerHTML = `
       <div class="m-card-name">${item.name}</div>
@@ -2453,7 +2811,7 @@ function buildMonsterGrid() {
         </div>
         <div class="m-cost">
           <div class="m-cost-left">${costIcon}${item.price.toLocaleString()}</div>
-          ${owned ? '<div class="m-owned-tag">Owned</div>' : ''}
+          ${tag ? `<div class="m-owned-tag">${tag}</div>` : ''}
         </div>
       </div>
     `;
@@ -2467,7 +2825,6 @@ function buildMonsterGrid() {
 
     monsterGrid.appendChild(card);
 
-    // Wire up the preview canvas
     const cvs = card.querySelector('canvas');
     const ctxPreview = cvs.getContext('2d');
     previewCanvases.push({
@@ -2475,12 +2832,10 @@ function buildMonsterGrid() {
       ctx: ctxPreview,
       item,
       dpr: 1,
-      size: { w: 0, h: 0 },
     });
   });
 }
 
-/* Called every frame — draws the live monster preview in each card */
 function updateMonsterCardPreviews(t) {
   for (const p of previewCanvases) {
     const cvs = p.canvas;
@@ -2499,7 +2854,6 @@ function updateMonsterCardPreviews(t) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, rect.width, rect.height);
 
-    // Soft backdrop
     const bg = g.createRadialGradient(
       rect.width / 2, rect.height * 0.35, 10,
       rect.width / 2, rect.height * 0.5, Math.max(rect.width, rect.height) * 0.7
@@ -2509,9 +2863,7 @@ function updateMonsterCardPreviews(t) {
     g.fillStyle = bg;
     g.fillRect(0, 0, rect.width, rect.height);
 
-    // Scale to fit
     const scale = Math.min(rect.width, rect.height) / 200;
-
     const beat = (t * (STELL_BPM / 60)) % 1;
 
     g.save();
@@ -2521,13 +2873,14 @@ function updateMonsterCardPreviews(t) {
   }
 }
 
-/* Action buttons */
 function updateActionButtons() {
   if (!selectedItem) {
     confirmBtn.disabled = true;
     return;
   }
-  const owned = state.ownedIds.has(selectedItem.id);
+  const owned = state.ownedIds.has(selectedItem.id) ||
+                (state.incubating && state.incubating.item.id === selectedItem.id) ||
+                state.monsters.some(m => m.id === selectedItem.id);
   const affordable = selectedItem.currency === 'gems'
     ? state.gems >= selectedItem.price
     : state.shards >= selectedItem.price;
@@ -2537,7 +2890,12 @@ function updateActionButtons() {
 
 confirmBtn.addEventListener('click', () => {
   if (!selectedItem) return;
-  if (state.ownedIds.has(selectedItem.id)) {
+
+  const alreadyOwned = state.ownedIds.has(selectedItem.id) ||
+                       (state.incubating && state.incubating.item.id === selectedItem.id) ||
+                       state.monsters.some(m => m.id === selectedItem.id);
+
+  if (alreadyOwned) {
     showToast('Already owned!', 'error');
     return;
   }
@@ -2563,31 +2921,19 @@ confirmBtn.addEventListener('click', () => {
 
   state.ownedIds.add(selectedItem.id);
 
-  // Place on island
-  if (selectedItem.id === 'stellarius') {
-    // Place in a nice open spot on the void surface
-    state.monsters.push({
-      id: 'stellarius',
-      name: 'Stellarius',
-      offsetX: 150,
-      offsetY: 40,
-    });
-  }
+  // Send to incubator instead of directly placing
+  startIncubation(selectedItem);
 
   updateCurrencyUI();
-  showToast(`${selectedItem.name} placed on Nyxara!`, 'success');
+  showToast(`${selectedItem.name} sent to the Incubator!`, 'success');
 
-  // Refresh grid so 'Owned' tag and disabled state show up
   buildMonsterGrid();
-  // Keep selection on the same item
   const stillSelected = document.querySelector(`.m-card[data-id="${selectedItem.id}"]`);
-  if (stillSelected) {
-    stillSelected.classList.add('selected');
-  }
+  if (stillSelected) stillSelected.classList.add('selected');
   updateActionButtons();
 });
 
-/* Tribe selector (cosmetic for now) */
+/* Tribe selector */
 document.querySelectorAll('.tribe-dot').forEach(dot => {
   dot.addEventListener('click', () => {
     document.querySelectorAll('.tribe-dot').forEach(d => d.classList.remove('active'));
@@ -2595,7 +2941,6 @@ document.querySelectorAll('.tribe-dot').forEach(dot => {
   });
 });
 
-/* Initialize currency display */
 updateCurrencyUI();
 
 /* ------------------------------ GO! ------------------------------ */
