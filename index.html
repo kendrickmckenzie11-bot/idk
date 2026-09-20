@@ -10,6 +10,8 @@
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; user-select:none; }
   canvas#game { display:block; position:fixed; inset:0; touch-action:none; cursor:grab; z-index:0; }
   canvas#game:active { cursor:grabbing; }
+  canvas#game.placing { cursor:crosshair; }
+  canvas#game.dragging-structure { cursor:move; }
 
   /* ---------- Top HUD ---------- */
   #top {
@@ -206,7 +208,7 @@
   }
 
   /* ======================================================
-     FULL-SCREEN MARKET — MSM monster-select style
+     FULL-SCREEN MARKET
      ====================================================== */
   #market-screen {
     position:fixed; inset:0; z-index:150;
@@ -219,7 +221,6 @@
     overflow:hidden;
   }
   #market-screen.open { opacity:1; pointer-events:auto; }
-
   #market-screen::before {
     content:""; position:absolute; inset:0; pointer-events:none;
     background:
@@ -227,7 +228,6 @@
       radial-gradient(ellipse 40% 60% at 92% 100%, rgba(0,200,255,.14), transparent 70%);
   }
 
-  /* ---- Header (no level badge) ---- */
   .market-header {
     position:relative; z-index:3;
     padding:18px 22px 14px;
@@ -247,9 +247,7 @@
     font-size:16px;
   }
 
-  .market-header .header-right {
-    display:flex; align-items:center; gap:10px;
-  }
+  .market-header .header-right { display:flex; align-items:center; gap:10px; }
   .market-header .resource {
     min-width:auto; padding:5px 14px 5px 6px;
     background:linear-gradient(180deg, rgba(60,30,20,.9), rgba(30,15,10,.9));
@@ -274,13 +272,11 @@
     box-shadow:0 2px 0 rgba(80,10,30,.9), 0 4px 10px rgba(220,60,120,.4);
   }
 
-  /* ---- Main monster grid ---- */
   .market-main {
     position:relative; z-index:3;
     flex:1; display:flex; flex-direction:column;
     min-height:0; padding:4px 22px 0;
   }
-
   .monster-grid {
     flex:1;
     display: grid;
@@ -312,7 +308,6 @@
       inset 0 2px 0 rgba(255,255,255,.2),
       0 0 0 3px rgba(250,204,21,.4);
   }
-
   .m-card-name {
     position:relative; z-index:2;
     margin:0 auto -8px;
@@ -332,7 +327,6 @@
     border-color:#facc15;
     color:#ffe9a0;
   }
-
   .m-card-body {
     position:relative;
     flex:1;
@@ -347,10 +341,7 @@
     min-height: 190px;
     box-shadow: inset 0 2px 0 rgba(255,255,255,.08);
   }
-  .m-card-body canvas {
-    display:block; width:100%; height:100%;
-  }
-
+  .m-card-body canvas { display:block; width:100%; height:100%; }
   .m-elements {
     position:absolute; top:8px; left:8px;
     display:flex; gap:4px; z-index:2;
@@ -364,7 +355,6 @@
   }
   .m-elem svg { width:16px; height:16px; }
   .m-elem.star svg { fill:#ffe066; filter:drop-shadow(0 0 3px #ffd76a); }
-
   .m-cost {
     position:absolute; bottom:0; left:0; right:0; z-index:2;
     padding:7px 10px;
@@ -403,7 +393,6 @@
     letter-spacing: .5px;
   }
 
-  /* ---- Bottom action bar ---- */
   .market-action-bar {
     position:relative; z-index:3;
     padding:12px 22px 18px;
@@ -412,7 +401,6 @@
     flex-shrink:0;
   }
   .action-left { display:flex; gap:10px; }
-
   .action-btn {
     width:64px; height:64px; border-radius:16px; cursor:pointer;
     display:flex; align-items:center; justify-content:center;
@@ -422,7 +410,6 @@
   }
   .action-btn:hover { filter:brightness(1.15); }
   .action-btn:active { transform:translateY(3px); }
-
   .action-btn.cancel {
     background:linear-gradient(180deg, rgba(200,60,80,.9), rgba(120,20,40,.95));
     border-color:rgba(255,150,170,.6);
@@ -433,7 +420,6 @@
   .action-btn.cancel:active {
     box-shadow:0 2px 0 rgba(80,10,20,.9), 0 4px 10px rgba(200,50,80,.4);
   }
-
   .action-btn.confirm {
     background:linear-gradient(180deg, rgba(120,220,90,.9), rgba(60,150,40,.95));
     border-color:rgba(180,255,140,.6);
@@ -447,15 +433,10 @@
   .action-btn:disabled,
   .action-btn[disabled] {
     filter:grayscale(.85) brightness(.65);
-    cursor:not-allowed;
-    pointer-events:none;
+    cursor:not-allowed; pointer-events:none;
   }
-
   .action-right { display:flex; gap:10px; }
-
-  .tribe-selector {
-    display:flex; gap:8px; align-items:center;
-  }
+  .tribe-selector { display:flex; gap:8px; align-items:center; }
   .tribe-dot {
     width:44px; height:44px; border-radius:50%; cursor:pointer;
     background:radial-gradient(circle at 35% 30%, #2a1a4a, #0d0520 75%);
@@ -472,11 +453,11 @@
     box-shadow:0 0 18px rgba(250,204,21,.5);
   }
 
-  /* ---------- Incubator status pill ---------- */
+  /* ---------- Incubator status pill (speed up + timer) ---------- */
   #incubator-status {
     position:fixed; top:84px; left:50%; transform:translateX(-50%) translateY(-20px);
     display:flex; align-items:center; gap:12px;
-    padding:10px 18px 10px 10px; border-radius:999px;
+    padding:10px 14px 10px 10px; border-radius:999px;
     background:linear-gradient(180deg, rgba(60,25,105,.96), rgba(25,8,50,.98));
     border:1.5px solid rgba(200,150,255,.5);
     box-shadow:0 10px 26px rgba(120,60,220,.55), inset 0 1px 0 rgba(255,255,255,.12);
@@ -484,7 +465,7 @@
     opacity:0; transition:opacity .3s ease, transform .3s ease;
   }
   #incubator-status.show {
-    opacity:1; transform:translateX(-50%) translateY(0);
+    opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;
   }
   #incubator-status.ready {
     background:linear-gradient(180deg, rgba(50,160,80,.96), rgba(20,80,30,.98));
@@ -509,7 +490,7 @@
     0%,100% { transform:scale(1); opacity:.85; }
     50%     { transform:scale(1.15); opacity:1; }
   }
-  .inc-info { display:flex; flex-direction:column; line-height:1.15; }
+  .inc-info { display:flex; flex-direction:column; line-height:1.15; min-width:140px; }
   .inc-title {
     font-size:11px; font-weight:800; letter-spacing:1.5px;
     color:rgba(220,190,255,.85); text-transform:uppercase;
@@ -519,8 +500,50 @@
     font-variant-numeric:tabular-nums;
     text-shadow:0 1px 3px rgba(0,0,0,.5);
   }
+  .inc-bar {
+    margin-top:4px; width:100%; height:6px; border-radius:3px;
+    background:rgba(0,0,0,.5);
+    overflow:hidden; position:relative;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.6);
+  }
+  .inc-bar-fill {
+    height:100%; width:0%;
+    background:linear-gradient(90deg, #ffd54a, #f59e0b);
+    border-radius:3px;
+    box-shadow:0 0 8px rgba(255,200,80,.8);
+    transition:width .25s linear;
+  }
+  #incubator-status.ready .inc-bar-fill {
+    background:linear-gradient(90deg, #b8ff8a, #22c55e);
+    box-shadow:0 0 8px rgba(180,255,140,.8);
+  }
   #incubator-status.ready .inc-title { color:rgba(200,255,200,.9); }
   #incubator-status.ready .inc-timer { color:#e0ffd0; }
+
+  .inc-speed-btn {
+    padding:8px 12px; border-radius:12px; cursor:pointer;
+    background:linear-gradient(180deg, rgba(200,120,255,.95), rgba(120,50,200,.98));
+    border:1.5px solid rgba(240,200,255,.7);
+    box-shadow:0 4px 0 rgba(60,10,120,.9), 0 8px 16px rgba(180,80,255,.4),
+               inset 0 1px 0 rgba(255,255,255,.2);
+    color:#fff; font-family:inherit; font-size:12px; font-weight:900;
+    letter-spacing:.5px;
+    display:flex; align-items:center; gap:6px;
+    transition:transform .1s, filter .15s;
+    white-space:nowrap;
+  }
+  .inc-speed-btn:hover { filter:brightness(1.12); }
+  .inc-speed-btn:active {
+    transform:translateY(2px);
+    box-shadow:0 2px 0 rgba(60,10,120,.9), 0 4px 8px rgba(180,80,255,.4);
+  }
+  .inc-speed-btn .mini-gem {
+    width:12px; height:11px;
+    background:linear-gradient(135deg, #f3e8ff, #c084fc, #7c3aed);
+    clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+    filter:drop-shadow(0 0 2px rgba(210,160,255,.9));
+  }
+  #incubator-status.ready .inc-speed-btn { display:none; }
 
   /* ---------- Placement panel ---------- */
   #placement-panel {
@@ -561,6 +584,21 @@
     border-color:rgba(255,150,170,.6);
     color:#fff;
     box-shadow:0 4px 0 rgba(80,10,20,.9), 0 8px 16px rgba(200,50,80,.4);
+  }
+
+  /* ---------- Structure drag hint ---------- */
+  #drag-hint {
+    position:fixed; top:84px; left:50%; transform:translateX(-50%) translateY(-20px);
+    padding:10px 18px; border-radius:999px;
+    background:linear-gradient(180deg, rgba(60,25,105,.96), rgba(25,8,50,.98));
+    border:1.5px solid rgba(200,150,255,.5);
+    box-shadow:0 10px 26px rgba(120,60,220,.55);
+    color:#fff; font-size:13px; font-weight:800; letter-spacing:.5px;
+    z-index:46; pointer-events:none;
+    opacity:0; transition:opacity .3s ease, transform .3s ease;
+  }
+  #drag-hint.show {
+    opacity:1; transform:translateX(-50%) translateY(0);
   }
 
   /* ---------- Toast ---------- */
@@ -633,14 +671,22 @@
   <div class="inc-info">
     <div class="inc-title" id="inc-title">Incubating</div>
     <div class="inc-timer" id="inc-timer">1:00</div>
+    <div class="inc-bar"><div class="inc-bar-fill" id="inc-bar-fill"></div></div>
   </div>
+  <button class="inc-speed-btn" id="inc-speed">
+    <span class="mini-gem"></span>
+    <span id="inc-speed-label">Speed Up</span>
+  </button>
 </div>
+
+<!-- Drag hint -->
+<div id="drag-hint">Drag the structure to reposition</div>
 
 <!-- Placement panel -->
 <div id="placement-panel">
   <div class="placement-text">
-    Place Stellarius
-    <small>Tap anywhere on the void to position him</small>
+    Place <span id="placement-name">Monster</span>
+    <small>Tap anywhere on the void to position them</small>
   </div>
   <div class="placement-btns">
     <button class="placement-btn cancel-place" id="place-cancel">Cancel</button>
@@ -653,7 +699,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
     <span>Settings</span>
   </button>
@@ -677,71 +723,50 @@
     </div>
     <div class="modal-body">
       <div class="setting-row">
-        <div class="setting-label">
-          <b>Master Audio</b>
-          <span>Toggle all in-game sound on or off</span>
-        </div>
+        <div class="setting-label"><b>Master Audio</b><span>Toggle all in-game sound on or off</span></div>
         <div class="toggle on" id="toggle-audio"></div>
       </div>
       <div class="setting-row">
-        <div class="setting-label">
-          <b>Music Volume</b>
-          <span>Controls the castle drone & songs</span>
-        </div>
+        <div class="setting-label"><b>Music Volume</b><span>Controls the castle drone & songs</span></div>
         <div class="slider-wrap">
           <input type="range" id="slider-music" min="0" max="100" value="70">
           <div class="slider-value" id="slider-music-val">70%</div>
         </div>
       </div>
       <div class="setting-row">
-        <div class="setting-label">
-          <b>SFX Volume</b>
-          <span>Controls UI & interaction sounds</span>
-        </div>
+        <div class="setting-label"><b>SFX Volume</b><span>Controls UI & interaction sounds</span></div>
         <div class="slider-wrap">
           <input type="range" id="slider-sfx" min="0" max="100" value="85">
           <div class="slider-value" id="slider-sfx-val">85%</div>
         </div>
       </div>
       <div class="setting-row">
-        <div class="setting-label">
-          <b>Low Detail Mode</b>
-          <span>Reduce visual effects for smoother performance</span>
-        </div>
+        <div class="setting-label"><b>Low Detail Mode</b><span>Reduce visual effects for smoother performance</span></div>
         <div class="toggle" id="toggle-detail"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ================= FULL-SCREEN MARKET ================= -->
+<!-- ================= MARKET ================= -->
 <div id="market-screen">
-
   <div class="market-header">
-    <div class="market-title">
-      <span class="title-dot">🛒</span>Market
-    </div>
+    <div class="market-title"><span class="title-dot">🛒</span>Market</div>
     <div class="header-right">
       <div class="resource">
         <div class="res-icon shard"><div class="shard-shape"></div></div>
-        <div class="res-info">
-          <div class="res-value" id="market-shard-value">1,250</div>
-        </div>
+        <div class="res-info"><div class="res-value" id="market-shard-value">1,250</div></div>
       </div>
       <div class="resource">
         <div class="res-icon gem"><div class="gem-shape"></div></div>
-        <div class="res-info">
-          <div class="res-value" id="market-gem-value">47</div>
-        </div>
+        <div class="res-info"><div class="res-value" id="market-gem-value">47</div></div>
       </div>
       <button class="market-close-btn" id="market-close" title="Close Market">✕</button>
     </div>
   </div>
-
   <div class="market-main">
     <div class="monster-grid" id="monster-grid"></div>
   </div>
-
   <div class="market-action-bar">
     <div class="action-left">
       <button class="action-btn cancel" id="market-cancel" title="Cancel">✕</button>
@@ -755,7 +780,6 @@
       <button class="action-btn confirm" id="market-confirm" title="Confirm" disabled>✓</button>
     </div>
   </div>
-
 </div>
 
 <div id="toast"></div>
@@ -769,7 +793,7 @@
 
 <script>
 /* =========================================================================
-   NYXARA — Cosmic Islet with Stellarius + Incubator flow
+   NYXARA — Islet with Stellarius, movable structures, sped-up incubation
    ========================================================================= */
 
 /* ------------------------------ CANVAS ------------------------------ */
@@ -799,13 +823,14 @@ const state = {
   musicVol: 0.70,
   sfxVol: 0.85,
   lowDetail: false,
-  shards: 1250,
-  gems: 47,
-  monsters: [],      // placed monsters on the island
+  shards: 999999,
+  gems: 999999,
+  monsters: [],
   ownedIds: new Set(),
-  incubating: null,  // { item, startTime, duration }
-  placingItem: null, // { item, offsetX, offsetY } while positioning
-  hoverIsland: null, // { x, y } world coords of cursor on island
+  incubating: null,   // { item, startTime, duration, ready, lastTick }
+  placingItem: null,  // { item, offsetX, offsetY } while positioning monster
+  hoverIsland: null,  // {x,y} world coords
+  draggingStructure: null, // 'left' | 'right' while moving a structure
 };
 
 /* --------------------------- HELPERS --------------------------- */
@@ -862,7 +887,6 @@ let beatIndex = 0;
 function initAudio() {
   if (audioStarted) return;
   audioStarted = true;
-
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   } catch (err) {
@@ -876,9 +900,7 @@ function initAudio() {
   castleGain.connect(audioCtx.destination);
 
   const lp = audioCtx.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 320;
-  lp.Q.value = 0.8;
+  lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 0.8;
   lp.connect(castleGain);
 
   const lfoFilter = audioCtx.createOscillator();
@@ -945,15 +967,14 @@ canvas.addEventListener('pointerdown', initAudio, { once: true });
 
 /* ---------------------- STELLARIUS PERCUSSION ---------------------- */
 const STELL_BEATS = [
-  { type: 'kick',    t: 0.00 },
-  { type: 'shimmer', t: 0.25 },
-  { type: 'tom',     t: 0.50 },
-  { type: 'rest',    t: 0.75 },
+  { type: 'kick' },
+  { type: 'shimmer' },
+  { type: 'tom' },
+  { type: 'rest' },
 ];
 
 function playStellHit(type, when) {
   if (!audioCtx || !monsterGain) return;
-
   if (type === 'kick') {
     const osc = audioCtx.createOscillator();
     osc.type = 'sine';
@@ -1007,13 +1028,11 @@ function tickStellariusAudio(t) {
   if (!audioCtx || !monsterGain) return;
   if (state.monsters.length === 0) return;
   if (!state.audioOn) return;
-
   const hasStell = state.monsters.some(m => m.id === 'stellarius');
   if (!hasStell) return;
 
   const now = audioCtx.currentTime;
   if (lastBeatTime === 0) lastBeatTime = now;
-
   while (lastBeatTime < now + 0.1) {
     const beat = STELL_BEATS[beatIndex];
     if (beat.type !== 'rest') playStellHit(beat.type, lastBeatTime);
@@ -1052,14 +1071,12 @@ function drawSky(t) {
     skyCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
     skyFrameCounter = 0;
   }
-
   skyFrameCounter++;
   const refreshEvery = state.lowDetail ? 60 : 20;
   if (skyFrameCounter % refreshEvery === 1) {
     const s = skyCtx;
     s.setTransform(DPR, 0, 0, DPR, 0, 0);
     s.clearRect(0, 0, W, H);
-
     const g = s.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0.0, '#05000a');
     g.addColorStop(0.3, '#0f0025');
@@ -1067,7 +1084,6 @@ function drawSky(t) {
     g.addColorStop(1.0, '#0d001a');
     s.fillStyle = g;
     s.fillRect(0, 0, W, H);
-
     s.save();
     s.globalCompositeOperation = 'lighter';
     for (const n of nebulae) {
@@ -1079,7 +1095,6 @@ function drawSky(t) {
       s.fillRect(nx - n.r, ny - n.r, n.r * 2, n.r * 2);
     }
     s.restore();
-
     const starCount = state.lowDetail ? 50 : 120;
     for (let i = 0; i < starCount; i++) {
       const st = stars[i];
@@ -1094,7 +1109,6 @@ function drawSky(t) {
     }
     s.globalAlpha = 1;
   }
-
   ctx.drawImage(skyCache, 0, 0, W, H);
 }
 
@@ -1105,15 +1119,12 @@ const GRX = 655;
 const GRY = 300;
 const BOT = 650;
 
-/* ----------------------------- CRYSTAL SPIKE ----------------------------- */
 function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-
   const len = size * 2.3;
   const wid = size * 0.75;
-
   ctx.fillStyle = `hsla(${hue}, 100%, 62%, ${alpha * 0.28})`;
   ctx.beginPath();
   ctx.moveTo(-len * 0.1, -wid * 1.5);
@@ -1121,7 +1132,6 @@ function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.lineTo(-len * 0.1, wid * 1.5);
   ctx.closePath();
   ctx.fill();
-
   const grad = ctx.createLinearGradient(0, 0, len, 0);
   grad.addColorStop(0.0, `hsla(${hue}, 90%, 45%, ${alpha})`);
   grad.addColorStop(0.5, `hsla(${hue + 25}, 92%, 66%, ${alpha})`);
@@ -1133,7 +1143,6 @@ function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.lineTo(0, wid);
   ctx.closePath();
   ctx.fill();
-
   ctx.fillStyle = `hsla(${hue + 60}, 100%, 93%, ${alpha * 0.55})`;
   ctx.beginPath();
   ctx.moveTo(0, -wid * 0.35);
@@ -1141,19 +1150,14 @@ function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.lineTo(0, 0);
   ctx.closePath();
   ctx.fill();
-
   ctx.restore();
 }
 
-/* ---------------------- TALL BACK SPIKES ---------------------- */
 function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.save();
   ctx.translate(x, y);
-
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
-  ctx.beginPath();
-  ctx.ellipse(0, 0, w * 0.85, 6, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 0, w * 0.85, 6, 0, 0, Math.PI * 2); ctx.fill();
 
   if (!state.lowDetail) {
     ctx.save();
@@ -1167,7 +1171,6 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
     ctx.fill();
     ctx.restore();
   }
-
   const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
   g.addColorStop(0.00, '#0a0016');
   g.addColorStop(0.30, `hsl(${hue}, 65%, 26%)`);
@@ -1182,7 +1185,6 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.lineTo(w / 2, 0);
   ctx.closePath();
   ctx.fill();
-
   ctx.strokeStyle = `hsla(${hue + 50}, 100%, 82%, ${0.9 * pulse})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -1190,12 +1192,10 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.lineTo(w * 0.18, -h * 0.62);
   ctx.lineTo(w / 2, 0);
   ctx.stroke();
-
   ctx.fillStyle = `hsla(${hue + 60}, 100%, 95%, ${pulse})`;
   ctx.beginPath();
   ctx.arc(0, -h, 3 + pulse * 1.8, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.restore();
 }
 
@@ -1216,11 +1216,21 @@ function drawBackSpikes(t) {
   }
 }
 
-/* ----------------------------- SIDE PLATFORMS ----------------------------- */
-const platforms = {
-  left:  { cx: -460, cy: -190, rx: 170, ry: 82 },
-  right: { cx:  460, cy: -190, rx: 170, ry: 82 },
+/* ----------------------------- MOVABLE STRUCTURES ----------------------------- */
+/* Positions in island-space (offsetX, offsetY).
+   These persist across the game and can be dragged by the user. */
+const structures = {
+  left:  { cx: -460, cy: -190, rx: 170, ry: 82, id: 'left',  name: 'Breed Synthesizer' },
+  right: { cx:  460, cy: -190, rx: 170, ry: 82, id: 'right', name: 'Incubation Center' },
 };
+
+/* Convert island-space to screen-space for a structure's origin */
+function structureScreenPos(st) {
+  return {
+    x: W / 2 + state.cam.x + st.cx * (RX / 780) * state.cam.zoom,
+    y: H * 0.45 + state.cam.y + st.cy * (RY / 390) * state.cam.zoom,
+  };
+}
 
 function drawPlatformBase(p) {
   ctx.save();
@@ -1280,7 +1290,6 @@ function drawCastle(t) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(s, s);
-
   const pulse = 0.85 + 0.15 * Math.sin(t * 1.4);
 
   ctx.save();
@@ -1292,13 +1301,9 @@ function drawCastle(t) {
   ctx.restore();
 
   ctx.fillStyle = '#0d0018';
-  ctx.beginPath();
-  ctx.ellipse(0, 26, 148, 32, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 26, 148, 32, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#1a0033';
-  ctx.beginPath();
-  ctx.ellipse(0, 22, 140, 28, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 22, 140, 28, 0, 0, Math.PI * 2); ctx.fill();
 
   if (!state.lowDetail) {
     ctx.save();
@@ -1319,7 +1324,6 @@ function drawCastle(t) {
     { x:  42, h: 170, w: 38, hue: 300 },
   ];
   for (const tw of towers) drawTower(tw.x, 26, tw.w, tw.h, tw.hue, t);
-
   drawMainSpire(0, 26, t, pulse);
 
   const orbs = state.lowDetail ? 0 : 3;
@@ -1329,50 +1333,28 @@ function drawCastle(t) {
     const orbitY = -160 + Math.sin(a) * 18;
     const sz = 7 + Math.sin(t * 2 + i) * 2;
     ctx.save();
-    ctx.translate(orbitX, orbitY);
-    ctx.rotate(a);
+    ctx.translate(orbitX, orbitY); ctx.rotate(a);
     ctx.fillStyle = `hsla(${290 + i * 15}, 100%, 75%, 0.9)`;
     ctx.shadowColor = `hsla(${290 + i * 15}, 100%, 65%, 0.9)`;
     ctx.shadowBlur = 16;
     ctx.beginPath();
-    ctx.moveTo(0, -sz);
-    ctx.lineTo(sz * 0.6, 0);
-    ctx.lineTo(0, sz);
-    ctx.lineTo(-sz * 0.6, 0);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(0, -sz); ctx.lineTo(sz * 0.6, 0); ctx.lineTo(0, sz); ctx.lineTo(-sz * 0.6, 0);
+    ctx.closePath(); ctx.fill();
     ctx.restore();
   }
-
-  if (!state.lowDetail) {
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const gg = ctx.createRadialGradient(0, 26, 6, 0, 26, 220);
-    gg.addColorStop(0, `rgba(180,90,255,${0.18 * pulse})`);
-    gg.addColorStop(1, 'rgba(180,90,255,0)');
-    ctx.fillStyle = gg;
-    ctx.beginPath();
-    ctx.ellipse(0, 26, 220, 60, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
   ctx.restore();
 }
 
 function drawTower(x, baseY, w, h, hue, t) {
   const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
-  g.addColorStop(0,   '#10001f');
-  g.addColorStop(0.5, '#2a004a');
-  g.addColorStop(1,   '#08001a');
+  g.addColorStop(0, '#10001f'); g.addColorStop(0.5, '#2a004a'); g.addColorStop(1, '#08001a');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.moveTo(x - w / 2, baseY);
   ctx.lineTo(x - w * 0.32, baseY - h);
   ctx.lineTo(x + w * 0.32, baseY - h);
   ctx.lineTo(x + w / 2, baseY);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
 
   ctx.fillStyle = 'rgba(180,120,255,0.20)';
   ctx.beginPath();
@@ -1380,54 +1362,40 @@ function drawTower(x, baseY, w, h, hue, t) {
   ctx.lineTo(x - w * 0.32, baseY - h);
   ctx.lineTo(x - w * 0.20, baseY - h);
   ctx.lineTo(x - w * 0.34, baseY);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
 
   const capSz = w * 0.42;
   const pulse = 0.8 + 0.2 * Math.sin(t * 2);
   ctx.save();
-  if (!state.lowDetail) {
-    ctx.shadowColor = `hsl(${hue}, 100%, 65%)`;
-    ctx.shadowBlur = 18 * pulse;
-  }
+  if (!state.lowDetail) { ctx.shadowColor = `hsl(${hue}, 100%, 65%)`; ctx.shadowBlur = 18 * pulse; }
   ctx.fillStyle = `hsl(${hue}, 90%, 70%)`;
   ctx.beginPath();
   ctx.moveTo(x, baseY - h - capSz * 1.8);
   ctx.lineTo(x + capSz, baseY - h);
   ctx.lineTo(x, baseY - h + capSz * 0.4);
   ctx.lineTo(x - capSz, baseY - h);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
   ctx.restore();
 
   ctx.save();
-  if (!state.lowDetail) {
-    ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
-    ctx.shadowBlur = 10 * pulse;
-  }
+  if (!state.lowDetail) { ctx.shadowColor = `hsl(${hue}, 100%, 70%)`; ctx.shadowBlur = 10 * pulse; }
   ctx.fillStyle = `hsla(${hue}, 100%, 78%, ${0.75 * pulse})`;
-  roundRect(ctx, x - w * 0.14, baseY - h * 0.6, w * 0.28, h * 0.16, 4);
-  ctx.fill();
+  roundRect(ctx, x - w * 0.14, baseY - h * 0.6, w * 0.28, h * 0.16, 4); ctx.fill();
   ctx.restore();
 }
 
 function drawMainSpire(x, baseY, t, pulse) {
-  const H = 320;
-  const W0 = 62;
-
+  const H = 320, W0 = 62;
   const g = ctx.createLinearGradient(x - W0 / 2, 0, x + W0 / 2, 0);
-  g.addColorStop(0,   '#0d001a');
-  g.addColorStop(0.4, '#2c0050');
-  g.addColorStop(0.6, '#3a0066');
-  g.addColorStop(1,   '#08001a');
+  g.addColorStop(0, '#0d001a'); g.addColorStop(0.4, '#2c0050');
+  g.addColorStop(0.6, '#3a0066'); g.addColorStop(1, '#08001a');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.moveTo(x - W0 / 2, baseY);
   ctx.lineTo(x - W0 * 0.22, baseY - H * 0.72);
   ctx.lineTo(x + W0 * 0.22, baseY - H * 0.72);
   ctx.lineTo(x + W0 / 2, baseY);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
 
   ctx.fillStyle = 'rgba(200,140,255,0.22)';
   ctx.beginPath();
@@ -1435,8 +1403,7 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.lineTo(x - W0 * 0.22, baseY - H * 0.72);
   ctx.lineTo(x - W0 * 0.10, baseY - H * 0.72);
   ctx.lineTo(x - W0 * 0.28, baseY);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
 
   ctx.strokeStyle = `rgba(200,130,255,${0.35 + 0.3 * pulse})`;
   ctx.lineWidth = 2;
@@ -1444,21 +1411,15 @@ function drawMainSpire(x, baseY, t, pulse) {
     const ry = baseY - H * 0.72 * (i / 6);
     const rw = W0 * 0.5 * (1 - i * 0.12);
     ctx.beginPath();
-    ctx.moveTo(x - rw, ry);
-    ctx.lineTo(x + rw, ry);
-    ctx.stroke();
+    ctx.moveTo(x - rw, ry); ctx.lineTo(x + rw, ry); ctx.stroke();
   }
 
   ctx.save();
-  if (!state.lowDetail) {
-    ctx.shadowColor = '#c87aff';
-    ctx.shadowBlur = 14 * pulse;
-  }
+  if (!state.lowDetail) { ctx.shadowColor = '#c87aff'; ctx.shadowBlur = 14 * pulse; }
   ctx.fillStyle = `rgba(230,180,255,${0.85 * pulse})`;
   for (let i = 0; i < 3; i++) {
     const wy = baseY - H * 0.18 - i * 60;
-    roundRect(ctx, x - 7, wy - 10, 14, 22, 4);
-    ctx.fill();
+    roundRect(ctx, x - 7, wy - 10, 14, 22, 4); ctx.fill();
   }
   ctx.restore();
 
@@ -1468,43 +1429,32 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.lineTo(x - 8, baseY - H * 0.95);
   ctx.lineTo(x + 8, baseY - H * 0.95);
   ctx.lineTo(x + W0 * 0.22, baseY - H * 0.72);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
 
   const cy = baseY - H * 0.95 - 40;
   const cr = 30;
   ctx.save();
-  if (!state.lowDetail) {
-    ctx.shadowColor = '#d090ff';
-    ctx.shadowBlur = 30 * pulse;
-  }
+  if (!state.lowDetail) { ctx.shadowColor = '#d090ff'; ctx.shadowBlur = 30 * pulse; }
   const cg = ctx.createRadialGradient(x, cy, 4, x, cy, cr);
   cg.addColorStop(0, `rgba(255,220,255,${0.95 * pulse})`);
   cg.addColorStop(0.5, `rgba(210,120,255,${0.75 * pulse})`);
   cg.addColorStop(1, 'rgba(140,60,200,0)');
   ctx.fillStyle = cg;
-  ctx.beginPath();
-  ctx.arc(x, cy, cr, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(x, cy, cr, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = `rgba(255,240,255,${0.9 * pulse})`;
-  ctx.beginPath();
-  ctx.arc(x, cy, cr * 0.32, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(x, cy, cr * 0.32, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = `rgba(230,180,255,${0.7 * pulse})`;
   ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.moveTo(x, cy - cr * 1.4);
-  ctx.lineTo(x + cr * 0.9, cy);
-  ctx.lineTo(x, cy + cr * 1.4);
-  ctx.lineTo(x - cr * 0.9, cy);
-  ctx.closePath();
-  ctx.stroke();
+  ctx.moveTo(x, cy - cr * 1.4); ctx.lineTo(x + cr * 0.9, cy);
+  ctx.lineTo(x, cy + cr * 1.4); ctx.lineTo(x - cr * 0.9, cy);
+  ctx.closePath(); ctx.stroke();
   ctx.restore();
 }
 
 /* ----------------------------- BREED SYNTHESIZER ----------------------------- */
-function drawBreedSynthesizer(t) {
-  const p = platforms.left;
+function drawBreedSynthesizer(t, st) {
+  const p = st;
   ctx.save();
   ctx.translate(p.cx, p.cy - 6);
   ctx.scale(0.95, 0.95);
@@ -1512,10 +1462,7 @@ function drawBreedSynthesizer(t) {
   const pods = [-52, 52];
   for (const px of pods) {
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(px, 16, 34, 10, 0, 0, Math.PI * 2);
-    ctx.fill();
-
+    ctx.beginPath(); ctx.ellipse(px, 16, 34, 10, 0, 0, Math.PI * 2); ctx.fill();
     const pg = ctx.createLinearGradient(px, -60, px, 20);
     pg.addColorStop(0, '#4a1f7a');
     pg.addColorStop(0.5, '#2a0f4a');
@@ -1524,14 +1471,10 @@ function drawBreedSynthesizer(t) {
     ctx.beginPath();
     ctx.moveTo(px - 32, 16);
     ctx.bezierCurveTo(px - 34, -30, px + 34, -30, px + 32, 16);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
 
-    ctx.strokeStyle = 'rgba(180,120,255,0.6)';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.ellipse(px, 16, 32, 9, 0, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(180,120,255,0.6)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(px, 16, 32, 9, 0, 0, Math.PI * 2); ctx.stroke();
 
     const pulse = 0.7 + 0.3 * Math.sin(t * 1.7 + px * 0.02);
     if (!state.lowDetail) {
@@ -1542,38 +1485,21 @@ function drawBreedSynthesizer(t) {
       wg.addColorStop(0.6, `rgba(150,80,220,${0.55 * pulse})`);
       wg.addColorStop(1, 'rgba(80,40,140,0)');
       ctx.fillStyle = wg;
-      ctx.beginPath();
-      ctx.ellipse(px, -12, 22, 26, 0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.ellipse(px, -12, 22, 26, 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
-
-    ctx.strokeStyle = 'rgba(200,140,255,0.7)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px, -38);
-    ctx.lineTo(px, -52);
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(200,140,255,0.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, -38); ctx.lineTo(px, -52); ctx.stroke();
     ctx.fillStyle = '#d4a2ff';
-    ctx.beginPath();
-    ctx.arc(px, -54, 2.6, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(px, -54, 2.6, 0, Math.PI * 2); ctx.fill();
   }
-
   ctx.fillStyle = '#1a0f30';
-  roundRect(ctx, -14, -78, 28, 94, 8);
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(200,140,255,0.55)';
-  ctx.lineWidth = 1.6;
+  roundRect(ctx, -14, -78, 28, 94, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(200,140,255,0.55)'; ctx.lineWidth = 1.6;
   for (let i = 0; i < 4; i++) {
     const ry = -66 + i * 22;
-    ctx.beginPath();
-    ctx.moveTo(-9, ry);
-    ctx.lineTo(9, ry);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-9, ry); ctx.lineTo(9, ry); ctx.stroke();
   }
-
   const topPulse = 0.75 + 0.25 * Math.sin(t * 2.2);
   if (!state.lowDetail) {
     ctx.save();
@@ -1582,63 +1508,48 @@ function drawBreedSynthesizer(t) {
     og.addColorStop(0, `rgba(255,230,255,${0.95 * topPulse})`);
     og.addColorStop(1, 'rgba(180,100,255,0)');
     ctx.fillStyle = og;
-    ctx.beginPath();
-    ctx.arc(0, -92, 24, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -92, 24, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
   ctx.fillStyle = `rgba(255,240,255,${0.9 * topPulse})`;
-  ctx.beginPath();
-  ctx.arc(0, -92, 5, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -92, 5, 0, Math.PI * 2); ctx.fill();
 
   ctx.strokeStyle = 'rgba(150,90,220,0.55)';
-  ctx.lineWidth = 6;
-  ctx.lineCap = 'round';
+  ctx.lineWidth = 6; ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(-12, -60);
-  ctx.quadraticCurveTo(-40, -55, -52, -38);
-  ctx.moveTo(12, -60);
-  ctx.quadraticCurveTo(40, -55, 52, -38);
+  ctx.moveTo(-12, -60); ctx.quadraticCurveTo(-40, -55, -52, -38);
+  ctx.moveTo(12, -60); ctx.quadraticCurveTo(40, -55, 52, -38);
   ctx.stroke();
-
   ctx.restore();
 
   ctx.save();
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(220,180,255,0.9)';
-  if (!state.lowDetail) {
-    ctx.shadowColor = '#b44aff';
-    ctx.shadowBlur = 8;
-  }
+  if (!state.lowDetail) { ctx.shadowColor = '#b44aff'; ctx.shadowBlur = 8; }
   ctx.fillText('◈ BREED SYNTHESIZER ◈', p.cx, p.cy + 82);
   ctx.restore();
 }
 
-/* ----------------------------- INCUBATION CENTER -----------------------------
-   Now displays the actual incubating egg + timer when active,
-   or a "ready to place" glow when the egg has hatched.
-   ----------------------------------------------------------------------- */
-function drawIncubationCenter(t) {
-  const p = platforms.right;
+/* ----------------------------- INCUBATION CENTER ----------------------------- */
+/* Draws the structure AND a progress bar below it. */
+function drawIncubationCenter(t, st) {
+  const p = st;
   ctx.save();
   ctx.translate(p.cx, p.cy - 6);
   ctx.scale(0.95, 0.95);
 
-  const isActive = !!state.incubating;
-  const isReady  = state.incubating && state.incubating.ready;
+  const inc = state.incubating;
+  const isActive = !!inc;
+  const isReady  = inc && inc.ready;
   const pulse    = 0.75 + 0.25 * Math.sin(t * 1.5);
 
   // Support arms
   ctx.strokeStyle = '#1a4a5a';
-  ctx.lineWidth = 8;
-  ctx.lineCap = 'round';
+  ctx.lineWidth = 8; ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(-52, 12);
-  ctx.quadraticCurveTo(-64, -40, -30, -76);
-  ctx.moveTo(52, 12);
-  ctx.quadraticCurveTo(64, -40, 30, -76);
+  ctx.moveTo(-52, 12); ctx.quadraticCurveTo(-64, -40, -30, -76);
+  ctx.moveTo(52, 12);  ctx.quadraticCurveTo(64, -40, 30, -76);
   ctx.stroke();
 
   if (!state.lowDetail) {
@@ -1648,18 +1559,15 @@ function drawIncubationCenter(t) {
     ctx.strokeStyle = isReady ? 'rgba(200,255,150,0.85)' : 'rgba(120,240,255,0.7)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.moveTo(-52, 12);
-    ctx.quadraticCurveTo(-64, -40, -30, -76);
-    ctx.moveTo(52, 12);
-    ctx.quadraticCurveTo(64, -40, 30, -76);
+    ctx.moveTo(-52, 12); ctx.quadraticCurveTo(-64, -40, -30, -76);
+    ctx.moveTo(52, 12);  ctx.quadraticCurveTo(64, -40, 30, -76);
     ctx.stroke();
     ctx.restore();
   }
 
   if (isActive) {
-    // Draw the actual incubating egg with a custom star pattern
     const beatPulse = isReady
-      ? (0.85 + 0.15 * Math.sin(t * 6))    // faster pulse when ready
+      ? (0.85 + 0.15 * Math.sin(t * 6))
       : (0.7 + 0.3 * Math.sin(t * 1.8));
 
     ctx.save();
@@ -1667,8 +1575,6 @@ function drawIncubationCenter(t) {
       ctx.shadowColor = isReady ? '#b8ff8a' : '#ffd76a';
       ctx.shadowBlur = 26 * beatPulse;
     }
-
-    // Egg base
     const eg = ctx.createRadialGradient(-6, -50, 4, 0, -46, 42);
     if (isReady) {
       eg.addColorStop(0, `rgba(220,255,180,${0.9 * beatPulse})`);
@@ -1686,11 +1592,9 @@ function drawIncubationCenter(t) {
     ctx.bezierCurveTo(34, -12, 16, 8, 0, 8);
     ctx.bezierCurveTo(-16, 8, -34, -12, -34, -42);
     ctx.bezierCurveTo(-34, -56, -28, -88, 0, -88);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
     ctx.restore();
 
-    // Egg rim
     ctx.strokeStyle = isReady
       ? `rgba(220,255,180,${0.8 * beatPulse})`
       : `rgba(255,230,170,${0.8 * beatPulse})`;
@@ -1701,10 +1605,9 @@ function drawIncubationCenter(t) {
     ctx.bezierCurveTo(30, -14, 14, 4, 0, 4);
     ctx.bezierCurveTo(-14, 4, -30, -14, -30, -42);
     ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
-    ctx.closePath();
-    ctx.stroke();
+    ctx.closePath(); ctx.stroke();
 
-    // Custom star pattern on the egg — 3 small stars + a big central star
+    // Star pattern on the egg
     const innerGlow = isReady ? '#e0ffd0' : '#ffe9a0';
     ctx.save();
     if (!state.lowDetail) {
@@ -1712,17 +1615,13 @@ function drawIncubationCenter(t) {
       ctx.shadowBlur = 12 * beatPulse;
     }
     ctx.fillStyle = innerGlow;
-
-    // Big central star
     const spin = t * (isReady ? 1.4 : 0.6);
     ctx.save();
-    ctx.translate(0, -46);
-    ctx.rotate(spin);
+    ctx.translate(0, -46); ctx.rotate(spin);
     drawStarPath(ctx, 0, 0, 12, 5);
     ctx.fill();
     ctx.restore();
 
-    // Small satellite stars
     const smallStars = [
       { a: 0.6, r: 18, size: 5 },
       { a: 2.6, r: 16, size: 4.5 },
@@ -1732,15 +1631,13 @@ function drawIncubationCenter(t) {
       const sx = Math.cos(s.a + spin * 0.5) * s.r;
       const sy = -52 + Math.sin(s.a + spin * 0.5) * s.r * 0.7;
       ctx.save();
-      ctx.translate(sx, sy);
-      ctx.rotate(-spin);
+      ctx.translate(sx, sy); ctx.rotate(-spin);
       drawStarPath(ctx, 0, 0, s.size, 5);
       ctx.fill();
       ctx.restore();
     }
     ctx.restore();
 
-    // Ready glow rays when hatched
     if (isReady && !state.lowDetail) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -1754,20 +1651,13 @@ function drawIncubationCenter(t) {
         rg.addColorStop(0, 'rgba(220,255,180,0.5)');
         rg.addColorStop(1, 'rgba(180,255,140,0)');
         ctx.fillStyle = rg;
-        ctx.beginPath();
-        ctx.arc(gx, gy, 22, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(gx, gy, 22, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
-
   } else {
-    // Idle state — original empty egg silhouette
     ctx.save();
-    if (!state.lowDetail) {
-      ctx.shadowColor = '#00e5ff';
-      ctx.shadowBlur = 24 * pulse;
-    }
+    if (!state.lowDetail) { ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 24 * pulse; }
     const eg = ctx.createRadialGradient(-6, -50, 4, 0, -46, 42);
     eg.addColorStop(0, `rgba(220,255,255,${0.55 * pulse})`);
     eg.addColorStop(0.5, `rgba(80,200,255,${0.35 * pulse})`);
@@ -1779,8 +1669,7 @@ function drawIncubationCenter(t) {
     ctx.bezierCurveTo(34, -12, 16, 8, 0, 8);
     ctx.bezierCurveTo(-16, 8, -34, -12, -34, -42);
     ctx.bezierCurveTo(-34, -56, -28, -88, 0, -88);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
     ctx.restore();
 
     ctx.strokeStyle = `rgba(200,250,255,${0.6 * pulse})`;
@@ -1791,73 +1680,104 @@ function drawIncubationCenter(t) {
     ctx.bezierCurveTo(30, -14, 14, 4, 0, 4);
     ctx.bezierCurveTo(-14, 4, -30, -14, -30, -42);
     ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
-    ctx.closePath();
-    ctx.stroke();
+    ctx.closePath(); ctx.stroke();
 
-    // Faint sparkle
     const sp = 0.5 + 0.5 * Math.sin(t * 3);
     ctx.fillStyle = `rgba(255,255,255,${0.6 * sp})`;
-    ctx.beginPath();
-    ctx.arc(-4, -50, 3 + sp * 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(-4, -50, 3 + sp * 1.2, 0, Math.PI * 2); ctx.fill();
   }
 
-  // Orbiting dashed ring (only when idle, otherwise the egg dominates)
   if (!isActive) {
     ctx.save();
-    ctx.translate(0, -44);
-    ctx.rotate(t * 0.6);
+    ctx.translate(0, -44); ctx.rotate(t * 0.6);
     ctx.strokeStyle = 'rgba(120,230,255,0.55)';
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 12]);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 52, 18, 0, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 52, 18, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
   }
 
-  // Pedestal
   ctx.fillStyle = '#0e4a5a';
-  roundRect(ctx, -30, 6, 60, 12, 5);
-  ctx.fill();
+  roundRect(ctx, -30, 6, 60, 12, 5); ctx.fill();
   ctx.strokeStyle = 'rgba(120,240,255,0.5)';
   ctx.lineWidth = 1.5;
-  roundRect(ctx, -30, 6, 60, 12, 5);
-  ctx.stroke();
+  roundRect(ctx, -30, 6, 60, 12, 5); ctx.stroke();
 
   ctx.restore();
 
-  // Label
+  // Label above
   ctx.save();
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.textAlign = 'center';
   if (isReady) {
     ctx.fillStyle = 'rgba(200,255,150,0.95)';
-    if (!state.lowDetail) {
-      ctx.shadowColor = '#b8ff8a';
-      ctx.shadowBlur = 12;
-    }
-    ctx.fillText('✦ READY TO HATCH ✦', p.cx, p.cy + 82);
+    if (!state.lowDetail) { ctx.shadowColor = '#b8ff8a'; ctx.shadowBlur = 12; }
+    ctx.fillText('✦ TAP TO HATCH ✦', p.cx, p.cy + 82);
   } else if (isActive) {
     ctx.fillStyle = 'rgba(255,220,140,0.95)';
-    if (!state.lowDetail) {
-      ctx.shadowColor = '#ffd76a';
-      ctx.shadowBlur = 10;
-    }
+    if (!state.lowDetail) { ctx.shadowColor = '#ffd76a'; ctx.shadowBlur = 10; }
     ctx.fillText('◈ INCUBATING ◈', p.cx, p.cy + 82);
   } else {
     ctx.fillStyle = 'rgba(140,240,255,0.9)';
-    if (!state.lowDetail) {
-      ctx.shadowColor = '#00d5ff';
-      ctx.shadowBlur = 8;
-    }
+    if (!state.lowDetail) { ctx.shadowColor = '#00d5ff'; ctx.shadowBlur = 8; }
     ctx.fillText('◈ INCUBATION CENTER ◈', p.cx, p.cy + 82);
   }
   ctx.restore();
+
+  // ---- Progress bar under the incubator (only when active) ----
+  if (isActive) {
+    const barW = 200;
+    const barH = 12;
+    const barX = p.cx - barW / 2;
+    const barY = p.cy + 100;
+
+    // Background track
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    roundRect(ctx, barX - 2, barY - 2, barW + 4, barH + 4, 8);
+    ctx.fill();
+
+    // Fill
+    const progress = isReady ? 1 : Math.min(1, inc.elapsed / inc.duration);
+    const fillW = barW * progress;
+
+    if (fillW > 0) {
+      const fg = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      if (isReady) {
+        fg.addColorStop(0, '#b8ff8a');
+        fg.addColorStop(1, '#22c55e');
+      } else {
+        fg.addColorStop(0, '#ffd54a');
+        fg.addColorStop(1, '#f59e0b');
+      }
+      ctx.fillStyle = fg;
+      roundRect(ctx, barX, barY, fillW, barH, 6);
+      ctx.fill();
+
+      if (!state.lowDetail) {
+        ctx.shadowColor = isReady ? '#b8ff8a' : '#ffd76a';
+        ctx.shadowBlur = 12;
+        roundRect(ctx, barX, barY, fillW, barH, 6);
+        ctx.fill();
+      }
+    }
+
+    // Border
+    ctx.strokeStyle = isReady ? 'rgba(200,255,150,0.8)' : 'rgba(255,220,140,0.7)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, barX, barY, barW, barH, 6);
+    ctx.stroke();
+
+    // Percentage text
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillText(`${Math.floor(progress * 100)}%`, p.cx, barY + barH + 15);
+    ctx.restore();
+  }
 }
 
-/* Helper: 5-pointed star path */
 function drawStarPath(g, cx, cy, r, points) {
   const inner = r * 0.42;
   g.beginPath();
@@ -1866,10 +1786,23 @@ function drawStarPath(g, cx, cy, r, points) {
     const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
     const px = cx + Math.cos(a) * rad;
     const py = cy + Math.sin(a) * rad;
-    if (i === 0) g.moveTo(px, py);
-    else         g.lineTo(px, py);
+    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
   }
   g.closePath();
+}
+
+/* Draw a translucent ring + border around a structure to hint it's draggable */
+function drawStructureDraggableOutline(st, pulse) {
+  ctx.save();
+  ctx.globalAlpha = 0.55 + pulse * 0.35;
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([12, 8]);
+  ctx.beginPath();
+  ctx.ellipse(st.cx, st.cy + 10, st.rx + 20, st.ry + 14, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
 }
 
 /* =====================================================
@@ -1894,7 +1827,6 @@ function drawIslandBase(t) {
 
   ctx.save();
   ctx.clip(path);
-
   for (let x = -RX - 60, i = 0; x < RX + 60; x += 140, i++) {
     if (i % 2 === 1) {
       ctx.fillStyle = 'rgba(0,20,45,0.14)';
@@ -1904,30 +1836,22 @@ function drawIslandBase(t) {
       ctx.fillRect(x, 0, 70, BOT + 60);
     }
   }
-
   ctx.globalAlpha = 0.10;
   ctx.fillStyle = '#000';
   for (let i = 0; i < 2; i++) {
     const y = 260 + i * 170;
     ctx.beginPath();
     ctx.moveTo(-RX, y);
-    for (let x = -RX; x <= RX; x += 60) {
-      ctx.lineTo(x, y + Math.sin(x * 0.004 + i * 1.7) * 7);
-    }
+    for (let x = -RX; x <= RX; x += 60) ctx.lineTo(x, y + Math.sin(x * 0.004 + i * 1.7) * 7);
     ctx.lineTo(RX, y + 26);
-    for (let x = RX; x >= -RX; x -= 60) {
-      ctx.lineTo(x, y + 26 + Math.sin(x * 0.004 + i * 1.7) * 7);
-    }
-    ctx.closePath();
-    ctx.fill();
+    for (let x = RX; x >= -RX; x -= 60) ctx.lineTo(x, y + 26 + Math.sin(x * 0.004 + i * 1.7) * 7);
+    ctx.closePath(); ctx.fill();
   }
   ctx.globalAlpha = 1;
 
   const windows = [
-    { x: -320, y: 300, w: 165, h: 105 },
-    { x:  320, y: 300, w: 165, h: 105 },
-    { x:  -90, y: 470, w: 130, h: 80 },
-    { x:   90, y: 470, w: 130, h: 80 },
+    { x: -320, y: 300, w: 165, h: 105 }, { x: 320, y: 300, w: 165, h: 105 },
+    { x: -90, y: 470, w: 130, h: 80 }, { x: 90, y: 470, w: 130, h: 80 },
   ];
   for (const w of windows) {
     if (!state.lowDetail) {
@@ -1938,35 +1862,22 @@ function drawIslandBase(t) {
       og.addColorStop(0.4, 'rgba(60,220,255,0.28)');
       og.addColorStop(1, 'rgba(0,150,200,0)');
       ctx.fillStyle = og;
-      roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30);
-      ctx.fill();
+      roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30); ctx.fill();
       ctx.restore();
     }
-
     const ig = ctx.createRadialGradient(w.x, w.y - 8, 3, w.x, w.y, w.w * 0.4);
     ig.addColorStop(0, 'rgba(255,255,255,0.95)');
     ig.addColorStop(0.6, 'rgba(140,235,255,0.55)');
     ig.addColorStop(1, 'rgba(80,200,255,0)');
     ctx.fillStyle = ig;
-    ctx.beginPath();
-    ctx.ellipse(w.x, w.y - 8, w.w * 0.34, w.h * 0.34, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(180,250,255,0.65)';
-    ctx.lineWidth = 2.5;
-    roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30);
-    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(w.x, w.y - 8, w.w * 0.34, w.h * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(180,250,255,0.65)'; ctx.lineWidth = 2.5;
+    roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30); ctx.stroke();
   }
-
-  ctx.strokeStyle = 'rgba(140,240,255,0.22)';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(140,240,255,0.22)'; ctx.lineWidth = 1.5;
   for (const w of windows) {
-    ctx.beginPath();
-    ctx.moveTo(w.x, w.y + w.h / 2 + 4);
-    ctx.lineTo(w.x, BOT - 40);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w.x, w.y + w.h / 2 + 4); ctx.lineTo(w.x, BOT - 40); ctx.stroke();
   }
-
   ctx.restore();
 
   if (!state.lowDetail) {
@@ -1977,18 +1888,12 @@ function drawIslandBase(t) {
     bg.addColorStop(0.55, 'rgba(60,200,255,0.12)');
     bg.addColorStop(1, 'rgba(60,200,255,0)');
     ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.ellipse(0, BOT - 50, 500, 115, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, BOT - 50, 500, 115, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
-
-  ctx.strokeStyle = 'rgba(160,245,255,0.5)';
-  ctx.lineWidth = 3;
-  ctx.stroke(path);
+  ctx.strokeStyle = 'rgba(160,245,255,0.5)'; ctx.lineWidth = 3; ctx.stroke(path);
 }
 
-/* ----------------------------- CRYSTAL RIM ----------------------------- */
 function drawCrystalRim(t) {
   const BUMPS = state.lowDetail ? 20 : 36;
   for (let i = 0; i < BUMPS; i++) {
@@ -2004,41 +1909,25 @@ function drawCrystalRim(t) {
   }
 }
 
-/* ----------------------------- VOID SURFACE ----------------------------- */
 function drawVoidSurface(t) {
   ctx.save();
-
   const voidGrad = ctx.createRadialGradient(-60, -60, 25, 0, 0, GRX);
   voidGrad.addColorStop(0, '#1a0033');
   voidGrad.addColorStop(0.6, '#0d001a');
   voidGrad.addColorStop(1, '#05000a');
   ctx.fillStyle = voidGrad;
-  ctx.beginPath();
-  ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2); ctx.fill();
 
-  ctx.strokeStyle = 'rgba(140, 80, 220, 0.16)';
-  ctx.lineWidth = 48;
-  ctx.beginPath();
-  ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(180, 100, 255, 0.42)';
-  ctx.lineWidth = 14;
-  ctx.beginPath();
-  ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(225, 165, 255, 0.75)';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.strokeStyle = 'rgba(140, 80, 220, 0.16)'; ctx.lineWidth = 48;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(180, 100, 255, 0.42)'; ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(225, 165, 255, 0.75)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
 
   if (!state.lowDetail) {
     ctx.globalAlpha = 0.07;
-    ctx.strokeStyle = '#cc88ff';
-    ctx.lineWidth = 16;
+    ctx.strokeStyle = '#cc88ff'; ctx.lineWidth = 16;
     for (let i = 0; i < 3; i++) {
       const off = Math.sin(t * 0.3 + i) * 24;
       ctx.beginPath();
@@ -2058,25 +1947,20 @@ function drawVoidSurface(t) {
     if (Math.abs(px) < 320 && py < -80) continue;
     const bob = Math.sin(t * 1.5 + i) * 4;
     ctx.save();
-    ctx.translate(px, py + bob);
-    ctx.rotate(rnd() * Math.PI);
+    ctx.translate(px, py + bob); ctx.rotate(rnd() * Math.PI);
     ctx.fillStyle = 'rgba(200, 130, 255, 0.75)';
     ctx.beginPath();
     ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(255, 220, 255, 0.6)';
     ctx.beginPath();
     ctx.moveTo(0, -7); ctx.lineTo(3.5, 0); ctx.lineTo(0, 0);
-    ctx.closePath();
-    ctx.fill();
+    ctx.closePath(); ctx.fill();
     ctx.restore();
   }
-
   ctx.restore();
 }
 
-/* ----------------------------- FLOATING DEBRIS ----------------------------- */
 const debris = (() => {
   const rnd = mulberry32(1234);
   const out = [];
@@ -2084,12 +1968,8 @@ const debris = (() => {
     const a = rnd() * Math.PI * 2;
     const r = 1.1 + rnd() * 0.55;
     out.push({
-      a, r,
-      size: 2 + rnd() * 5,
-      spd: 0.1 + rnd() * 0.3,
-      yOff: (rnd() - 0.5) * 460,
-      hue: 260 + rnd() * 80,
-      phase: rnd() * Math.PI * 2,
+      a, r, size: 2 + rnd() * 5, spd: 0.1 + rnd() * 0.3,
+      yOff: (rnd() - 0.5) * 460, hue: 260 + rnd() * 80, phase: rnd() * Math.PI * 2,
     });
   }
   return out;
@@ -2098,7 +1978,6 @@ const debris = (() => {
 function drawDebris(t) {
   ctx.save();
   ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
-
   const count = state.lowDetail ? 5 : debris.length;
   for (let i = 0; i < count; i++) {
     const d = debris[i];
@@ -2110,27 +1989,21 @@ function drawDebris(t) {
     ctx.fillStyle = `hsla(${d.hue}, 85%, 72%, ${alpha})`;
     if (d.size > 4) {
       ctx.save();
-      ctx.translate(dx, dy);
-      ctx.rotate(angle * 2);
+      ctx.translate(dx, dy); ctx.rotate(angle * 2);
       ctx.beginPath();
-      ctx.moveTo(0, -d.size);
-      ctx.lineTo(d.size * 0.55, 0);
-      ctx.lineTo(0, d.size);
-      ctx.lineTo(-d.size * 0.55, 0);
-      ctx.closePath();
-      ctx.fill();
+      ctx.moveTo(0, -d.size); ctx.lineTo(d.size * 0.55, 0);
+      ctx.lineTo(0, d.size); ctx.lineTo(-d.size * 0.55, 0);
+      ctx.closePath(); ctx.fill();
       ctx.restore();
     } else {
-      ctx.beginPath();
-      ctx.arc(dx, dy, d.size, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(dx, dy, d.size, 0, Math.PI * 2); ctx.fill();
     }
   }
   ctx.restore();
 }
 
 /* =========================================================================
-   STELLARIUS SHAPE — shared between island and market previews
+   STELLARIUS SHAPE
    ========================================================================= */
 function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false) {
   const hitPhase = Math.max(0, 1 - beatPhase * 3);
@@ -2151,153 +2024,102 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
     halo.addColorStop(0.5, `rgba(255,180,80,${0.15 * glow})`);
     halo.addColorStop(1, 'rgba(255,180,80,0)');
     g.fillStyle = halo;
-    g.beginPath();
-    g.arc(0, -34, 90, 0, Math.PI * 2);
-    g.fill();
+    g.beginPath(); g.arc(0, -34, 90, 0, Math.PI * 2); g.fill();
     g.restore();
   }
 
-  // Body
   g.save();
   g.scale(squashX, squashY);
-
   const bodyGrad = g.createLinearGradient(0, -90, 0, 10);
   bodyGrad.addColorStop(0.0, '#fff2a8');
   bodyGrad.addColorStop(0.35, '#ffd76a');
   bodyGrad.addColorStop(0.7, '#c988ff');
   bodyGrad.addColorStop(1.0, '#5a2d9c');
-
   g.fillStyle = bodyGrad;
   g.beginPath();
-  g.moveTo(0, -95);
-  g.lineTo(24, -62);
-  g.lineTo(52, -46);
-  g.lineTo(30, -22);
+  g.moveTo(0, -95); g.lineTo(24, -62); g.lineTo(52, -46); g.lineTo(30, -22);
   g.quadraticCurveTo(34, 4, 0, 14);
   g.quadraticCurveTo(-34, 4, -30, -22);
-  g.lineTo(-52, -46);
-  g.lineTo(-24, -62);
-  g.closePath();
-  g.fill();
+  g.lineTo(-52, -46); g.lineTo(-24, -62);
+  g.closePath(); g.fill();
 
   g.strokeStyle = `rgba(255,250,220,${0.7 + 0.3 * glow})`;
-  g.lineWidth = 2;
-  g.stroke();
+  g.lineWidth = 2; g.stroke();
 
-  g.strokeStyle = 'rgba(255,255,255,0.35)';
-  g.lineWidth = 1.2;
+  g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1.2;
   g.beginPath();
   g.moveTo(0, -95); g.lineTo(0, 14);
   g.moveTo(-24, -62); g.lineTo(24, -62);
   g.moveTo(-52, -46); g.lineTo(52, -46);
   g.stroke();
-
   g.restore();
 
-  // Eyes
   const blink = (Math.sin(t * 2.2) > 0.92) ? 0.15 : 1;
   g.save();
   g.globalAlpha = blink;
-  if (!state.lowDetail && !previewMode) {
-    g.shadowColor = '#fff5c0';
-    g.shadowBlur = 12;
-  }
+  if (!state.lowDetail && !previewMode) { g.shadowColor = '#fff5c0'; g.shadowBlur = 12; }
   g.fillStyle = '#fffbe8';
   g.beginPath(); g.arc(-14, -50, 8, 0, Math.PI * 2); g.fill();
   g.beginPath(); g.arc( 14, -50, 8, 0, Math.PI * 2); g.fill();
-
   g.shadowBlur = 0;
   g.fillStyle = '#3a1a5e';
   g.beginPath(); g.arc(-14, -48, 3.5, 0, Math.PI * 2); g.fill();
   g.beginPath(); g.arc( 14, -48, 3.5, 0, Math.PI * 2); g.fill();
-
   g.fillStyle = '#fff';
   g.beginPath(); g.arc(-15.5, -49.5, 1.3, 0, Math.PI * 2); g.fill();
   g.beginPath(); g.arc( 12.5, -49.5, 1.3, 0, Math.PI * 2); g.fill();
   g.restore();
 
-  // Mouth
   g.fillStyle = '#3a1a5e';
   g.beginPath();
   g.ellipse(0, -32, 6 + hitPhase * 3, 4 + hitPhase * 4, 0, 0, Math.PI * 2);
   g.fill();
 
-  // Star badge
   drawStarBadgeOn(g, 0, 8, t, glow, previewMode);
 
-  // Drum
-  const drumY = 18;
-  const drumW = 34;
-  const drumH = 20;
-
+  const drumY = 18, drumW = 34, drumH = 20;
   g.fillStyle = 'rgba(0,0,0,0.4)';
-  g.beginPath();
-  g.ellipse(0, drumY + drumH * 0.5, drumW * 0.55, 5, 0, 0, Math.PI * 2);
-  g.fill();
-
+  g.beginPath(); g.ellipse(0, drumY + drumH * 0.5, drumW * 0.55, 5, 0, 0, Math.PI * 2); g.fill();
   const drumGrad = g.createLinearGradient(0, drumY - drumH / 2, 0, drumY + drumH / 2);
   drumGrad.addColorStop(0, '#5a2d9c');
   drumGrad.addColorStop(0.5, '#2a0f4a');
   drumGrad.addColorStop(1, '#180828');
   g.fillStyle = drumGrad;
-  roundRect(g, -drumW / 2, drumY - drumH / 2, drumW, drumH, 8);
-  g.fill();
-
+  roundRect(g, -drumW / 2, drumY - drumH / 2, drumW, drumH, 8); g.fill();
   g.fillStyle = `rgba(255,220,120,${0.5 + hitPhase * 0.5})`;
-  g.beginPath();
-  g.ellipse(0, drumY - drumH / 2, drumW * 0.5, 3.5, 0, 0, Math.PI * 2);
-  g.fill();
-
+  g.beginPath(); g.ellipse(0, drumY - drumH / 2, drumW * 0.5, 3.5, 0, 0, Math.PI * 2); g.fill();
   g.strokeStyle = `rgba(255,240,180,${0.4 + hitPhase * 0.6})`;
   g.lineWidth = 1.5;
-  g.beginPath();
-  g.moveTo(-8, drumY); g.lineTo(0, drumY - 4); g.lineTo(8, drumY);
-  g.stroke();
+  g.beginPath(); g.moveTo(-8, drumY); g.lineTo(0, drumY - 4); g.lineTo(8, drumY); g.stroke();
 
   const stickTilt = hitPhase * 0.25;
-  g.strokeStyle = '#a78bfa';
-  g.lineWidth = 3;
-  g.lineCap = 'round';
+  g.strokeStyle = '#a78bfa'; g.lineWidth = 3; g.lineCap = 'round';
   g.beginPath();
-  g.moveTo(-22, -18);
-  g.lineTo(-drumW * 0.35 - stickTilt * 6, drumY - 6);
-  g.moveTo( 22, -18);
-  g.lineTo( drumW * 0.35 + stickTilt * 6, drumY - 6);
+  g.moveTo(-22, -18); g.lineTo(-drumW * 0.35 - stickTilt * 6, drumY - 6);
+  g.moveTo( 22, -18); g.lineTo( drumW * 0.35 + stickTilt * 6, drumY - 6);
   g.stroke();
 
-  // Orbiting shards
   if (!previewMode) {
     const shardCount = state.lowDetail ? 3 : 5;
     for (let i = 0; i < shardCount; i++) {
       const a = t * 1.1 + i * (Math.PI * 2 / shardCount);
       const ox = Math.cos(a) * 58;
       const oy = -46 + Math.sin(a) * 18;
-      const depth = Math.sin(a);
-      if (depth < -0.2) continue;
+      if (Math.sin(a) < -0.2) continue;
       const sz = 6 + Math.sin(t * 2 + i) * 1.5;
       g.save();
-      g.translate(ox, oy);
-      g.rotate(a * 1.5);
-      if (!state.lowDetail) {
-        g.shadowColor = '#ffd76a';
-        g.shadowBlur = 12 * glow;
-      }
+      g.translate(ox, oy); g.rotate(a * 1.5);
+      if (!state.lowDetail) { g.shadowColor = '#ffd76a'; g.shadowBlur = 12 * glow; }
       g.fillStyle = `rgba(255,230,140,${0.75 + 0.25 * glow})`;
       g.beginPath();
-      g.moveTo(0, -sz * 1.6);
-      g.lineTo(sz * 0.45, -sz * 0.45);
-      g.lineTo(sz * 1.6, 0);
-      g.lineTo(sz * 0.45, sz * 0.45);
-      g.lineTo(0, sz * 1.6);
-      g.lineTo(-sz * 0.45, sz * 0.45);
-      g.lineTo(-sz * 1.6, 0);
-      g.lineTo(-sz * 0.45, -sz * 0.45);
-      g.closePath();
-      g.fill();
+      g.moveTo(0, -sz * 1.6); g.lineTo(sz * 0.45, -sz * 0.45);
+      g.lineTo(sz * 1.6, 0); g.lineTo(sz * 0.45, sz * 0.45);
+      g.lineTo(0, sz * 1.6); g.lineTo(-sz * 0.45, sz * 0.45);
+      g.lineTo(-sz * 1.6, 0); g.lineTo(-sz * 0.45, -sz * 0.45);
+      g.closePath(); g.fill();
       g.restore();
     }
   }
-
   g.restore();
 }
 
@@ -2305,7 +2127,6 @@ function drawStarBadgeOn(g, x, y, t, glow, small) {
   g.save();
   g.translate(x, y);
   const r1 = small ? 8 : 11;
-
   g.fillStyle = 'rgba(20, 5, 45, 0.85)';
   g.beginPath(); g.arc(0, 0, r1, 0, Math.PI * 2); g.fill();
   g.strokeStyle = `rgba(255,220,140,${0.7 + 0.3 * glow})`;
@@ -2313,10 +2134,7 @@ function drawStarBadgeOn(g, x, y, t, glow, small) {
   g.beginPath(); g.arc(0, 0, r1, 0, Math.PI * 2); g.stroke();
 
   g.rotate(t * 0.8);
-  if (!state.lowDetail && !small) {
-    g.shadowColor = '#ffd76a';
-    g.shadowBlur = 8;
-  }
+  if (!state.lowDetail && !small) { g.shadowColor = '#ffd76a'; g.shadowBlur = 8; }
   g.fillStyle = '#ffe066';
   g.beginPath();
   const rStar = small ? 5.5 : 7;
@@ -2326,37 +2144,13 @@ function drawStarBadgeOn(g, x, y, t, glow, small) {
     const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
     const px = Math.cos(a) * r;
     const py = Math.sin(a) * r;
-    if (i === 0) g.moveTo(px, py);
-    else         g.lineTo(px, py);
+    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
   }
-  g.closePath();
-  g.fill();
+  g.closePath(); g.fill();
   g.restore();
 }
 
-/* ----------------------------- ON-ISLAND MONSTER ----------------------------- */
-function drawStellarius(m, t) {
-  const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
-  const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
-  const beat = (t * (STELL_BPM / 60)) % 1;
-
-  ctx.save();
-  ctx.globalAlpha = 0.4;
-  ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.ellipse(wx, wy + 8, 46, 14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  // 2x2 grid footprint overlay (only visible when placing)
-  if (state.placingItem && state.placingItem.item.id === m.id) {
-    drawFootprintOverlay(wx, wy, 2);
-  }
-
-  drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
-}
-
-/* Draw a 2×2 grid footprint helper (for the placement preview) */
+/* Draw a 2×2 grid footprint overlay */
 function drawFootprintOverlay(wx, wy, size) {
   const TW = 72 * (RX / 780) * state.cam.zoom * 0.5;
   const TH = 36 * (RY / 390) * state.cam.zoom * 0.5;
@@ -2376,20 +2170,28 @@ function drawFootprintOverlay(wx, wy, size) {
       ctx.lineTo(tx, ty + TH / 2);
       ctx.lineTo(tx - TW / 2, ty);
       ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fill(); ctx.stroke();
     }
   }
   ctx.restore();
 }
 
+function drawStellarius(m, t) {
+  const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
+  const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
+  const beat = (t * (STELL_BPM / 60)) % 1;
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(wx, wy + 8, 46, 14, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
+}
+
 function drawMonsters(t) {
   const sorted = [...state.monsters].sort((a, b) => a.offsetY - b.offsetY);
-  for (const m of sorted) {
-    if (m.id === 'stellarius') drawStellarius(m, t);
-  }
+  for (const m of sorted) if (m.id === 'stellarius') drawStellarius(m, t);
 
-  // Draw ghost preview while placing
   if (state.placingItem && state.hoverIsland) {
     const m = state.placingItem;
     const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
@@ -2411,9 +2213,7 @@ function drawIsland(t) {
   ctx.save();
   ctx.globalAlpha = 0.14;
   ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.ellipse(0, BOT + 70, 480, 90, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, BOT + 70, 480, 90, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 
   drawIslandBase(t);
@@ -2421,22 +2221,30 @@ function drawIsland(t) {
   drawVoidSurface(t);
   drawBackSpikes(t);
   drawCastle(t);
-  drawPlatformBase(platforms.left);
-  drawPlatformBase(platforms.right);
-  drawBreedSynthesizer(t);
-  drawIncubationCenter(t);
+
+  // Draw platforms behind the structures
+  drawPlatformBase(structures.left);
+  drawPlatformBase(structures.right);
+
+  // Draw structures
+  drawBreedSynthesizer(t, structures.left);
+  drawIncubationCenter(t, structures.right);
+
+  // Draw draggable outline on any structure the user is hovering while dragging
+  if (state.draggingStructure) {
+    const st = state.draggingStructure === 'left' ? structures.left : structures.right;
+    drawStructureDraggableOutline(st, 0.5 + 0.5 * Math.sin(t * 6));
+  }
+
   drawMonsters(t);
 
   ctx.strokeStyle = 'rgba(255, 150, 255, 0.3)';
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2); ctx.stroke();
 
   ctx.restore();
 }
 
-/* ------------------------------ VIGNETTE ------------------------------ */
 function drawVignette() {
   const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3,
                                      W / 2, H / 2, Math.max(W, H) * 0.8);
@@ -2463,42 +2271,45 @@ function render(now) {
   tickStellariusAudio(t);
   updateIncubation(t);
   updateMonsterCardPreviews(t);
-
   requestAnimationFrame(render);
 }
 
-/* ============================ INCUBATION TIMER ============================ */
-const INCUBATE_DURATION = 60; // seconds
+/* ============================ INCUBATION ============================ */
+const INCUBATE_DURATION = 60;
 
 function startIncubation(item) {
   state.incubating = {
     item,
     startTime: performance.now() / 1000,
     duration: INCUBATE_DURATION,
+    elapsed: 0,
     ready: false,
   };
 }
 
 function updateIncubation(t) {
   const inc = state.incubating;
+  const statusEl = document.getElementById('incubator-status');
+  const barFill  = document.getElementById('inc-bar-fill');
+  const speedBtn = document.getElementById('inc-speed');
+  const speedLbl = document.getElementById('inc-speed-label');
+
   if (!inc) {
-    document.getElementById('incubator-status').classList.remove('show');
+    statusEl.classList.remove('show', 'ready');
     return;
   }
 
-  const elapsed = t - inc.startTime;
-  const remaining = inc.duration - elapsed;
+  inc.elapsed = t - inc.startTime;
+  const remaining = Math.max(0, inc.duration - inc.elapsed);
 
   if (remaining <= 0 && !inc.ready) {
     inc.ready = true;
     showToast(`${inc.item.name} is ready to hatch!`, 'success');
-    // Update the incubation center visually to show it's ready
-    document.getElementById('incubator-status').classList.add('ready');
+    statusEl.classList.add('ready');
     document.getElementById('inc-title').textContent = 'Ready to Hatch!';
-    document.getElementById('inc-timer').textContent = 'Tap the Incubator';
+    document.getElementById('inc-timer').textContent = 'Tap Incubator';
   }
 
-  const statusEl = document.getElementById('incubator-status');
   statusEl.classList.add('show');
 
   if (!inc.ready) {
@@ -2506,7 +2317,37 @@ function updateIncubation(t) {
     document.getElementById('inc-title').textContent = `Incubating ${inc.item.name}`;
     document.getElementById('inc-timer').textContent = formatTime(remaining);
   }
+
+  const progress = Math.min(1, inc.elapsed / inc.duration);
+  barFill.style.width = (progress * 100).toFixed(1) + '%';
+
+  if (!inc.ready) {
+    // Speed cost: 1 gem per remaining minute, rounded up
+    const remainingMin = Math.max(1, Math.ceil(remaining / 60));
+    speedLbl.textContent = `Speed Up (${remainingMin})`;
+  }
 }
+
+/* Speed up button: 1 gem per remaining minute */
+document.getElementById('inc-speed').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const inc = state.incubating;
+  if (!inc || inc.ready) return;
+  const remaining = Math.max(0, inc.duration - inc.elapsed);
+  const remainingMin = Math.max(1, Math.ceil(remaining / 60));
+
+  if (state.gems < remainingMin) {
+    showToast('Not enough gems!', 'error');
+    return;
+  }
+  state.gems -= remainingMin;
+  updateCurrencyUI();
+
+  // Instantly complete the incubation
+  inc.elapsed = inc.duration;
+  inc.startTime = performance.now() / 1000 - inc.duration;
+  showToast(`Speeding up — used ${remainingMin} gem${remainingMin > 1 ? 's' : ''}!`, 'success');
+});
 
 /* ============================ INTERACTION ============================ */
 let isDragging = false, lastX = 0, lastY = 0;
@@ -2533,26 +2374,105 @@ function screenToIslandWorld(sx, sy) {
   };
 }
 
+/* Hit test: is a screen point on top of a structure?
+   Works in screen-space so zoom level doesn't matter. */
+function hitStructure(sx, sy) {
+  for (const st of [structures.left, structures.right]) {
+    const sp = structureScreenPos(st);
+    const dx = sx - sp.x;
+    const dy = sy - sp.y;
+    const rx = st.rx * state.cam.zoom * 0.95;
+    const ry = st.ry * state.cam.zoom * 0.95;
+    if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.2) {
+      return st;
+    }
+  }
+  return null;
+}
+
+/* Is the pointer over the incubator specifically? */
+function hitIncubator(sx, sy) {
+  const st = structures.right;
+  const sp = structureScreenPos(st);
+  const dx = sx - sp.x;
+  const dy = sy - sp.y;
+  const rx = st.rx * state.cam.zoom * 1.15;
+  const ry = st.ry * state.cam.zoom * 1.15;
+  return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.2;
+}
+
+/* Update the cursor class based on hover */
+function updateCursor(sx, sy) {
+  if (state.placingItem) {
+    canvas.className = 'placing';
+    return;
+  }
+  canvas.className = '';
+}
+
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
+
+  // Check if user tapped a structure to start dragging it
+  const st = hitStructure(e.clientX, e.clientY);
+  if (st && !state.placingItem) {
+    // If it's the incubator AND an egg is ready → hatch
+    if (st.id === 'right' && state.incubating && state.incubating.ready) {
+      beginPlacement(state.incubating.item);
+      return;
+    }
+    // Otherwise start dragging
+    state.draggingStructure = st.id;
+    canvas.classList.add('dragging-structure');
+    document.getElementById('drag-hint').classList.add('show');
+    lastX = e.clientX; lastY = e.clientY;
+    isDragging = false;
+    dragMoved = false;
+    return;
+  }
+
   isDragging = true;
   dragMoved = false;
   lastX = e.clientX; lastY = e.clientY;
 });
+
 canvas.addEventListener('pointermove', (e) => {
-  // Always track island hover position for placement preview
+  // Track island hover for placement preview
   const w = screenToIslandWorld(e.clientX, e.clientY);
   state.hoverIsland = w;
 
   if (state.placingItem) {
-    // Snap to integer grid coords in island-space
+    // Snap in island-space
     const gx = Math.round(w.x / (RX / 780) / 40) * 40;
     const gy = Math.round(w.y / (RY / 390) / 20) * 20;
     state.placingItem.offsetX = gx;
     state.placingItem.offsetY = gy;
   }
 
-  if (!isDragging) return;
+  // Dragging a structure
+  if (state.draggingStructure) {
+    const dx = (e.clientX - lastX) / state.cam.zoom;
+    const dy = (e.clientY - lastY) / state.cam.zoom;
+
+    // Convert screen delta → island-space delta (scaled by the ratios)
+    const st = state.draggingStructure === 'left' ? structures.left : structures.right;
+    st.cx += dx / (RX / 780);
+    st.cy += dy / (RY / 390);
+
+    // Clamp inside the island roughly
+    st.cx = Math.max(-600, Math.min(600, st.cx));
+    st.cy = Math.max(-300, Math.min(150, st.cy));
+
+    lastX = e.clientX; lastY = e.clientY;
+    dragMoved = true;
+    return;
+  }
+
+  if (!isDragging) {
+    updateCursor(e.clientX, e.clientY);
+    return;
+  }
+
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
   if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved = true;
@@ -2561,43 +2481,46 @@ canvas.addEventListener('pointermove', (e) => {
   lastX = e.clientX; lastY = e.clientY;
   clampCamera();
 });
+
 canvas.addEventListener('pointerup', (e) => {
+  // End structure drag
+  if (state.draggingStructure) {
+    state.draggingStructure = null;
+    canvas.classList.remove('dragging-structure');
+    document.getElementById('drag-hint').classList.remove('show');
+    return;
+  }
+
   isDragging = false;
   if (dragMoved) return;
 
   const w = screenToIslandWorld(e.clientX, e.clientY);
 
-  // If placing a monster, tap confirms position
   if (state.placingItem) {
     confirmPlacement();
     return;
   }
 
-  // Check if the incubation center was tapped while an egg is ready
-  const incX = W / 2 + state.cam.x + platforms.right.cx * (RX / 780) * state.cam.zoom;
-  const incY = H * 0.45 + state.cam.y + (platforms.right.cy - 6) * (RY / 390) * state.cam.zoom;
-  const dxInc = e.clientX - incX;
-  const dyInc = e.clientY - incY;
-  if (state.incubating && state.incubating.ready && dxInc * dxInc + dyInc * dyInc < 90 * 90) {
-    beginPlacement(state.incubating.item);
-    return;
-  }
-
-  // Check if any placed monster was tapped
+  // Monster tap?
   const rx = w.x / (RX / 780);
   const ry = w.y / (RY / 390);
   for (const m of state.monsters) {
     const dx = rx - m.offsetX;
     const dy = ry - m.offsetY;
     if (dx * dx + dy * dy < 60 * 60) {
-      if (m.id === 'stellarius') {
-        showToast('♪ Stellarius drums to the beat ♪');
-      }
+      if (m.id === 'stellarius') showToast('♪ Stellarius drums to the beat ♪');
       break;
     }
   }
 });
-canvas.addEventListener('pointercancel', () => { isDragging = false; dragMoved = false; });
+
+canvas.addEventListener('pointercancel', () => {
+  isDragging = false;
+  dragMoved = false;
+  state.draggingStructure = null;
+  canvas.classList.remove('dragging-structure');
+  document.getElementById('drag-hint').classList.remove('show');
+});
 
 const ZOOM_FACTOR = 1.15;
 
@@ -2622,39 +2545,30 @@ function fitCamera() {
   const zoomY = (H * 0.92) / 1350;
   state.cam.zoom = Math.max(CAM_LIMITS.zoomMin,
                     Math.min(1.0, Math.min(zoomX, zoomY)));
-  state.cam.x = 0;
-  state.cam.y = 0;
+  state.cam.x = 0; state.cam.y = 0;
   clampCamera();
 }
 fitCamera();
 
-/* ============================ PLACEMENT FLOW ============================ */
+/* ============================ PLACEMENT ============================ */
 function beginPlacement(item) {
-  state.placingItem = {
-    item,
-    offsetX: 0,
-    offsetY: 40,
-  };
+  state.placingItem = { item, offsetX: 0, offsetY: 40 };
+  document.getElementById('placement-name').textContent = item.name;
   document.getElementById('placement-panel').classList.add('show');
+  canvas.classList.add('placing');
 }
 
 function confirmPlacement() {
   if (!state.placingItem) return;
   const { item, offsetX, offsetY } = state.placingItem;
 
-  // Place the actual monster
-  state.monsters.push({
-    id: item.id,
-    name: item.name,
-    offsetX,
-    offsetY,
-  });
+  state.monsters.push({ id: item.id, name: item.name, offsetX, offsetY });
 
-  // Clear incubation
   state.incubating = null;
   state.placingItem = null;
   document.getElementById('incubator-status').classList.remove('show', 'ready');
   document.getElementById('placement-panel').classList.remove('show');
+  canvas.classList.remove('placing');
 
   showToast(`${item.name} placed on Nyxara!`, 'success');
 }
@@ -2662,29 +2576,20 @@ function confirmPlacement() {
 function cancelPlacement() {
   state.placingItem = null;
   document.getElementById('placement-panel').classList.remove('show');
+  canvas.classList.remove('placing');
 }
 
 document.getElementById('place-confirm').addEventListener('click', confirmPlacement);
 document.getElementById('place-cancel').addEventListener('click', cancelPlacement);
 
-/* =========================================================================
-   SETTINGS UI
-   ========================================================================= */
-function openModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add('open');
-}
-function closeModal(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove('open');
-}
+/* ============================ SETTINGS ============================ */
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 document.querySelectorAll('.modal-close').forEach(el => {
   el.addEventListener('click', () => closeModal(el.dataset.close));
 });
 document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-  backdrop.addEventListener('click', (e) => {
-    if (e.target === backdrop) closeModal(backdrop.id);
-  });
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(backdrop.id); });
 });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -2693,7 +2598,6 @@ window.addEventListener('keydown', (e) => {
     if (state.placingItem) cancelPlacement();
   }
 });
-
 document.getElementById('btn-settings').addEventListener('click', () => openModal('settings-modal'));
 
 function wireToggle(id, onChange) {
@@ -2715,18 +2619,10 @@ function wireSlider(sliderId, valueId, onChange) {
     if (onChange) onChange(val);
   });
 }
-wireSlider('slider-music', 'slider-music-val', (v) => {
-  state.musicVol = v / 100;
-  applyAudioSettings();
-});
-wireSlider('slider-sfx', 'slider-sfx-val', (v) => {
-  state.sfxVol = v / 100;
-  applyAudioSettings();
-});
+wireSlider('slider-music', 'slider-music-val', (v) => { state.musicVol = v / 100; applyAudioSettings(); });
+wireSlider('slider-sfx',   'slider-sfx-val',   (v) => { state.sfxVol   = v / 100; applyAudioSettings(); });
 
-/* =========================================================================
-   MARKET
-   ========================================================================= */
+/* ============================ MARKET ============================ */
 const marketScreen = document.getElementById('market-screen');
 const monsterGrid  = document.getElementById('monster-grid');
 const confirmBtn   = document.getElementById('market-confirm');
@@ -2761,7 +2657,6 @@ function closeMarket() {
   selectedItem = null;
   confirmBtn.disabled = true;
 }
-
 document.getElementById('btn-market').addEventListener('click', openMarket);
 document.getElementById('market-close').addEventListener('click', closeMarket);
 cancelBtn.addEventListener('click', closeMarket);
@@ -2788,19 +2683,14 @@ function buildMonsterGrid() {
     const card = document.createElement('div');
     card.className = 'm-card';
     card.dataset.id = item.id;
-    const owned = state.ownedIds.has(item.id);
     const incubating = state.incubating && state.incubating.item.id === item.id;
     const placed = state.monsters.some(m => m.id === item.id);
-    const affordable = item.currency === 'gems'
-      ? state.gems >= item.price
-      : state.shards >= item.price;
-    if (!affordable && !owned && !incubating) card.classList.add('m-unaffordable');
+    const affordable = state.shards >= item.price;
+    if (!affordable && !incubating && !placed) card.classList.add('m-unaffordable');
 
-    const costIcon = item.currency === 'gems'
-      ? '<span class="mini-gem"></span>'
-      : '<span class="mini-shard"></span>';
-
-    const tag = placed ? 'Placed' : (incubating ? 'Incubating' : (owned ? 'Owned' : ''));
+    let tag = '';
+    if (placed) tag = 'Placed';
+    else if (incubating) tag = 'Incubating';
 
     card.innerHTML = `
       <div class="m-card-name">${item.name}</div>
@@ -2810,7 +2700,7 @@ function buildMonsterGrid() {
           <div class="m-elem star" title="Star">${starElementSVG()}</div>
         </div>
         <div class="m-cost">
-          <div class="m-cost-left">${costIcon}${item.price.toLocaleString()}</div>
+          <div class="m-cost-left"><span class="mini-shard"></span>${item.price.toLocaleString()}</div>
           ${tag ? `<div class="m-owned-tag">${tag}</div>` : ''}
         </div>
       </div>
@@ -2824,15 +2714,8 @@ function buildMonsterGrid() {
     });
 
     monsterGrid.appendChild(card);
-
     const cvs = card.querySelector('canvas');
-    const ctxPreview = cvs.getContext('2d');
-    previewCanvases.push({
-      canvas: cvs,
-      ctx: ctxPreview,
-      item,
-      dpr: 1,
-    });
+    previewCanvases.push({ canvas: cvs, ctx: cvs.getContext('2d'), item });
   });
 }
 
@@ -2841,19 +2724,13 @@ function updateMonsterCardPreviews(t) {
     const cvs = p.canvas;
     const rect = cvs.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
-
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.floor(rect.width * dpr);
     const h = Math.floor(rect.height * dpr);
-    if (cvs.width !== w || cvs.height !== h) {
-      cvs.width = w;
-      cvs.height = h;
-    }
-
+    if (cvs.width !== w || cvs.height !== h) { cvs.width = w; cvs.height = h; }
     const g = p.ctx;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, rect.width, rect.height);
-
     const bg = g.createRadialGradient(
       rect.width / 2, rect.height * 0.35, 10,
       rect.width / 2, rect.height * 0.5, Math.max(rect.width, rect.height) * 0.7
@@ -2862,10 +2739,8 @@ function updateMonsterCardPreviews(t) {
     bg.addColorStop(1, 'rgba(15,5,35,0)');
     g.fillStyle = bg;
     g.fillRect(0, 0, rect.width, rect.height);
-
     const scale = Math.min(rect.width, rect.height) / 200;
     const beat = (t * (STELL_BPM / 60)) % 1;
-
     g.save();
     g.translate(rect.width / 2, rect.height * 0.55);
     drawStellariusShape(g, 0, 0, scale, t, beat, true);
@@ -2874,66 +2749,32 @@ function updateMonsterCardPreviews(t) {
 }
 
 function updateActionButtons() {
-  if (!selectedItem) {
-    confirmBtn.disabled = true;
-    return;
-  }
-  const owned = state.ownedIds.has(selectedItem.id) ||
-                (state.incubating && state.incubating.item.id === selectedItem.id) ||
-                state.monsters.some(m => m.id === selectedItem.id);
-  const affordable = selectedItem.currency === 'gems'
-    ? state.gems >= selectedItem.price
-    : state.shards >= selectedItem.price;
-
-  confirmBtn.disabled = owned || !affordable || !selectedItem.available;
+  if (!selectedItem) { confirmBtn.disabled = true; return; }
+  const incubating = state.incubating && state.incubating.item.id === selectedItem.id;
+  const placed = state.monsters.some(m => m.id === selectedItem.id);
+  const affordable = state.shards >= selectedItem.price;
+  confirmBtn.disabled = incubating || placed || !affordable || !selectedItem.available;
 }
 
 confirmBtn.addEventListener('click', () => {
   if (!selectedItem) return;
+  const incubating = state.incubating && state.incubating.item.id === selectedItem.id;
+  const placed = state.monsters.some(m => m.id === selectedItem.id);
+  if (incubating || placed) { showToast('Already owned!', 'error'); return; }
+  if (!selectedItem.available) { showToast('Coming soon!', 'error'); return; }
+  if (state.shards < selectedItem.price) { showToast('Not enough shards!', 'error'); return; }
 
-  const alreadyOwned = state.ownedIds.has(selectedItem.id) ||
-                       (state.incubating && state.incubating.item.id === selectedItem.id) ||
-                       state.monsters.some(m => m.id === selectedItem.id);
-
-  if (alreadyOwned) {
-    showToast('Already owned!', 'error');
-    return;
-  }
-  if (!selectedItem.available) {
-    showToast('Coming soon!', 'error');
-    return;
-  }
-
-  const cost = selectedItem.price;
-  const cur = selectedItem.currency || 'shards';
-
-  if (cur === 'shards' && state.shards < cost) {
-    showToast('Not enough shards!', 'error');
-    return;
-  }
-  if (cur === 'gems' && state.gems < cost) {
-    showToast('Not enough gems!', 'error');
-    return;
-  }
-
-  if (cur === 'shards') state.shards -= cost;
-  else                  state.gems   -= cost;
-
+  state.shards -= selectedItem.price;
   state.ownedIds.add(selectedItem.id);
-
-  // Send to incubator instead of directly placing
   startIncubation(selectedItem);
-
   updateCurrencyUI();
   showToast(`${selectedItem.name} sent to the Incubator!`, 'success');
-
   buildMonsterGrid();
   const stillSelected = document.querySelector(`.m-card[data-id="${selectedItem.id}"]`);
   if (stillSelected) stillSelected.classList.add('selected');
   updateActionButtons();
 });
 
-/* Tribe selector */
 document.querySelectorAll('.tribe-dot').forEach(dot => {
   dot.addEventListener('click', () => {
     document.querySelectorAll('.tribe-dot').forEach(d => d.classList.remove('active'));
@@ -2942,8 +2783,6 @@ document.querySelectorAll('.tribe-dot').forEach(dot => {
 });
 
 updateCurrencyUI();
-
-/* ------------------------------ GO! ------------------------------ */
 requestAnimationFrame(render);
 </script>
 </body>
