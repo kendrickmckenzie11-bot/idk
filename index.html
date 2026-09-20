@@ -11,29 +11,80 @@
   canvas { display:block; position:absolute; inset:0; touch-action:none; cursor:grab; }
   canvas:active { cursor:grabbing; }
 
+  /* ---------- Top HUD ---------- */
   #top {
     position:fixed; top:0; left:0; right:0; padding:16px 20px;
     display:flex; justify-content:space-between; align-items:flex-start;
-    pointer-events:none; z-index:10;
+    pointer-events:none; z-index:10; gap:16px;
   }
   #island-name {
     font-size:24px; font-weight:900; letter-spacing:1px; color:#fff;
     text-shadow:0 0 20px rgba(180,100,255,.8), 0 2px 0 rgba(0,0,0,.5), 0 6px 18px rgba(0,0,0,.4);
     background:rgba(30,10,50,.6); padding:10px 22px; border-radius:999px;
     backdrop-filter:blur(10px); border:1px solid rgba(200,150,255,.3);
+    white-space:nowrap;
   }
   #island-name small {
     display:block; font-size:11px; font-weight:700; letter-spacing:3px;
     color:#b89aff; text-transform:uppercase; margin-top:3px;
   }
+
+  /* ---------- Resource HUD (top right) ---------- */
+  #hud-right { display:flex; gap:10px; pointer-events:auto; }
+  .resource {
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(180deg, rgba(45,20,80,.85), rgba(20,8,40,.85));
+    padding:6px 18px 6px 8px; border-radius:30px;
+    border:1px solid rgba(180,120,255,.35);
+    box-shadow:0 6px 24px rgba(120,60,220,.4), inset 0 1px 0 rgba(255,255,255,.08);
+    backdrop-filter:blur(10px); min-width:128px;
+  }
+  .res-icon {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; position:relative;
+  }
+  .res-icon.shard {
+    background:radial-gradient(circle at 35% 30%, #ffe9a0, #f59e0b 55%, #92400e);
+    box-shadow:0 0 14px rgba(255,180,60,.7), inset 0 -2px 4px rgba(0,0,0,.35);
+  }
+  .shard-shape {
+    width:13px; height:15px;
+    background:linear-gradient(135deg, #fff8dc, #ffca3a);
+    clip-path:polygon(50% 0%, 100% 42%, 78% 100%, 22% 100%, 0% 42%);
+    filter:drop-shadow(0 0 3px rgba(255,220,120,.9));
+  }
+  .res-icon.gem {
+    background:radial-gradient(circle at 35% 30%, #e9d5ff, #a855f7 55%, #6b21a8);
+    box-shadow:0 0 14px rgba(180,110,255,.85), inset 0 -2px 4px rgba(0,0,0,.4);
+  }
+  .gem-shape {
+    width:15px; height:13px;
+    background:linear-gradient(135deg, #f3e8ff, #c084fc, #7c3aed);
+    clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+    filter:drop-shadow(0 0 3px rgba(210,160,255,.9));
+  }
+  .res-info { display:flex; flex-direction:column; line-height:1.1; }
+  .res-label {
+    font-size:9px; font-weight:700; letter-spacing:1.5px;
+    color:rgba(200,170,255,.72); text-transform:uppercase;
+  }
+  .res-value {
+    font-size:16px; font-weight:900; color:#fff;
+    text-shadow:0 1px 3px rgba(0,0,0,.6);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- Bottom hint ---------- */
   #hint {
+    position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
     font-size:12px; color:rgba(220,200,255,.8); font-weight:600;
     background:rgba(10,0,25,.5); padding:8px 16px; border-radius:999px;
     backdrop-filter:blur(8px); border:1px solid rgba(180,120,255,.2);
-    text-align:right; line-height:1.6;
+    letter-spacing:.5px; pointer-events:none; z-index:10;
   }
 
-  /* Audio start prompt */
+  /* ---------- Audio start prompt ---------- */
   #audio-prompt {
     position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
     background:rgba(5,0,15,.55); backdrop-filter:blur(6px);
@@ -54,8 +105,25 @@
 
 <div id="top">
   <div id="island-name">🌌 Nyxara<small>The First Islet</small></div>
-  <div id="hint">Drag to pan • Scroll to zoom</div>
+  <div id="hud-right">
+    <div class="resource">
+      <div class="res-icon shard"><div class="shard-shape"></div></div>
+      <div class="res-info">
+        <div class="res-label">Shards</div>
+        <div class="res-value" id="shard-value">1,250</div>
+      </div>
+    </div>
+    <div class="resource">
+      <div class="res-icon gem"><div class="gem-shape"></div></div>
+      <div class="res-info">
+        <div class="res-label">Gems</div>
+        <div class="res-value" id="gem-value">47</div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<div id="hint">Drag to pan • Scroll to zoom</div>
 
 <div id="audio-prompt">
   <div class="card">
@@ -87,9 +155,7 @@ window.addEventListener('resize', resize);
 resize();
 
 /* ------------------------------ STATE ------------------------------ */
-const state = {
-  cam: { x: 0, y: 0, zoom: 1 },
-};
+const state = { cam: { x: 0, y: 0, zoom: 1 } };
 
 /* --------------------------- HELPERS --------------------------- */
 function roundRect(x, y, w, h, r) {
@@ -122,19 +188,16 @@ function initAudio() {
 
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  // Master gain for the castle drone
   castleGain = audioCtx.createGain();
-  castleGain.gain.value = 0.0; // fade in
+  castleGain.gain.value = 0.0;
   castleGain.connect(audioCtx.destination);
 
-  // Low-pass filter to keep it warm and deep
   const lp = audioCtx.createBiquadFilter();
   lp.type = 'lowpass';
   lp.frequency.value = 320;
   lp.Q.value = 0.8;
   lp.connect(castleGain);
 
-  // A slow LFO modulating the filter for a "breathing" mystery
   const lfoFilter = audioCtx.createOscillator();
   lfoFilter.frequency.value = 0.07;
   const lfoFilterGain = audioCtx.createGain();
@@ -143,50 +206,38 @@ function initAudio() {
   lfoFilterGain.connect(lp.frequency);
   lfoFilter.start();
 
-  // A slow amplitude LFO for a swelling pad
   const lfoAmp = audioCtx.createOscillator();
   lfoAmp.frequency.value = 0.11;
   const lfoAmpGain = audioCtx.createGain();
   lfoAmpGain.gain.value = 0.25;
   lfoAmp.connect(lfoAmpGain);
 
-  // Deep bass chord — root + fifth + octave + sub
-  // A1 = 55 Hz, E2 = 82.4, A2 = 110, A0 = 27.5 (sub)
   const notes = [
     { f: 27.5,  g: 0.35, type: 'sine'     },
     { f: 55.0,  g: 0.55, type: 'sine'     },
     { f: 82.4,  g: 0.30, type: 'triangle' },
     { f: 110.0, g: 0.18, type: 'sine'     },
-    { f: 165.0, g: 0.10, type: 'triangle' }, // hint of the fifth above
+    { f: 165.0, g: 0.10, type: 'triangle' },
   ];
 
   notes.forEach((n, i) => {
     const osc = audioCtx.createOscillator();
     osc.type = n.type;
     osc.frequency.value = n.f;
-
-    // Slight detune for a chorus-like shimmer
     osc.detune.value = (i - 2) * 4;
-
     const g = audioCtx.createGain();
     g.gain.value = n.g;
-
-    // Route through amplitude LFO
     lfoAmpGain.connect(g.gain);
-
     osc.connect(g);
     g.connect(lp);
     osc.start();
   });
-
   lfoAmp.start();
 
-  // Gentle fade in
   const now = audioCtx.currentTime;
   castleGain.gain.setValueAtTime(0.0001, now);
   castleGain.gain.linearRampToValueAtTime(0.55, now + 4.0);
 
-  // Hide the prompt
   document.getElementById('audio-prompt').classList.add('hide');
 }
 
@@ -199,12 +250,9 @@ const stars = (() => {
   const out = [];
   for (let i = 0; i < 420; i++) {
     out.push({
-      x: rnd() * 2400 - 700,
-      y: rnd() * 2400 - 700,
-      r: 0.5 + rnd() * 2.2,
-      a: 0.3 + rnd() * 0.7,
-      tw: rnd() * Math.PI * 2,
-      spd: 0.5 + rnd() * 2,
+      x: rnd() * 2400 - 700, y: rnd() * 2400 - 700,
+      r: 0.5 + rnd() * 2.2, a: 0.3 + rnd() * 0.7,
+      tw: rnd() * Math.PI * 2, spd: 0.5 + rnd() * 2,
       col: rnd() > 0.85 ? '#aaddff' : (rnd() > 0.65 ? '#ffccff' : '#ffffff'),
     });
   }
@@ -297,15 +345,94 @@ function drawCrystalSpike(x, y, angle, size, hue, alpha = 1) {
   ctx.restore();
 }
 
-/* ----------------------------- SIDE PLATFORMS ----------------------------- */
-/* Left platform: Breed Synthesizer. Right: Incubation Center. */
-const platforms = {
-  left:  { cx: -640, cy: 70,  rx: 155, ry: 78 },
-  right: { cx:  640, cy: 70,  rx: 155, ry: 78 },
-};
+/* ---------------------- TALL BACK SPIKES (background detail) ---------------------- */
+function drawTallBackSpike(x, y, h, w, hue, pulse) {
+  ctx.save();
+  ctx.translate(x, y);
 
-function drawPlatformBase(p, t, side) {
-  // Teal base disc
+  // Base shadow on the rim
+  ctx.fillStyle = 'rgba(0,0,0,0.42)';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, w * 0.85, 6, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Main crystalline body
+  const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+  g.addColorStop(0.00, '#0a0016');
+  g.addColorStop(0.32, `hsl(${hue}, 65%, 28%)`);
+  g.addColorStop(0.62, `hsl(${hue}, 80%, 48%)`);
+  g.addColorStop(1.00, '#0a0016');
+
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-w / 2, 0);
+  ctx.lineTo(-w * 0.18, -h * 0.62);
+  ctx.lineTo(0, -h);
+  ctx.lineTo(w * 0.18, -h * 0.62);
+  ctx.lineTo(w / 2, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Glowing edge on the lit side
+  ctx.save();
+  ctx.shadowColor = `hsl(${hue + 40}, 100%, 65%)`;
+  ctx.shadowBlur = 14 * pulse;
+  ctx.strokeStyle = `hsla(${hue + 50}, 100%, 80%, ${0.85 * pulse})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, -h);
+  ctx.lineTo(w * 0.18, -h * 0.62);
+  ctx.lineTo(w / 2, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // Tip glow
+  ctx.save();
+  ctx.shadowColor = `hsl(${hue + 50}, 100%, 75%)`;
+  ctx.shadowBlur = 20 * pulse;
+  ctx.fillStyle = `hsla(${hue + 60}, 100%, 92%, ${0.95 * pulse})`;
+  ctx.beginPath();
+  ctx.arc(0, -h, 3 + pulse * 1.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function drawBackSpikes(t) {
+  // Evenly spread across the back rim (upper half of the ellipse)
+  const N = 11;
+  for (let i = 0; i < N; i++) {
+    const u = (i / (N - 1)) * 2 - 1;               // -1 .. 1
+    const a = -Math.PI / 2 + u * 0.95;             // top arc angle
+
+    const bx = Math.cos(a) * (RX - 14);
+    const by = Math.sin(a) * (RY - 14);
+
+    // Skip the very middle two spikes — the castle lives there
+    if (Math.abs(u) < 0.14) continue;
+
+    // Taller toward the middle, shorter at the sides
+    const hFactor = Math.cos(u * 1.15);
+    const h = 70 + hFactor * 90;
+    const w = 24 + hFactor * 14;
+
+    const hue = 265 + hFactor * 40;
+    const pulse = 0.65 + 0.35 * Math.sin(t * 1.3 + i * 0.9);
+
+    drawTallBackSpike(bx, by, h, w, hue, pulse);
+  }
+}
+
+/* ----------------------------- SIDE PLATFORMS ----------------------------- */
+/* Left: Breed Synthesizer.  Right: Incubation Center.  Both moved UP (further back). */
+const platforms = {
+  left:  { cx: -720, cy: -50, rx: 148, ry: 72 },
+  right: { cx:  720, cy: -50, rx: 148, ry: 72 },
+};
+const BRIDGE_Y = -50;
+
+function drawPlatformBase(p, t) {
   const g = ctx.createLinearGradient(0, p.cy - p.ry, 0, p.cy + p.ry + 60);
   g.addColorStop(0, '#0089aa');
   g.addColorStop(0.6, '#00aacc');
@@ -316,7 +443,6 @@ function drawPlatformBase(p, t, side) {
   ctx.ellipse(p.cx, p.cy, p.rx, p.ry, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Underside shadow
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#00303f';
@@ -325,11 +451,10 @@ function drawPlatformBase(p, t, side) {
   ctx.fill();
   ctx.restore();
 
-  // Crystal rim around the platform
+  // Crystal spikes around the platform edge
   const BUMPS = 26;
   for (let i = 0; i < BUMPS; i++) {
     const a = (i / BUMPS) * Math.PI * 2;
-    // Only draw the outward-facing arcs (skip where it connects to the bridge)
     const bx = p.cx + Math.cos(a) * p.rx;
     const by = p.cy + Math.sin(a) * p.ry;
     const size = 10 + Math.sin(i * 1.9) * 4;
@@ -352,18 +477,19 @@ function drawPlatformBase(p, t, side) {
 }
 
 function drawBridge(side, t) {
-  const startX = side === 'left' ? -RX + 30 : RX - 30;
-  const endX   = side === 'left' ? platforms.left.cx + platforms.left.rx * 0.8
-                                  : platforms.right.cx - platforms.right.rx * 0.8;
-  const y = 60;
+  const dir = side === 'left' ? -1 : 1;
+  const startX = dir * 490;
+  const endX   = dir * 595;
+  const y = BRIDGE_Y;
 
-  // Bridge beam
-  const g = ctx.createLinearGradient(0, y - 14, 0, y + 22);
+  // Bridge deck
+  const g = ctx.createLinearGradient(0, y - 16, 0, y + 24);
   g.addColorStop(0, '#007799');
   g.addColorStop(0.5, '#00bbdd');
   g.addColorStop(1, '#006688');
   ctx.fillStyle = g;
-  roundRect(Math.min(startX, endX), y - 14, Math.abs(endX - startX), 36, 14);
+  roundRect(Math.min(startX, endX), y - 16,
+            Math.abs(endX - startX), 36, 14);
   ctx.fill();
 
   // Glowing top line
@@ -373,19 +499,19 @@ function drawBridge(side, t) {
   ctx.strokeStyle = 'rgba(150,255,255,0.7)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(Math.min(startX, endX) + 6, y - 6);
-  ctx.lineTo(Math.max(startX, endX) - 6, y - 6);
+  ctx.moveTo(Math.min(startX, endX) + 6, y - 8);
+  ctx.lineTo(Math.max(startX, endX) - 6, y - 8);
   ctx.stroke();
   ctx.restore();
 
   // Support pylons
-  const steps = 5;
+  const steps = 4;
   for (let i = 1; i < steps; i++) {
     const px = startX + (endX - startX) * (i / steps);
-    ctx.fillStyle = 'rgba(0,150,190,0.6)';
+    ctx.fillStyle = 'rgba(0,150,190,0.65)';
     ctx.beginPath();
     ctx.moveTo(px - 6, y + 20);
-    ctx.lineTo(px, y + 42);
+    ctx.lineTo(px, y + 44);
     ctx.lineTo(px + 6, y + 20);
     ctx.closePath();
     ctx.fill();
@@ -393,8 +519,8 @@ function drawBridge(side, t) {
 }
 
 /* ----------------------------- CASTLE ----------------------------- */
-/* Sits at the back of the island surface. Dark crystal architecture. */
-const castle = { cx: 0, cy: -150, s: 1 };
+/* Positioned further back / higher. */
+const castle = { cx: 0, cy: -180, s: 1 };
 
 function drawCastle(t) {
   const { cx, cy, s } = castle;
@@ -404,9 +530,8 @@ function drawCastle(t) {
   ctx.scale(s, s);
 
   const pulse = 0.85 + 0.15 * Math.sin(t * 1.4);
-  const pulse2 = 0.85 + 0.15 * Math.sin(t * 1.4 + 1.6);
 
-  /* ---- shadow on the void ---- */
+  // Shadow on the void
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#000';
@@ -415,18 +540,17 @@ function drawCastle(t) {
   ctx.fill();
   ctx.restore();
 
-  /* ---- main obsidian platform ---- */
+  // Obsidian platform
   ctx.fillStyle = '#0d0018';
   ctx.beginPath();
   ctx.ellipse(0, 26, 148, 32, 0, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = '#1a0033';
   ctx.beginPath();
   ctx.ellipse(0, 22, 140, 28, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Glowing rune ring on the platform
+  // Glowing rune ring
   ctx.save();
   ctx.strokeStyle = `rgba(200,120,255,${0.6 * pulse})`;
   ctx.lineWidth = 3;
@@ -437,21 +561,19 @@ function drawCastle(t) {
   ctx.stroke();
   ctx.restore();
 
-  /* ---- side towers ---- */
+  // Side towers
   const towers = [
     { x: -78, h: 120, w: 44, hue: 280 },
     { x:  78, h: 120, w: 44, hue: 280 },
     { x: -42, h: 170, w: 38, hue: 300 },
     { x:  42, h: 170, w: 38, hue: 300 },
   ];
-  for (const tw of towers) {
-    drawTower(tw.x, 26, tw.w, tw.h, tw.hue, t, 0);
-  }
+  for (const tw of towers) drawTower(tw.x, 26, tw.w, tw.h, tw.hue, t, 0);
 
-  /* ---- main central spire ---- */
+  // Main central spire
   drawMainSpire(0, 26, t, pulse);
 
-  /* ---- floating crystals orbiting the spire ---- */
+  // Floating crystals
   for (let i = 0; i < 3; i++) {
     const a = t * 0.6 + i * (Math.PI * 2 / 3);
     const orbitX = Math.cos(a) * 90;
@@ -473,7 +595,7 @@ function drawCastle(t) {
     ctx.restore();
   }
 
-  /* ---- ground glow under the castle ---- */
+  // Ground glow
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   const gg = ctx.createRadialGradient(0, 26, 6, 0, 26, 220);
@@ -489,7 +611,6 @@ function drawCastle(t) {
 }
 
 function drawTower(x, baseY, w, h, hue, t, offset) {
-  // tower body (tapered obelisk)
   const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
   g.addColorStop(0,   '#10001f');
   g.addColorStop(0.5, '#2a004a');
@@ -504,7 +625,6 @@ function drawTower(x, baseY, w, h, hue, t, offset) {
   ctx.closePath();
   ctx.fill();
 
-  // left edge highlight
   ctx.fillStyle = 'rgba(180,120,255,0.20)';
   ctx.beginPath();
   ctx.moveTo(x - w / 2, baseY);
@@ -514,7 +634,6 @@ function drawTower(x, baseY, w, h, hue, t, offset) {
   ctx.closePath();
   ctx.fill();
 
-  // crystal cap
   const capSz = w * 0.42;
   const pulse = 0.8 + 0.2 * Math.sin(t * 2 + offset);
   ctx.save();
@@ -530,7 +649,6 @@ function drawTower(x, baseY, w, h, hue, t, offset) {
   ctx.fill();
   ctx.restore();
 
-  // glowing window
   ctx.save();
   ctx.shadowColor = `hsl(${hue}, 100%, 70%)`;
   ctx.shadowBlur = 10 * pulse;
@@ -544,7 +662,6 @@ function drawMainSpire(x, baseY, t, pulse) {
   const H = 320;
   const W0 = 62;
 
-  // Main body
   const g = ctx.createLinearGradient(x - W0 / 2, 0, x + W0 / 2, 0);
   g.addColorStop(0,   '#0d001a');
   g.addColorStop(0.4, '#2c0050');
@@ -560,7 +677,6 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.closePath();
   ctx.fill();
 
-  // left lit edge
   ctx.fillStyle = 'rgba(200,140,255,0.22)';
   ctx.beginPath();
   ctx.moveTo(x - W0 / 2, baseY);
@@ -570,7 +686,6 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.closePath();
   ctx.fill();
 
-  // Rune lines along the spire
   ctx.strokeStyle = `rgba(200,130,255,${0.35 + 0.3 * pulse})`;
   ctx.lineWidth = 2;
   for (let i = 1; i <= 5; i++) {
@@ -582,20 +697,17 @@ function drawMainSpire(x, baseY, t, pulse) {
     ctx.stroke();
   }
 
-  // Glowing windows
   ctx.save();
   ctx.shadowColor = '#c87aff';
   ctx.shadowBlur = 14 * pulse;
   ctx.fillStyle = `rgba(230,180,255,${0.85 * pulse})`;
   for (let i = 0; i < 3; i++) {
     const wy = baseY - H * 0.18 - i * 60;
-    const ww = 14;
-    roundRect(x - ww / 2, wy - 10, ww, 22, 4);
+    roundRect(x - 7, wy - 10, 14, 22, 4);
     ctx.fill();
   }
   ctx.restore();
 
-  // Upper tapered section
   ctx.fillStyle = '#1a0033';
   ctx.beginPath();
   ctx.moveTo(x - W0 * 0.22, baseY - H * 0.72);
@@ -605,7 +717,6 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.closePath();
   ctx.fill();
 
-  // Floating crown crystal
   const cy = baseY - H * 0.95 - 40;
   const cr = 30;
   ctx.save();
@@ -620,13 +731,11 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.arc(x, cy, cr, 0, Math.PI * 2);
   ctx.fill();
 
-  // Inner bright core
   ctx.fillStyle = `rgba(255,240,255,${0.9 * pulse})`;
   ctx.beginPath();
   ctx.arc(x, cy, cr * 0.32, 0, Math.PI * 2);
   ctx.fill();
 
-  // Diamond crystal around it
   ctx.strokeStyle = `rgba(230,180,255,${0.7 * pulse})`;
   ctx.lineWidth = 2.5;
   ctx.beginPath();
@@ -638,7 +747,6 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.stroke();
   ctx.restore();
 
-  // Light beam up
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   const bg = ctx.createLinearGradient(0, cy - 200, 0, cy + 40);
@@ -655,13 +763,12 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.restore();
 }
 
-/* ----------------------------- BREED SYNTHESIZER (left platform) ----------------------------- */
+/* ----------------------------- BREED SYNTHESIZER ----------------------------- */
 function drawBreedSynthesizer(t) {
   const p = platforms.left;
   ctx.save();
   ctx.translate(p.cx, p.cy - 6);
 
-  // Shadow
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#000';
@@ -670,27 +777,22 @@ function drawBreedSynthesizer(t) {
   ctx.fill();
   ctx.restore();
 
-  // Base pad
   ctx.fillStyle = '#0d0a22';
   ctx.beginPath();
   ctx.ellipse(0, 14, 105, 26, 0, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = '#1a1440';
   ctx.beginPath();
   ctx.ellipse(0, 10, 96, 22, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Two chamber pods
   const pods = [-52, 52];
   for (const px of pods) {
-    // Pod shadow
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
     ctx.ellipse(px, 16, 34, 10, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Pod body (dome)
     const pg = ctx.createLinearGradient(px, -60, px, 20);
     pg.addColorStop(0, '#4a1f7a');
     pg.addColorStop(0.5, '#2a0f4a');
@@ -702,14 +804,12 @@ function drawBreedSynthesizer(t) {
     ctx.closePath();
     ctx.fill();
 
-    // Pod rim
     ctx.strokeStyle = 'rgba(180,120,255,0.6)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.ellipse(px, 16, 32, 9, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Glass window glow
     const pulse = 0.7 + 0.3 * Math.sin(t * 1.7 + px * 0.02);
     ctx.save();
     ctx.shadowColor = '#c77dff';
@@ -724,7 +824,6 @@ function drawBreedSynthesizer(t) {
     ctx.fill();
     ctx.restore();
 
-    // Little antenna tip
     ctx.strokeStyle = 'rgba(200,140,255,0.7)';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -737,7 +836,6 @@ function drawBreedSynthesizer(t) {
     ctx.fill();
   }
 
-  // Central column with glowing runes
   ctx.fillStyle = '#1a0f30';
   roundRect(-14, -78, 28, 94, 8);
   ctx.fill();
@@ -752,7 +850,6 @@ function drawBreedSynthesizer(t) {
     ctx.stroke();
   }
 
-  // Top orb
   const topPulse = 0.75 + 0.25 * Math.sin(t * 2.2);
   ctx.save();
   ctx.shadowColor = '#d090ff';
@@ -764,14 +861,12 @@ function drawBreedSynthesizer(t) {
   ctx.beginPath();
   ctx.arc(0, -92, 18, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = `rgba(255,240,255,${0.9 * topPulse})`;
   ctx.beginPath();
   ctx.arc(0, -92, 5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Connecting tubes from the central column to pods
   ctx.strokeStyle = 'rgba(150,90,220,0.55)';
   ctx.lineWidth = 6;
   ctx.lineCap = 'round';
@@ -784,7 +879,7 @@ function drawBreedSynthesizer(t) {
 
   ctx.restore();
 
-  // Floating label
+  // Label
   ctx.save();
   ctx.translate(p.cx, p.cy + 110);
   ctx.font = 'bold 13px system-ui, sans-serif';
@@ -796,13 +891,12 @@ function drawBreedSynthesizer(t) {
   ctx.restore();
 }
 
-/* ----------------------------- INCUBATION CENTER (right platform) ----------------------------- */
+/* ----------------------------- INCUBATION CENTER ----------------------------- */
 function drawIncubationCenter(t) {
   const p = platforms.right;
   ctx.save();
   ctx.translate(p.cx, p.cy - 6);
 
-  // Shadow
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#000';
@@ -811,18 +905,15 @@ function drawIncubationCenter(t) {
   ctx.fill();
   ctx.restore();
 
-  // Base pad
   ctx.fillStyle = '#062028';
   ctx.beginPath();
   ctx.ellipse(0, 14, 105, 26, 0, 0, Math.PI * 2);
   ctx.fill();
-
   ctx.fillStyle = '#0a3846';
   ctx.beginPath();
   ctx.ellipse(0, 10, 96, 22, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Support arms (arch)
   ctx.strokeStyle = '#1a4a5a';
   ctx.lineWidth = 8;
   ctx.lineCap = 'round';
@@ -833,7 +924,6 @@ function drawIncubationCenter(t) {
   ctx.quadraticCurveTo(64, -40, 30, -76);
   ctx.stroke();
 
-  // Glow on arms
   ctx.save();
   ctx.shadowColor = '#00d5ff';
   ctx.shadowBlur = 10;
@@ -847,15 +937,11 @@ function drawIncubationCenter(t) {
   ctx.stroke();
   ctx.restore();
 
-  // Central egg chamber
   const pulse = 0.75 + 0.25 * Math.sin(t * 1.5);
-
-  // Egg outline glow
   ctx.save();
   ctx.shadowColor = '#00e5ff';
   ctx.shadowBlur = 28 * pulse;
 
-  // Outer egg shape
   const eg = ctx.createRadialGradient(-6, -50, 4, 0, -46, 42);
   eg.addColorStop(0, `rgba(220,255,255,${0.85 * pulse})`);
   eg.addColorStop(0.5, `rgba(80,200,255,${0.6 * pulse})`);
@@ -872,7 +958,6 @@ function drawIncubationCenter(t) {
   ctx.fill();
   ctx.restore();
 
-  // Inner shell ring
   ctx.strokeStyle = `rgba(200,250,255,${0.7 * pulse})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -884,7 +969,6 @@ function drawIncubationCenter(t) {
   ctx.closePath();
   ctx.stroke();
 
-  // Mysterious sparkle inside the egg
   const sp = 0.5 + 0.5 * Math.sin(t * 3);
   ctx.save();
   ctx.shadowColor = '#ffffff';
@@ -895,7 +979,6 @@ function drawIncubationCenter(t) {
   ctx.fill();
   ctx.restore();
 
-  // Orbiting ring around egg
   ctx.save();
   ctx.translate(0, -44);
   ctx.rotate(t * 0.6);
@@ -908,7 +991,6 @@ function drawIncubationCenter(t) {
   ctx.setLineDash([]);
   ctx.restore();
 
-  // Pedestal under the egg
   ctx.fillStyle = '#0e4a5a';
   roundRect(-30, 6, 60, 12, 5);
   ctx.fill();
@@ -919,7 +1001,7 @@ function drawIncubationCenter(t) {
 
   ctx.restore();
 
-  // Floating label
+  // Label
   ctx.save();
   ctx.translate(p.cx, p.cy + 110);
   ctx.font = 'bold 13px system-ui, sans-serif';
@@ -950,7 +1032,6 @@ function drawIslandBase(t) {
   ctx.closePath();
   ctx.fill();
 
-  // Under shadow
   ctx.save();
   ctx.globalAlpha = 0.3;
   ctx.fillStyle = '#003344';
@@ -963,7 +1044,6 @@ function drawIslandBase(t) {
   ctx.fill();
   ctx.restore();
 
-  // Glowing veins
   ctx.save();
   ctx.shadowColor = '#00ffff';
   ctx.shadowBlur = 15;
@@ -986,7 +1066,6 @@ function drawIslandBase(t) {
   }
   ctx.restore();
 
-  // Glowing pools
   ctx.save();
   ctx.shadowColor = '#00ffff';
   ctx.shadowBlur = 25;
@@ -1057,7 +1136,6 @@ function drawVoidSurface(t) {
   ctx.ellipse(0, -10, GRX - 12, GRY - 12, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Surface swirls
   ctx.globalAlpha = 0.08;
   ctx.strokeStyle = '#cc88ff';
   ctx.lineWidth = 15;
@@ -1069,14 +1147,12 @@ function drawVoidSurface(t) {
   }
   ctx.globalAlpha = 1;
 
-  // Floating crystals on surface
   const rnd = mulberry32(777);
   for (let i = 0; i < 10; i++) {
     const a = rnd() * Math.PI * 2;
     const r = Math.sqrt(rnd()) * 0.85;
     const px = Math.cos(a) * r * GRX;
     const py = Math.sin(a) * r * GRY - 10;
-    // Skip crystals near the castle (back-center)
     if (Math.abs(px) < 200 && py < -40) continue;
 
     const bob = Math.sin(t * 1.5 + i) * 5;
@@ -1161,7 +1237,7 @@ function drawIsland(t) {
   ctx.save();
   ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
 
-  // Drop shadow
+  // Ground shadow
   ctx.save();
   ctx.globalAlpha = 0.15;
   ctx.fillStyle = '#000';
@@ -1170,31 +1246,17 @@ function drawIsland(t) {
   ctx.fill();
   ctx.restore();
 
-  // ---- Draw order ----
-  // 1. Platform bases (behind, at the sides)
-  drawPlatformBase(platforms.left, t, 'left');
-  drawPlatformBase(platforms.right, t, 'right');
-
-  // 2. Bridges (behind the main island rim)
+  // Draw order:
+  drawPlatformBase(platforms.left, t);
+  drawPlatformBase(platforms.right, t);
   drawBridge('left', t);
   drawBridge('right', t);
-
-  // 3. Main island base
   drawIslandBase(t);
-
-  // 4. Crystal rim
   drawCrystalRim(t);
-
-  // 5. Void surface
   drawVoidSurface(t);
-
-  // 6. Castle (on the void, at the back)
+  drawBackSpikes(t);      // <-- tall detail spikes behind the castle
   drawCastle(t);
-
-  // 7. Left: Breed Synthesizer
   drawBreedSynthesizer(t);
-
-  // 8. Right: Incubation Center
   drawIncubationCenter(t);
 
   // Final rim highlight
@@ -1241,8 +1303,8 @@ let isDragging = false, lastX = 0, lastY = 0;
 const CAM_LIMITS = {
   zoomMin: 0.55,
   zoomMax: 2.0,
-  panXFrac: 0.38,   // max pan X = W * panXFrac
-  panYFrac: 0.28,   // max pan Y = H * panYFrac
+  panXFrac: 0.42,
+  panYFrac: 0.32,
 };
 
 function clampCamera() {
@@ -1268,25 +1330,38 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerup',    () => { isDragging = false; });
 canvas.addEventListener('pointercancel',() => { isDragging = false; });
 
+/* ---- ZOOM (fixed & smooth, cursor-pivoted) ---- */
+const ZOOM_STEP = 0.09;
+
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
-  const z  = state.cam.zoom;
-  const nz = Math.max(CAM_LIMITS.zoomMin,
-             Math.min(CAM_LIMITS.zoomMax, z * (e.deltaY > 0 ? 0.9 : 1.1)));
 
-  const wx = (e.clientX - W / 2 - state.cam.x) / z;
-  const wy = (e.clientY - H * 0.45 - state.cam.y) / z;
-  state.cam.x = e.clientX - W / 2 - wx * nz;
-  state.cam.y = e.clientY - H * 0.45 - wy * nz;
+  const dir = e.deltaY > 0 ? -1 : 1;
+  const z = state.cam.zoom;
+  const nz = Math.max(CAM_LIMITS.zoomMin,
+             Math.min(CAM_LIMITS.zoomMax, z * (1 + dir * ZOOM_STEP)));
+  if (Math.abs(nz - z) < 1e-4) return;
+
+  // World point under the cursor (must stay fixed across zoom)
+  const px = e.clientX;
+  const py = e.clientY;
+  const wx = (px - W / 2 - state.cam.x) / z;
+  const wy = (py - H * 0.45 - state.cam.y) / z;
+
+  // Apply zoom, then re-anchor cam so the pivot stays under the cursor
   state.cam.zoom = nz;
+  state.cam.x = px - W / 2 - wx * nz;
+  state.cam.y = py - H * 0.45 - wy * nz;
 
   clampCamera();
 }, { passive: false });
 
 /* ------------------------- INITIAL CAMERA FIT ------------------------- */
 function fitCamera() {
-  const zoomX = (W * 0.92) / 1500;   // wider to fit both platforms
-  const zoomY = (H * 0.88) / 900;
+  // Total scene width ≈ 1900 (platforms reach out to ±868 + margin)
+  // Total scene height ≈ 1150 (castle top ≈ -560, shadow bottom ≈ +520)
+  const zoomX = (W * 0.92) / 1900;
+  const zoomY = (H * 0.88) / 1150;
   state.cam.zoom = Math.max(CAM_LIMITS.zoomMin,
                     Math.min(1.15, Math.min(zoomX, zoomY)));
   state.cam.x = 0;
