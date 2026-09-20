@@ -76,13 +76,8 @@
 
   /* ---------- Bottom UI ---------- */
   #bottom-ui {
-    position:fixed;
-    bottom:24px;
-    left:50%;
-    transform:translateX(-50%);
-    display:flex;
-    gap:16px;
-    z-index:40;
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    display:flex; gap:16px; z-index:40;
   }
   .ui-btn {
     cursor:pointer;
@@ -153,8 +148,7 @@
     background:rgba(200,100,255,.12); border:1px solid rgba(200,150,255,.25);
     color:#e0c8ff; font-size:20px; font-weight:900; line-height:1;
     display:flex; align-items:center; justify-content:center;
-    transition:background .15s, transform .1s;
-    font-family:inherit;
+    transition:background .15s, transform .1s; font-family:inherit;
   }
   .modal-close:hover { background:rgba(200,100,255,.25); transform:scale(1.05); }
   .modal-close:active { transform:scale(.95); }
@@ -170,8 +164,7 @@
     padding:16px 18px; margin-bottom:12px;
     background:rgba(255,255,255,.03);
     border:1px solid rgba(200,150,255,.15);
-    border-radius:16px;
-    gap:16px;
+    border-radius:16px; gap:16px;
   }
   .setting-label { display:flex; flex-direction:column; gap:3px; flex:1; }
   .setting-label b { font-size:14px; font-weight:800; color:#fff; }
@@ -216,7 +209,7 @@
   }
 
   /* ======================================================
-     FULL-SCREEN MARKET (MSM style)
+     FULL-SCREEN MARKET
      ====================================================== */
   #market-screen {
     position:fixed; inset:0; z-index:150;
@@ -228,7 +221,6 @@
   }
   #market-screen.open { opacity:1; pointer-events:auto; }
 
-  /* Decorative ambient glow behind everything */
   #market-screen::before {
     content:""; position:absolute; inset:0;
     background:
@@ -237,7 +229,6 @@
     pointer-events:none;
   }
 
-  /* ---- Header ---- */
   .market-header {
     position:relative; z-index:2;
     padding:18px 26px;
@@ -261,9 +252,7 @@
   .market-header .header-right {
     display:flex; align-items:center; gap:14px;
   }
-  .market-header .resource {
-    min-width:118px; padding:5px 16px 5px 7px;
-  }
+  .market-header .resource { min-width:118px; padding:5px 16px 5px 7px; }
   .market-header .res-icon { width:32px; height:32px; }
   .market-header .res-value { font-size:15px; }
 
@@ -275,8 +264,7 @@
                inset 0 1px 0 rgba(255,255,255,.2);
     color:#fff; font-size:24px; font-weight:900; line-height:1;
     display:flex; align-items:center; justify-content:center;
-    transition:transform .1s, filter .15s;
-    font-family:inherit;
+    transition:transform .1s, filter .15s; font-family:inherit;
   }
   .market-close-btn:hover { filter:brightness(1.15); }
   .market-close-btn:active {
@@ -284,13 +272,11 @@
     box-shadow:0 2px 0 rgba(80,10,30,.9), 0 4px 10px rgba(220,60,120,.4);
   }
 
-  /* ---- Main area: preview pane + tab rail ---- */
   .market-main {
     position:relative; z-index:2;
     flex:1; display:flex; min-height:0;
   }
 
-  /* Preview pane (left) */
   .market-preview {
     flex:1; position:relative;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -319,17 +305,14 @@
     content:""; position:absolute; top:22%; left:26%;
     width:36%; height:22%;
     background:radial-gradient(ellipse, rgba(255,255,255,.5), transparent 70%);
-    border-radius:50%;
-    filter:blur(8px);
+    border-radius:50%; filter:blur(8px);
   }
   @keyframes eggFloat {
     0%,100% { transform:translateY(0) rotate(-1deg); }
     50%     { transform:translateY(-16px) rotate(1deg); }
   }
 
-  .preview-info {
-    text-align:center; padding-bottom:10px;
-  }
+  .preview-info { text-align:center; padding-bottom:10px; }
   .preview-info h2 {
     font-size:30px; font-weight:900; color:#fff; letter-spacing:1px;
     text-shadow:0 0 20px rgba(180,100,255,.7), 0 2px 0 rgba(0,0,0,.4);
@@ -373,7 +356,6 @@
     background:linear-gradient(135deg, #808090, #4a4a5a);
   }
 
-  /* Right tab rail */
   .market-tabs {
     width:120px; flex-shrink:0;
     padding:20px 14px 20px 0;
@@ -390,9 +372,7 @@
     border:2px solid rgba(200,150,255,.28);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:6px; padding:10px;
-    transition:all .18s ease;
-    font-family:inherit;
-    position:relative;
+    transition:all .18s ease; font-family:inherit;
   }
   .market-tab svg { width:30px; height:30px; color:rgba(220,180,255,.8); }
   .market-tab span {
@@ -413,7 +393,6 @@
   .market-tab.active svg { color:#fff; }
   .market-tab.active span { color:#fff; }
 
-  /* ---- Bottom item tray ---- */
   .market-tray {
     position:relative; z-index:2;
     border-top:1px solid rgba(200,150,255,.18);
@@ -447,8 +426,7 @@
     background:linear-gradient(180deg, rgba(60,25,105,.7), rgba(25,8,50,.85));
     border:2px solid rgba(200,150,255,.25);
     display:flex; flex-direction:column; align-items:center; gap:8px;
-    transition:all .18s ease;
-    position:relative;
+    transition:all .18s ease; position:relative;
   }
   .tray-item:hover {
     transform:translateY(-4px);
@@ -491,6 +469,16 @@
     font-style:italic; letter-spacing:.5px;
   }
 
+  /* ---------- Owned badge on tray items ---------- */
+  .tray-item .owned-badge {
+    position:absolute; top:6px; right:6px;
+    padding:3px 8px; border-radius:8px;
+    background:linear-gradient(180deg, #22c55e, #15803d);
+    color:#fff; font-size:9px; font-weight:900;
+    letter-spacing:.8px; text-transform:uppercase;
+    box-shadow:0 2px 6px rgba(0,0,0,.4);
+  }
+
   /* ---------- Audio prompt ---------- */
   #audio-prompt {
     position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
@@ -505,6 +493,21 @@
   }
   #audio-prompt h2 { color:#fff; font-size:22px; font-weight:800; letter-spacing:1px; }
   #audio-prompt p { color:#b89aff; font-size:13px; margin-top:8px; letter-spacing:1px; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position:fixed; top:100px; left:50%; transform:translateX(-50%) translateY(-20px);
+    padding:14px 26px; border-radius:16px;
+    background:linear-gradient(180deg, rgba(80,35,140,.98), rgba(35,12,70,.98));
+    border:1.5px solid rgba(210,160,255,.6);
+    box-shadow:0 10px 30px rgba(120,60,220,.6);
+    color:#fff; font-size:14px; font-weight:800; letter-spacing:.5px;
+    z-index:300; pointer-events:none;
+    opacity:0; transition:opacity .3s ease, transform .3s ease;
+  }
+  #toast.show {
+    opacity:1; transform:translateX(-50%) translateY(0);
+  }
 </style>
 </head>
 <body>
@@ -558,7 +561,6 @@
       <div class="modal-close" data-close="settings-modal">✕</div>
     </div>
     <div class="modal-body">
-
       <div class="setting-row">
         <div class="setting-label">
           <b>Master Audio</b>
@@ -566,7 +568,6 @@
         </div>
         <div class="toggle on" id="toggle-audio"></div>
       </div>
-
       <div class="setting-row">
         <div class="setting-label">
           <b>Music Volume</b>
@@ -577,7 +578,6 @@
           <div class="slider-value" id="slider-music-val">70%</div>
         </div>
       </div>
-
       <div class="setting-row">
         <div class="setting-label">
           <b>SFX Volume</b>
@@ -588,7 +588,6 @@
           <div class="slider-value" id="slider-sfx-val">85%</div>
         </div>
       </div>
-
       <div class="setting-row">
         <div class="setting-label">
           <b>Low Detail Mode</b>
@@ -596,14 +595,12 @@
         </div>
         <div class="toggle" id="toggle-detail"></div>
       </div>
-
     </div>
   </div>
 </div>
 
 <!-- ================= FULL-SCREEN MARKET ================= -->
 <div id="market-screen">
-
   <div class="market-header">
     <h1><span class="logo-dot">🛒</span>Market</h1>
     <div class="header-right">
@@ -680,14 +677,12 @@
 
   <div class="market-tray">
     <div class="tray-label" id="tray-label">Monsters</div>
-    <div class="tray-scroll" id="tray-scroll">
-      <!-- Items injected by JS -->
-    </div>
+    <div class="tray-scroll" id="tray-scroll"></div>
   </div>
-
 </div>
 
-<!-- ================= AUDIO PROMPT ================= -->
+<div id="toast"></div>
+
 <div id="audio-prompt">
   <div class="card">
     <h2>Tap to Awaken the Castle</h2>
@@ -697,7 +692,7 @@
 
 <script>
 /* =========================================================================
-   NYXARA — Cosmic Islet
+   NYXARA — Cosmic Islet with Stellarius
    ========================================================================= */
 
 /* ------------------------------ CANVAS ------------------------------ */
@@ -727,6 +722,10 @@ const state = {
   musicVol: 0.70,
   sfxVol: 0.85,
   lowDetail: false,
+  shards: 1250,
+  gems: 47,
+  monsters: [],   // placed monsters on the island
+  ownedIds: new Set(),
 };
 
 /* --------------------------- HELPERS --------------------------- */
@@ -748,11 +747,29 @@ function mulberry32(a) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.classList.remove('show'), 1800);
+}
+function updateCurrencyUI() {
+  const s = state.shards.toLocaleString();
+  const g = state.gems.toLocaleString();
+  document.getElementById('shard-value').textContent = s;
+  document.getElementById('gem-value').textContent = g;
+  document.getElementById('market-shard-value').textContent = s;
+  document.getElementById('market-gem-value').textContent = g;
+}
 
 /* =========================================================================
    AUDIO
    ========================================================================= */
 let audioCtx = null, castleGain = null, audioStarted = false;
+let monsterGain = null;
+let lastBeatTime = 0;
+let beatIndex = 0;
 
 function initAudio() {
   if (audioStarted) return;
@@ -811,24 +828,121 @@ function initAudio() {
   });
   lfoAmp.start();
 
+  // Separate gain for monster percussion so it can be balanced
+  monsterGain = audioCtx.createGain();
+  monsterGain.gain.value = 0.0;
+  monsterGain.connect(audioCtx.destination);
+
   applyAudioSettings(true);
   document.getElementById('audio-prompt').classList.add('hide');
 }
 
 function applyAudioSettings(instant = false) {
-  if (!castleGain) return;
+  if (!castleGain || !monsterGain) return;
   const now = audioCtx.currentTime;
-  const target = state.audioOn ? 0.55 * state.musicVol : 0.0;
+  const cTarget = state.audioOn ? 0.55 * state.musicVol : 0.0;
+  const mTarget = state.audioOn ? 0.60 * state.sfxVol   : 0.0;
   castleGain.gain.cancelScheduledValues(now);
+  monsterGain.gain.cancelScheduledValues(now);
   if (instant) {
-    castleGain.gain.setValueAtTime(target, now);
+    castleGain.gain.setValueAtTime(cTarget, now);
+    monsterGain.gain.setValueAtTime(mTarget, now);
   } else {
-    castleGain.gain.linearRampToValueAtTime(target, now + 0.4);
+    castleGain.gain.linearRampToValueAtTime(cTarget, now + 0.4);
+    monsterGain.gain.linearRampToValueAtTime(mTarget, now + 0.4);
   }
 }
 
 document.getElementById('audio-prompt').addEventListener('click', initAudio);
 canvas.addEventListener('pointerdown', initAudio, { once: true });
+
+/* ---------------------- STELLARIUS PERCUSSION ---------------------- */
+/* Rhythmic loop: kick-style thump, high shimmer, mid tom, rest.
+   Each hit triggers a short oscillator burst. */
+const STELL_BEATS = [
+  { type: 'kick',    t: 0.00 },
+  { type: 'shimmer', t: 0.25 },
+  { type: 'tom',     t: 0.50 },
+  { type: 'rest',    t: 0.75 },
+];
+
+function playStellHit(type, when) {
+  if (!audioCtx || !monsterGain) return;
+
+  if (type === 'kick') {
+    // Deep thump — sine sweeping from 180 → 45 Hz
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(180, when);
+    osc.frequency.exponentialRampToValueAtTime(45, when + 0.16);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(0.95, when + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.22);
+    osc.connect(g); g.connect(monsterGain);
+    osc.start(when); osc.stop(when + 0.25);
+  } else if (type === 'shimmer') {
+    // Bright crystalline "ting" — triangle + short decay
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(2200, when);
+    osc.frequency.exponentialRampToValueAtTime(1400, when + 0.12);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(0.30, when + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.28);
+    osc.connect(g); g.connect(monsterGain);
+    osc.start(when); osc.stop(when + 0.3);
+
+    // High harmonic layer
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(3300, when);
+    const g2 = audioCtx.createGain();
+    g2.gain.setValueAtTime(0.0001, when);
+    g2.gain.exponentialRampToValueAtTime(0.14, when + 0.005);
+    g2.gain.exponentialRampToValueAtTime(0.0001, when + 0.20);
+    osc2.connect(g2); g2.connect(monsterGain);
+    osc2.start(when); osc2.stop(when + 0.22);
+  } else if (type === 'tom') {
+    // Mid tom — sine 320 → 130 Hz, quick decay
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, when);
+    osc.frequency.exponentialRampToValueAtTime(130, when + 0.14);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(0.65, when + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.20);
+    osc.connect(g); g.connect(monsterGain);
+    osc.start(when); osc.stop(when + 0.22);
+  }
+}
+
+/* Called every frame — schedules Stellarius drum hits */
+const STELL_BPM = 96;
+const STELL_LOOP = 2.0;   // seconds per 4-beat bar
+
+function tickStellariusAudio(t) {
+  if (!audioCtx || !monsterGain) return;
+  if (state.monsters.length === 0) return;
+  if (!state.audioOn) return;
+
+  // Check if any placed monster is Stellarius
+  const hasStell = state.monsters.some(m => m.id === 'stellarius');
+  if (!hasStell) return;
+
+  const now = audioCtx.currentTime;
+  if (lastBeatTime === 0) lastBeatTime = now;
+
+  // Schedule ahead by ~100ms
+  while (lastBeatTime < now + 0.1) {
+    const beat = STELL_BEATS[beatIndex];
+    if (beat.type !== 'rest') playStellHit(beat.type, lastBeatTime);
+    lastBeatTime += STELL_LOOP / 4;
+    beatIndex = (beatIndex + 1) % STELL_BEATS.length;
+  }
+}
 
 /* ======================== SKY ======================== */
 const stars = (() => {
@@ -1014,15 +1128,12 @@ function drawBackSpikes(t) {
     const a = -Math.PI / 2 + u * 0.95;
     const bx = Math.cos(a) * (RX - 22);
     const by = Math.sin(a) * (RY - 22);
-
     if (Math.abs(u) < 0.12) continue;
-
     const hFactor = Math.cos(u * 1.15);
     const h = 120 + hFactor * 170;
     const w = 36 + hFactor * 22;
     const hue = 265 + hFactor * 40;
     const pulse = 0.65 + 0.35 * Math.sin(t * 1.3 + i * 0.9);
-
     drawTallBackSpike(bx, by, h, w, hue, pulse);
   }
 }
@@ -1653,7 +1764,6 @@ function drawCrystalRim(t) {
   for (let i = 0; i < BUMPS; i++) {
     const a = (i / BUMPS) * Math.PI * 2 - Math.PI / 2;
     if (Math.sin(a) > 0.35) continue;
-
     const bx = Math.cos(a) * RX;
     const by = Math.sin(a) * RY;
     const centerBias = Math.max(0, -Math.sin(a));
@@ -1716,25 +1826,18 @@ function drawVoidSurface(t) {
     const px = Math.cos(a) * r * GRX;
     const py = Math.sin(a) * r * GRY - 10;
     if (Math.abs(px) < 320 && py < -80) continue;
-
     const bob = Math.sin(t * 1.5 + i) * 4;
-
     ctx.save();
     ctx.translate(px, py + bob);
     ctx.rotate(rnd() * Math.PI);
     ctx.fillStyle = 'rgba(200, 130, 255, 0.75)';
     ctx.beginPath();
-    ctx.moveTo(0, -12);
-    ctx.lineTo(8, 0);
-    ctx.lineTo(0, 12);
-    ctx.lineTo(-8, 0);
+    ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = 'rgba(255, 220, 255, 0.6)';
     ctx.beginPath();
-    ctx.moveTo(0, -7);
-    ctx.lineTo(3.5, 0);
-    ctx.lineTo(0, 0);
+    ctx.moveTo(0, -7); ctx.lineTo(3.5, 0); ctx.lineTo(0, 0);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
@@ -1773,10 +1876,8 @@ function drawDebris(t) {
     const dx = Math.cos(angle) * RX * d.r;
     const dy = Math.sin(angle) * RY * d.r + d.yOff + Math.sin(t * 0.5 + d.phase) * 18;
     if (dy < 0 && dx > -RX * 1.05 && dx < RX * 1.05) continue;
-
     const alpha = 0.55 + 0.4 * Math.sin(t * 2 + d.phase);
     ctx.fillStyle = `hsla(${d.hue}, 85%, 72%, ${alpha})`;
-
     if (d.size > 4) {
       ctx.save();
       ctx.translate(dx, dy);
@@ -1796,6 +1897,262 @@ function drawDebris(t) {
     }
   }
   ctx.restore();
+}
+
+/* =========================================================================
+   STELLARIUS — Star-element percussion monster
+   Custom crystalline design with orbiting star shards and a beat animation.
+   ========================================================================= */
+function drawStellarius(m, t) {
+  // World position + isometric offset
+  const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
+  const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
+
+  // Beat-phase drives the animation
+  const beat = (t * (STELL_BPM / 60)) % 1;   // 0..1 across each beat
+  const hitPhase = Math.max(0, 1 - beat * 3); // Sharp spike right on the beat
+  const idleBob = Math.sin(t * 1.6) * 3;
+  const squashY = 1 - hitPhase * 0.14;
+  const squashX = 1 + hitPhase * 0.10;
+  const glow = 0.55 + 0.45 * hitPhase;
+
+  ctx.save();
+  ctx.translate(wx, wy + idleBob);
+
+  // Shadow
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(0, 8, 46, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  /* ---- Outer halo ring (pulses on beat) ---- */
+  if (!state.lowDetail) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(0, -34, 5, 0, -34, 90);
+    halo.addColorStop(0, `rgba(255,220,140,${0.35 * glow})`);
+    halo.addColorStop(0.5, `rgba(255,180,80,${0.15 * glow})`);
+    halo.addColorStop(1, 'rgba(255,180,80,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(0, -34, 90, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* ---- Body: tapered crystal star ---- */
+  ctx.save();
+  ctx.scale(squashX, squashY);
+
+  // Main body silhouette — a star-crystal shape
+  const bodyGrad = ctx.createLinearGradient(0, -90, 0, 10);
+  bodyGrad.addColorStop(0.0, '#fff2a8');
+  bodyGrad.addColorStop(0.35, '#ffd76a');
+  bodyGrad.addColorStop(0.7, '#c988ff');
+  bodyGrad.addColorStop(1.0, '#5a2d9c');
+
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath();
+  // Top point (star tip)
+  ctx.moveTo(0, -95);
+  // Upper-right shoulder
+  ctx.lineTo(24, -62);
+  // Right star point
+  ctx.lineTo(52, -46);
+  // Right waist
+  ctx.lineTo(30, -22);
+  // Bottom-right curve
+  ctx.quadraticCurveTo(34, 4, 0, 14);
+  // Bottom-left curve
+  ctx.quadraticCurveTo(-34, 4, -30, -22);
+  // Left star point
+  ctx.lineTo(-52, -46);
+  // Upper-left shoulder
+  ctx.lineTo(-24, -62);
+  ctx.closePath();
+  ctx.fill();
+
+  // Rim highlight
+  ctx.strokeStyle = `rgba(255,250,220,${0.7 + 0.3 * glow})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Inner facet lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(0, -95); ctx.lineTo(0, 14);
+  ctx.moveTo(-24, -62); ctx.lineTo(24, -62);
+  ctx.moveTo(-52, -46); ctx.lineTo(52, -46);
+  ctx.stroke();
+
+  ctx.restore();
+
+  /* ---- Twin eyes (blink on the off-beat) ---- */
+  const blink = (Math.sin(t * 2.2) > 0.92) ? 0.15 : 1;
+  ctx.save();
+  ctx.globalAlpha = blink;
+
+  // Eye glow
+  if (!state.lowDetail) {
+    ctx.shadowColor = '#fff5c0';
+    ctx.shadowBlur = 12;
+  }
+  ctx.fillStyle = '#fffbe8';
+  ctx.beginPath(); ctx.arc(-14, -50, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 14, -50, 8, 0, Math.PI * 2); ctx.fill();
+
+  // Pupils (look downward slightly toward the drum)
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#3a1a5e';
+  ctx.beginPath(); ctx.arc(-14, -48, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 14, -48, 3.5, 0, Math.PI * 2); ctx.fill();
+
+  // Tiny highlights
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-15.5, -49.5, 1.3, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc( 12.5, -49.5, 1.3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  /* ---- Mouth (opens slightly on the beat) ---- */
+  ctx.fillStyle = '#3a1a5e';
+  ctx.beginPath();
+  ctx.ellipse(0, -32, 6 + hitPhase * 3, 4 + hitPhase * 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* ---- Element badge: STAR ---- */
+  drawStarBadge(0, 8, t, glow);
+
+  /* ---- Little arms holding a drum ---- */
+  // Drum (in front of the body)
+  ctx.save();
+  const drumY = 18;
+  const drumW = 34;
+  const drumH = 20;
+
+  // Drum shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, drumY + drumH * 0.5, drumW * 0.55, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Drum body
+  const drumGrad = ctx.createLinearGradient(0, drumY - drumH / 2, 0, drumY + drumH / 2);
+  drumGrad.addColorStop(0, '#5a2d9c');
+  drumGrad.addColorStop(0.5, '#2a0f4a');
+  drumGrad.addColorStop(1, '#180828');
+  ctx.fillStyle = drumGrad;
+  roundRect(ctx, -drumW / 2, drumY - drumH / 2, drumW, drumH, 8);
+  ctx.fill();
+
+  // Drum top rim (bright when struck)
+  ctx.fillStyle = `rgba(255,220,120,${0.5 + hitPhase * 0.5})`;
+  ctx.beginPath();
+  ctx.ellipse(0, drumY - drumH / 2, drumW * 0.5, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Drum rune
+  ctx.strokeStyle = `rgba(255,240,180,${0.4 + hitPhase * 0.6})`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-8, drumY);
+  ctx.lineTo(0, drumY - 4);
+  ctx.lineTo(8, drumY);
+  ctx.stroke();
+
+  // Sticks (angled outward, tapping on the beat)
+  const stickTilt = hitPhase * 0.25;
+  ctx.strokeStyle = '#a78bfa';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-22, -18);
+  ctx.lineTo(-drumW * 0.35 - stickTilt * 6, drumY - 6);
+  ctx.moveTo( 22, -18);
+  ctx.lineTo( drumW * 0.35 + stickTilt * 6, drumY - 6);
+  ctx.stroke();
+  ctx.restore();
+
+  /* ---- Orbiting star shards ---- */
+  const shardCount = state.lowDetail ? 3 : 5;
+  for (let i = 0; i < shardCount; i++) {
+    const a = t * 1.1 + i * (Math.PI * 2 / shardCount);
+    const ox = Math.cos(a) * 58;
+    const oy = -46 + Math.sin(a) * 18;
+    const depth = Math.sin(a); // -1 (behind) .. 1 (front)
+    if (depth < -0.2) continue;
+
+    const sz = 6 + Math.sin(t * 2 + i) * 1.5;
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.rotate(a * 1.5);
+    if (!state.lowDetail) {
+      ctx.shadowColor = '#ffd76a';
+      ctx.shadowBlur = 12 * glow;
+    }
+    ctx.fillStyle = `rgba(255,230,140,${0.75 + 0.25 * glow})`;
+    // 4-point star shard
+    ctx.beginPath();
+    ctx.moveTo(0, -sz * 1.6);
+    ctx.lineTo(sz * 0.45, -sz * 0.45);
+    ctx.lineTo(sz * 1.6, 0);
+    ctx.lineTo(sz * 0.45, sz * 0.45);
+    ctx.lineTo(0, sz * 1.6);
+    ctx.lineTo(-sz * 0.45, sz * 0.45);
+    ctx.lineTo(-sz * 1.6, 0);
+    ctx.lineTo(-sz * 0.45, -sz * 0.45);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/* Small circular badge showing the Star element */
+function drawStarBadge(x, y, t, glow) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Badge ring
+  ctx.fillStyle = 'rgba(20, 5, 45, 0.85)';
+  ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = `rgba(255,220,140,${0.7 + 0.3 * glow})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2); ctx.stroke();
+
+  // Star icon (5-point)
+  const spin = t * 0.8;
+  ctx.rotate(spin);
+  if (!state.lowDetail) {
+    ctx.shadowColor = '#ffd76a';
+    ctx.shadowBlur = 8;
+  }
+  ctx.fillStyle = '#ffe066';
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? 7 : 3;
+    const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else         ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ----------------------------- DRAW MONSTERS ----------------------------- */
+function drawMonsters(t) {
+  // Sort by Y so closer monsters overlap correctly
+  const sorted = [...state.monsters].sort((a, b) => a.offsetY - b.offsetY);
+  for (const m of sorted) {
+    if (m.id === 'stellarius') drawStellarius(m, t);
+  }
 }
 
 /* ----------------------------- MAIN ISLAND DRAW ----------------------------- */
@@ -1820,6 +2177,9 @@ function drawIsland(t) {
   drawPlatformBase(platforms.right);
   drawBreedSynthesizer(t);
   drawIncubationCenter(t);
+
+  // Monsters sit on the void surface — draw them after the surface
+  drawMonsters(t);
 
   ctx.strokeStyle = 'rgba(255, 150, 255, 0.3)';
   ctx.lineWidth = 2;
@@ -1846,7 +2206,6 @@ let marketOpen = false;
 function render(now) {
   const t = now / 1000;
 
-  // Skip heavy rendering entirely when the market is open
   if (!marketOpen) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     drawSky(t);
@@ -1855,17 +2214,19 @@ function render(now) {
     drawVignette();
   }
 
+  // Schedule Stellarius percussion regardless of market state
+  tickStellariusAudio(t);
+
   requestAnimationFrame(render);
 }
 
 /* ============================ INTERACTION ============================ */
 let isDragging = false, lastX = 0, lastY = 0;
+let dragMoved = false;
 
 const CAM_LIMITS = {
-  zoomMin: 0.35,
-  zoomMax: 3.0,
-  panXFrac: 0.55,
-  panYFrac: 0.42,
+  zoomMin: 0.35, zoomMax: 3.0,
+  panXFrac: 0.55, panYFrac: 0.42,
 };
 
 function clampCamera() {
@@ -1876,42 +2237,69 @@ function clampCamera() {
   state.cam.zoom = Math.max(CAM_LIMITS.zoomMin, Math.min(CAM_LIMITS.zoomMax, state.cam.zoom));
 }
 
+/* Converts a screen point to world-space island coordinates */
+function screenToIslandWorld(sx, sy) {
+  const zoom = state.cam.zoom;
+  return {
+    x: (sx - W / 2 - state.cam.x) / zoom,
+    y: (sy - H * 0.45 - state.cam.y) / zoom,
+  };
+}
+
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
   isDragging = true;
+  dragMoved = false;
   lastX = e.clientX; lastY = e.clientY;
 });
 canvas.addEventListener('pointermove', (e) => {
   if (!isDragging) return;
-  state.cam.x += e.clientX - lastX;
-  state.cam.y += e.clientY - lastY;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved = true;
+  state.cam.x += dx;
+  state.cam.y += dy;
   lastX = e.clientX; lastY = e.clientY;
   clampCamera();
 });
-canvas.addEventListener('pointerup',    () => { isDragging = false; });
-canvas.addEventListener('pointercancel',() => { isDragging = false; });
+canvas.addEventListener('pointerup', (e) => {
+  isDragging = false;
+  if (!dragMoved) {
+    // Check if a monster was tapped
+    const w = screenToIslandWorld(e.clientX, e.clientY);
+    // Convert back through the camera-scaling to compare against placed monster offsets
+    const rx = (w.x - 0) / (RX / 780);
+    const ry = (w.y - 0) / (RY / 390);
+    for (const m of state.monsters) {
+      const dx = rx - m.offsetX;
+      const dy = ry - m.offsetY;
+      if (dx * dx + dy * dy < 60 * 60) {
+        // Tapped a monster
+        if (m.id === 'stellarius') {
+          showToast('♪ Stellarius drums to the beat ♪');
+        }
+        break;
+      }
+    }
+  }
+});
+canvas.addEventListener('pointercancel', () => { isDragging = false; dragMoved = false; });
 
 const ZOOM_FACTOR = 1.15;
 
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
-
   const z  = state.cam.zoom;
   const nz = e.deltaY < 0
     ? Math.min(CAM_LIMITS.zoomMax, z * ZOOM_FACTOR)
     : Math.max(CAM_LIMITS.zoomMin, z / ZOOM_FACTOR);
-
   if (Math.abs(nz - z) < 1e-6) return;
-
-  const px = e.clientX;
-  const py = e.clientY;
+  const px = e.clientX, py = e.clientY;
   const wx = (px - W / 2 - state.cam.x) / z;
   const wy = (py - H * 0.45 - state.cam.y) / z;
-
   state.cam.zoom = nz;
   state.cam.x = px - W / 2 - wx * nz;
   state.cam.y = py - H * 0.45 - wy * nz;
-
   clampCamera();
 }, { passive: false });
 
@@ -1929,7 +2317,6 @@ fitCamera();
 /* =========================================================================
    UI — Settings & Market
    ========================================================================= */
-
 function openModal(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add('open');
@@ -1979,7 +2366,10 @@ wireSlider('slider-music', 'slider-music-val', (v) => {
   state.musicVol = v / 100;
   applyAudioSettings();
 });
-wireSlider('slider-sfx', 'slider-sfx-val', (v) => { state.sfxVol = v / 100; });
+wireSlider('slider-sfx', 'slider-sfx-val', (v) => {
+  state.sfxVol = v / 100;
+  applyAudioSettings();
+});
 
 /* =========================================================================
    MARKET
@@ -1988,21 +2378,30 @@ const marketScreen = document.getElementById('market-screen');
 const trayScroll   = document.getElementById('tray-scroll');
 const trayLabel    = document.getElementById('tray-label');
 
-/* Empty market data — add items when you're ready */
+/* Market catalogue — first monster is Stellarius */
 const marketData = {
-  monsters:    [],
+  monsters: [
+    {
+      id: 'stellarius',
+      name: 'Stellarius',
+      icon: '⭐',
+      price: 750,
+      currency: 'shards',
+      rarity: 'Star',
+      element: 'star',
+      description: 'A cosmic percussionist born from a fallen star. Stellarius drums in a slow, hypnotic rhythm that weaves through the castle\'s drone — ethereal, ancient, and a little mysterious.',
+      available: true,
+    },
+  ],
   decorations: [],
   islands:     [],
   special:     [],
 };
 
 const tabLabels = {
-  monsters:    'Monsters',
-  decorations: 'Decorations',
-  islands:     'Islands',
-  special:     'Special',
+  monsters: 'Monsters', decorations: 'Decorations',
+  islands: 'Islands', special: 'Special',
 };
-
 const tabEmptyText = {
   monsters:    'No monsters available yet. Check back soon!',
   decorations: 'No decorations available yet. Check back soon!',
@@ -2016,12 +2415,14 @@ let activeItem = null;
 function openMarket() {
   marketOpen = true;
   marketScreen.classList.add('open');
+  renderTray(activeTab);
 }
 function closeMarket() {
   if (!marketOpen) return;
   marketOpen = false;
   marketScreen.classList.remove('open');
   activeItem = null;
+  updatePreview(null);
 }
 
 document.getElementById('btn-market').addEventListener('click', openMarket);
@@ -2042,9 +2443,10 @@ function renderTray(tab) {
     return;
   }
 
-  data.forEach((item, idx) => {
+  data.forEach((item) => {
     const card = document.createElement('div');
     card.className = 'tray-item';
+    const owned = state.ownedIds.has(item.id);
     card.innerHTML = `
       <div class="thumb">${item.icon || '❔'}</div>
       <div class="tray-name">${item.name}</div>
@@ -2052,6 +2454,7 @@ function renderTray(tab) {
         <span class="mini-shard"></span>
         ${item.price.toLocaleString()}
       </div>
+      ${owned ? '<div class="owned-badge">Owned</div>' : ''}
     `;
     card.addEventListener('click', () => {
       activeItem = item;
@@ -2062,7 +2465,6 @@ function renderTray(tab) {
     trayScroll.appendChild(card);
   });
 
-  // Auto-select the first item
   const firstCard = trayScroll.querySelector('.tray-item');
   if (firstCard) {
     firstCard.classList.add('selected');
@@ -2074,15 +2476,15 @@ function renderTray(tab) {
 }
 
 function updatePreview(item) {
-  const egg        = document.getElementById('preview-egg');
-  const nameEl     = document.getElementById('preview-name');
-  const subEl      = document.getElementById('preview-sub');
-  const descEl     = document.getElementById('preview-desc');
-  const buyBtn     = document.getElementById('preview-buy');
-  const buyLabel   = document.getElementById('preview-buy-label');
+  const egg      = document.getElementById('preview-egg');
+  const nameEl   = document.getElementById('preview-name');
+  const subEl    = document.getElementById('preview-sub');
+  const descEl   = document.getElementById('preview-desc');
+  const buyBtn   = document.getElementById('preview-buy');
+  const buyLabel = document.getElementById('preview-buy-label');
 
   if (!item) {
-    egg.textContent = '🥚';
+    egg.textContent    = '🥚';
     nameEl.textContent = 'Coming Soon';
     subEl.textContent  = 'No items available yet';
     descEl.textContent = 'The market is empty for now. New monsters and decorations will appear here soon.';
@@ -2091,19 +2493,54 @@ function updatePreview(item) {
     return;
   }
 
-  egg.textContent  = item.icon || '❔';
+  egg.textContent    = item.icon || '❔';
   nameEl.textContent = item.name;
-  subEl.textContent  = (item.rarity || 'Common').toUpperCase();
+  subEl.textContent  = (item.rarity || 'Common').toUpperCase() + ' · ' +
+                       (item.element ? item.element.toUpperCase() + ' ELEMENT' : '');
   descEl.textContent = item.description || 'A mysterious new addition to Nyxara.';
 
+  const owned = state.ownedIds.has(item.id);
   if (item.available === false) {
     buyBtn.classList.add('disabled');
     buyLabel.textContent = '— Coming Soon —';
+  } else if (owned) {
+    buyBtn.classList.add('disabled');
+    buyLabel.textContent = '— Already Owned —';
   } else {
     buyBtn.classList.remove('disabled');
     buyLabel.textContent = `Buy  •  ${item.price.toLocaleString()}`;
   }
 }
+
+/* Buy handler — places the monster on the island */
+document.getElementById('preview-buy').addEventListener('click', () => {
+  if (!activeItem || activeItem.available === false) return;
+  if (state.ownedIds.has(activeItem.id)) return;
+
+  const cost = activeItem.price;
+  if (state.shards < cost) {
+    showToast('Not enough shards!');
+    return;
+  }
+
+  state.shards -= cost;
+  state.ownedIds.add(activeItem.id);
+
+  // Place the monster on the void surface
+  if (activeItem.id === 'stellarius') {
+    state.monsters.push({
+      id: 'stellarius',
+      name: 'Stellarius',
+      offsetX: 120,   // island-space offset (roughly center-right of the void)
+      offsetY: 30,
+    });
+  }
+
+  updateCurrencyUI();
+  renderTray(activeTab);
+  updatePreview(activeItem);
+  showToast(`${activeItem.name} placed on Nyxara!`);
+});
 
 document.querySelectorAll('.market-tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -2114,7 +2551,8 @@ document.querySelectorAll('.market-tab').forEach(tab => {
   });
 });
 
-/* Initialize the market with the Monsters tab */
+/* Initialize */
+updateCurrencyUI();
 renderTray('monsters');
 
 /* ------------------------------ GO! ------------------------------ */
