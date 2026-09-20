@@ -369,12 +369,6 @@
     clip-path:polygon(50% 0%, 100% 42%, 78% 100%, 22% 100%, 0% 42%);
     filter:drop-shadow(0 0 2px rgba(255,220,120,.8));
   }
-  .m-cost-left .mini-gem {
-    width:13px; height:11px;
-    background:linear-gradient(135deg, #f3e8ff, #c084fc, #7c3aed);
-    clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
-    filter:drop-shadow(0 0 2px rgba(210,160,255,.9));
-  }
   .m-owned-tag {
     font-size:10px; letter-spacing:1px;
     padding:2px 8px; border-radius:6px;
@@ -453,7 +447,7 @@
     box-shadow:0 0 18px rgba(250,204,21,.5);
   }
 
-  /* ---------- Incubator status pill (speed up + timer) ---------- */
+  /* ---------- Incubator status pill ---------- */
   #incubator-status {
     position:fixed; top:84px; left:50%; transform:translateX(-50%) translateY(-20px);
     display:flex; align-items:center; gap:12px;
@@ -545,6 +539,63 @@
   }
   #incubator-status.ready .inc-speed-btn { display:none; }
 
+  /* ---------- Hatch button floating above incubator ---------- */
+  #hatch-btn {
+    position:fixed; z-index:45;
+    padding:12px 22px; border-radius:16px; cursor:pointer;
+    background:linear-gradient(180deg, rgba(120,220,90,.98), rgba(60,150,40,.99));
+    border:2px solid rgba(220,255,180,.8);
+    box-shadow:0 6px 0 rgba(20,80,20,.95), 0 12px 28px rgba(100,220,80,.6),
+               0 0 30px rgba(180,255,140,.6),
+               inset 0 1px 0 rgba(255,255,255,.35);
+    color:#fff; font-family:inherit; font-size:15px; font-weight:900;
+    letter-spacing:1.2px; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+    transition:transform .12s ease, filter .15s;
+    opacity:0; pointer-events:none;
+    transform:translate(-50%, -50%) scale(.85);
+  }
+  #hatch-btn.show {
+    opacity:1; pointer-events:auto;
+    transform:translate(-50%, -50%) scale(1);
+    animation:hatchBob 1.2s ease-in-out infinite;
+  }
+  @keyframes hatchBob {
+    0%,100% { margin-top:0; }
+    50%     { margin-top:-8px; }
+  }
+  #hatch-btn:hover { filter:brightness(1.12); }
+  #hatch-btn:active {
+    transform:translate(-50%, -50%) scale(.95);
+    box-shadow:0 3px 0 rgba(20,80,20,.95), 0 6px 14px rgba(100,220,80,.5),
+               0 0 20px rgba(180,255,140,.5);
+  }
+  #hatch-btn .hatch-star {
+    font-size:18px;
+    color:#fff8a0;
+    text-shadow:0 0 8px rgba(255,240,150,.9);
+    animation:hatchStarSpin 2s linear infinite;
+  }
+  @keyframes hatchStarSpin {
+    from { transform:rotate(0deg); }
+    to   { transform:rotate(360deg); }
+  }
+
+  /* ---------- Drag hint ---------- */
+  #drag-hint {
+    position:fixed; top:84px; left:50%; transform:translateX(-50%) translateY(-20px);
+    padding:10px 18px; border-radius:999px;
+    background:linear-gradient(180deg, rgba(60,25,105,.96), rgba(25,8,50,.98));
+    border:1.5px solid rgba(200,150,255,.5);
+    box-shadow:0 10px 26px rgba(120,60,220,.55);
+    color:#fff; font-size:13px; font-weight:800; letter-spacing:.5px;
+    z-index:46; pointer-events:none;
+    opacity:0; transition:opacity .3s ease, transform .3s ease;
+  }
+  #drag-hint.show {
+    opacity:1; transform:translateX(-50%) translateY(0);
+  }
+
   /* ---------- Placement panel ---------- */
   #placement-panel {
     position:fixed; bottom:110px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -584,21 +635,6 @@
     border-color:rgba(255,150,170,.6);
     color:#fff;
     box-shadow:0 4px 0 rgba(80,10,20,.9), 0 8px 16px rgba(200,50,80,.4);
-  }
-
-  /* ---------- Structure drag hint ---------- */
-  #drag-hint {
-    position:fixed; top:84px; left:50%; transform:translateX(-50%) translateY(-20px);
-    padding:10px 18px; border-radius:999px;
-    background:linear-gradient(180deg, rgba(60,25,105,.96), rgba(25,8,50,.98));
-    border:1.5px solid rgba(200,150,255,.5);
-    box-shadow:0 10px 26px rgba(120,60,220,.55);
-    color:#fff; font-size:13px; font-weight:800; letter-spacing:.5px;
-    z-index:46; pointer-events:none;
-    opacity:0; transition:opacity .3s ease, transform .3s ease;
-  }
-  #drag-hint.show {
-    opacity:1; transform:translateX(-50%) translateY(0);
   }
 
   /* ---------- Toast ---------- */
@@ -679,6 +715,12 @@
   </button>
 </div>
 
+<!-- Floating Hatch button (positioned via JS above the incubator) -->
+<button id="hatch-btn">
+  <span class="hatch-star">✦</span>
+  <span>Hatch!</span>
+</button>
+
 <!-- Drag hint -->
 <div id="drag-hint">Drag the structure to reposition</div>
 
@@ -699,7 +741,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
     <span>Settings</span>
   </button>
@@ -794,6 +836,7 @@
 <script>
 /* =========================================================================
    NYXARA — Islet with Stellarius, movable structures, sped-up incubation
+   Fixed: monster tracks island during pan/zoom; floating Hatch button.
    ========================================================================= */
 
 /* ------------------------------ CANVAS ------------------------------ */
@@ -827,10 +870,10 @@ const state = {
   gems: 999999,
   monsters: [],
   ownedIds: new Set(),
-  incubating: null,   // { item, startTime, duration, ready, lastTick }
-  placingItem: null,  // { item, offsetX, offsetY } while positioning monster
-  hoverIsland: null,  // {x,y} world coords
-  draggingStructure: null, // 'left' | 'right' while moving a structure
+  incubating: null,
+  placingItem: null,
+  hoverIsland: null,
+  draggingStructure: null,
 };
 
 /* --------------------------- HELPERS --------------------------- */
@@ -894,7 +937,6 @@ function initAudio() {
     document.getElementById('audio-prompt').classList.add('hide');
     return;
   }
-
   castleGain = audioCtx.createGain();
   castleGain.gain.value = 0.0;
   castleGain.connect(audioCtx.destination);
@@ -1216,15 +1258,13 @@ function drawBackSpikes(t) {
   }
 }
 
-/* ----------------------------- MOVABLE STRUCTURES ----------------------------- */
-/* Positions in island-space (offsetX, offsetY).
-   These persist across the game and can be dragged by the user. */
 const structures = {
   left:  { cx: -460, cy: -190, rx: 170, ry: 82, id: 'left',  name: 'Breed Synthesizer' },
   right: { cx:  460, cy: -190, rx: 170, ry: 82, id: 'right', name: 'Incubation Center' },
 };
 
-/* Convert island-space to screen-space for a structure's origin */
+/* Compute screen position of a structure origin.
+   Used by hit-testing (which happens in screen space). */
 function structureScreenPos(st) {
   return {
     x: W / 2 + state.cam.x + st.cx * (RX / 780) * state.cam.zoom,
@@ -1295,9 +1335,7 @@ function drawCastle(t) {
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.ellipse(0, 34, 150, 34, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 34, 150, 34, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 
   ctx.fillStyle = '#0d0018';
@@ -1311,9 +1349,7 @@ function drawCastle(t) {
     ctx.shadowBlur = 14 * pulse;
     ctx.strokeStyle = `rgba(200,120,255,${0.6 * pulse})`;
     ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.ellipse(0, 22, 110, 20, 0, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 22, 110, 20, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
 
@@ -1452,7 +1488,6 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.restore();
 }
 
-/* ----------------------------- BREED SYNTHESIZER ----------------------------- */
 function drawBreedSynthesizer(t, st) {
   const p = st;
   ctx.save();
@@ -1531,8 +1566,6 @@ function drawBreedSynthesizer(t, st) {
   ctx.restore();
 }
 
-/* ----------------------------- INCUBATION CENTER ----------------------------- */
-/* Draws the structure AND a progress bar below it. */
 function drawIncubationCenter(t, st) {
   const p = st;
   ctx.save();
@@ -1544,7 +1577,6 @@ function drawIncubationCenter(t, st) {
   const isReady  = inc && inc.ready;
   const pulse    = 0.75 + 0.25 * Math.sin(t * 1.5);
 
-  // Support arms
   ctx.strokeStyle = '#1a4a5a';
   ctx.lineWidth = 8; ctx.lineCap = 'round';
   ctx.beginPath();
@@ -1607,7 +1639,6 @@ function drawIncubationCenter(t, st) {
     ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
     ctx.closePath(); ctx.stroke();
 
-    // Star pattern on the egg
     const innerGlow = isReady ? '#e0ffd0' : '#ffe9a0';
     ctx.save();
     if (!state.lowDetail) {
@@ -1706,14 +1737,13 @@ function drawIncubationCenter(t, st) {
 
   ctx.restore();
 
-  // Label above
   ctx.save();
   ctx.font = 'bold 12px system-ui, sans-serif';
   ctx.textAlign = 'center';
   if (isReady) {
     ctx.fillStyle = 'rgba(200,255,150,0.95)';
     if (!state.lowDetail) { ctx.shadowColor = '#b8ff8a'; ctx.shadowBlur = 12; }
-    ctx.fillText('✦ TAP TO HATCH ✦', p.cx, p.cy + 82);
+    ctx.fillText('✦ READY TO HATCH ✦', p.cx, p.cy + 82);
   } else if (isActive) {
     ctx.fillStyle = 'rgba(255,220,140,0.95)';
     if (!state.lowDetail) { ctx.shadowColor = '#ffd76a'; ctx.shadowBlur = 10; }
@@ -1725,20 +1755,17 @@ function drawIncubationCenter(t, st) {
   }
   ctx.restore();
 
-  // ---- Progress bar under the incubator (only when active) ----
   if (isActive) {
     const barW = 200;
     const barH = 12;
     const barX = p.cx - barW / 2;
     const barY = p.cy + 100;
 
-    // Background track
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     roundRect(ctx, barX - 2, barY - 2, barW + 4, barH + 4, 8);
     ctx.fill();
 
-    // Fill
     const progress = isReady ? 1 : Math.min(1, inc.elapsed / inc.duration);
     const fillW = barW * progress;
 
@@ -1763,13 +1790,11 @@ function drawIncubationCenter(t, st) {
       }
     }
 
-    // Border
     ctx.strokeStyle = isReady ? 'rgba(200,255,150,0.8)' : 'rgba(255,220,140,0.7)';
     ctx.lineWidth = 1.5;
     roundRect(ctx, barX, barY, barW, barH, 6);
     ctx.stroke();
 
-    // Percentage text
     ctx.font = 'bold 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -1791,7 +1816,6 @@ function drawStarPath(g, cx, cy, r, points) {
   g.closePath();
 }
 
-/* Draw a translucent ring + border around a structure to hint it's draggable */
 function drawStructureDraggableOutline(st, pulse) {
   ctx.save();
   ctx.globalAlpha = 0.55 + pulse * 0.35;
@@ -1805,9 +1829,6 @@ function drawStructureDraggableOutline(st, pulse) {
   ctx.restore();
 }
 
-/* =====================================================
-   ISLAND BASE
-   ===================================================== */
 function drawIslandBase(t) {
   const path = new Path2D();
   path.moveTo(-RX, 0);
@@ -2150,7 +2171,6 @@ function drawStarBadgeOn(g, x, y, t, glow, small) {
   g.restore();
 }
 
-/* Draw a 2×2 grid footprint overlay */
 function drawFootprintOverlay(wx, wy, size) {
   const TW = 72 * (RX / 780) * state.cam.zoom * 0.5;
   const TH = 36 * (RY / 390) * state.cam.zoom * 0.5;
@@ -2176,26 +2196,36 @@ function drawFootprintOverlay(wx, wy, size) {
   ctx.restore();
 }
 
-function drawStellarius(m, t) {
-  const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
-  const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
+/* ----------------------------- MONSTERS -----------------------------
+   IMPORTANT: Monsters are drawn INSIDE the world-space transform,
+   so their island-space offsets move correctly with pan & zoom.
+   ----------------------------------------------------------------------- */
+function drawStellariusWorld(m, t) {
+  // m.offsetX / m.offsetY are in ISLAND-SPACE units (same scale as structures).
+  // Convert to world-space by scaling against RX/RY ratios, similar to how
+  // structures use (RX/780) and (RY/390). This keeps everything anchored.
+  const wx = m.offsetX * (RX / 780);
+  const wy = m.offsetY * (RY / 390);
   const beat = (t * (STELL_BPM / 60)) % 1;
+
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#000';
   ctx.beginPath(); ctx.ellipse(wx, wy + 8, 46, 14, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
+
   drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
 }
 
-function drawMonsters(t) {
+function drawMonstersInWorld(t) {
   const sorted = [...state.monsters].sort((a, b) => a.offsetY - b.offsetY);
-  for (const m of sorted) if (m.id === 'stellarius') drawStellarius(m, t);
+  for (const m of sorted) if (m.id === 'stellarius') drawStellariusWorld(m, t);
 
+  // Ghost placement preview
   if (state.placingItem && state.hoverIsland) {
     const m = state.placingItem;
-    const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780);
-    const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390);
+    const wx = m.offsetX * (RX / 780);
+    const wy = m.offsetY * (RY / 390);
     const beat = (t * (STELL_BPM / 60)) % 1;
     ctx.save();
     ctx.globalAlpha = 0.7;
@@ -2205,7 +2235,6 @@ function drawMonsters(t) {
   }
 }
 
-/* ----------------------------- MAIN ISLAND DRAW ----------------------------- */
 function drawIsland(t) {
   ctx.save();
   ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
@@ -2222,21 +2251,19 @@ function drawIsland(t) {
   drawBackSpikes(t);
   drawCastle(t);
 
-  // Draw platforms behind the structures
   drawPlatformBase(structures.left);
   drawPlatformBase(structures.right);
 
-  // Draw structures
   drawBreedSynthesizer(t, structures.left);
   drawIncubationCenter(t, structures.right);
 
-  // Draw draggable outline on any structure the user is hovering while dragging
   if (state.draggingStructure) {
     const st = state.draggingStructure === 'left' ? structures.left : structures.right;
     drawStructureDraggableOutline(st, 0.5 + 0.5 * Math.sin(t * 6));
   }
 
-  drawMonsters(t);
+  // Monsters are drawn inside the world transform → anchored to the island.
+  drawMonstersInWorld(t);
 
   ctx.strokeStyle = 'rgba(255, 150, 255, 0.3)';
   ctx.lineWidth = 2;
@@ -2270,6 +2297,7 @@ function render(now) {
 
   tickStellariusAudio(t);
   updateIncubation(t);
+  updateHatchButton();
   updateMonsterCardPreviews(t);
   requestAnimationFrame(render);
 }
@@ -2291,7 +2319,6 @@ function updateIncubation(t) {
   const inc = state.incubating;
   const statusEl = document.getElementById('incubator-status');
   const barFill  = document.getElementById('inc-bar-fill');
-  const speedBtn = document.getElementById('inc-speed');
   const speedLbl = document.getElementById('inc-speed-label');
 
   if (!inc) {
@@ -2307,11 +2334,10 @@ function updateIncubation(t) {
     showToast(`${inc.item.name} is ready to hatch!`, 'success');
     statusEl.classList.add('ready');
     document.getElementById('inc-title').textContent = 'Ready to Hatch!';
-    document.getElementById('inc-timer').textContent = 'Tap Incubator';
+    document.getElementById('inc-timer').textContent = 'Tap Hatch!';
   }
 
   statusEl.classList.add('show');
-
   if (!inc.ready) {
     statusEl.classList.remove('ready');
     document.getElementById('inc-title').textContent = `Incubating ${inc.item.name}`;
@@ -2322,11 +2348,41 @@ function updateIncubation(t) {
   barFill.style.width = (progress * 100).toFixed(1) + '%';
 
   if (!inc.ready) {
-    // Speed cost: 1 gem per remaining minute, rounded up
     const remainingMin = Math.max(1, Math.ceil(remaining / 60));
     speedLbl.textContent = `Speed Up (${remainingMin})`;
   }
 }
+
+/* Position the floating Hatch button above the incubator whenever an egg is ready */
+const hatchBtn = document.getElementById('hatch-btn');
+function updateHatchButton() {
+  const inc = state.incubating;
+  if (!inc || !inc.ready) {
+    hatchBtn.classList.remove('show');
+    return;
+  }
+
+  const sp = structureScreenPos(structures.right);
+  // Float it ~120px above the incubator origin
+  const bx = sp.x;
+  const by = sp.y - 130 * state.cam.zoom;
+
+  hatchBtn.style.left = bx + 'px';
+  hatchBtn.style.top  = by + 'px';
+
+  // Scale down a bit when zoomed way out, so it doesn't dominate
+  const s = Math.max(0.75, Math.min(1.15, state.cam.zoom));
+  hatchBtn.style.transform = `translate(-50%, -50%) scale(${s})`;
+  hatchBtn.style.setProperty('--hatch-scale', s);
+
+  hatchBtn.classList.add('show');
+}
+
+hatchBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!state.incubating || !state.incubating.ready) return;
+  beginPlacement(state.incubating.item);
+});
 
 /* Speed up button: 1 gem per remaining minute */
 document.getElementById('inc-speed').addEventListener('click', (e) => {
@@ -2343,10 +2399,9 @@ document.getElementById('inc-speed').addEventListener('click', (e) => {
   state.gems -= remainingMin;
   updateCurrencyUI();
 
-  // Instantly complete the incubation
   inc.elapsed = inc.duration;
   inc.startTime = performance.now() / 1000 - inc.duration;
-  showToast(`Speeding up — used ${remainingMin} gem${remainingMin > 1 ? 's' : ''}!`, 'success');
+  showToast(`Sped up — used ${remainingMin} gem${remainingMin > 1 ? 's' : ''}!`, 'success');
 });
 
 /* ============================ INTERACTION ============================ */
@@ -2366,16 +2421,17 @@ function clampCamera() {
   state.cam.zoom = Math.max(CAM_LIMITS.zoomMin, Math.min(CAM_LIMITS.zoomMax, state.cam.zoom));
 }
 
-function screenToIslandWorld(sx, sy) {
-  const zoom = state.cam.zoom;
+/* Convert screen → island-space (offsetX/offsetY style),
+   so it matches structures AND monster positions. */
+function screenToIslandSpace(sx, sy) {
+  const wx = (sx - W / 2 - state.cam.x) / state.cam.zoom;
+  const wy = (sy - H * 0.45 - state.cam.y) / state.cam.zoom;
   return {
-    x: (sx - W / 2 - state.cam.x) / zoom,
-    y: (sy - H * 0.45 - state.cam.y) / zoom,
+    x: wx / (RX / 780),
+    y: wy / (RY / 390),
   };
 }
 
-/* Hit test: is a screen point on top of a structure?
-   Works in screen-space so zoom level doesn't matter. */
 function hitStructure(sx, sy) {
   for (const st of [structures.left, structures.right]) {
     const sp = structureScreenPos(st);
@@ -2383,45 +2439,20 @@ function hitStructure(sx, sy) {
     const dy = sy - sp.y;
     const rx = st.rx * state.cam.zoom * 0.95;
     const ry = st.ry * state.cam.zoom * 0.95;
-    if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.2) {
-      return st;
-    }
+    if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.2) return st;
   }
   return null;
-}
-
-/* Is the pointer over the incubator specifically? */
-function hitIncubator(sx, sy) {
-  const st = structures.right;
-  const sp = structureScreenPos(st);
-  const dx = sx - sp.x;
-  const dy = sy - sp.y;
-  const rx = st.rx * state.cam.zoom * 1.15;
-  const ry = st.ry * state.cam.zoom * 1.15;
-  return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.2;
-}
-
-/* Update the cursor class based on hover */
-function updateCursor(sx, sy) {
-  if (state.placingItem) {
-    canvas.className = 'placing';
-    return;
-  }
-  canvas.className = '';
 }
 
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
 
-  // Check if user tapped a structure to start dragging it
   const st = hitStructure(e.clientX, e.clientY);
   if (st && !state.placingItem) {
-    // If it's the incubator AND an egg is ready → hatch
     if (st.id === 'right' && state.incubating && state.incubating.ready) {
       beginPlacement(state.incubating.item);
       return;
     }
-    // Otherwise start dragging
     state.draggingStructure = st.id;
     canvas.classList.add('dragging-structure');
     document.getElementById('drag-hint').classList.add('show');
@@ -2437,39 +2468,33 @@ canvas.addEventListener('pointerdown', (e) => {
 });
 
 canvas.addEventListener('pointermove', (e) => {
-  // Track island hover for placement preview
-  const w = screenToIslandWorld(e.clientX, e.clientY);
-  state.hoverIsland = w;
+  // Hover position in island-space
+  const isp = screenToIslandSpace(e.clientX, e.clientY);
+  state.hoverIsland = isp;
 
   if (state.placingItem) {
-    // Snap in island-space
-    const gx = Math.round(w.x / (RX / 780) / 40) * 40;
-    const gy = Math.round(w.y / (RY / 390) / 20) * 20;
+    const gx = Math.round(isp.x / 40) * 40;
+    const gy = Math.round(isp.y / 20) * 20;
     state.placingItem.offsetX = gx;
     state.placingItem.offsetY = gy;
   }
 
-  // Dragging a structure
   if (state.draggingStructure) {
     const dx = (e.clientX - lastX) / state.cam.zoom;
     const dy = (e.clientY - lastY) / state.cam.zoom;
-
-    // Convert screen delta → island-space delta (scaled by the ratios)
     const st = state.draggingStructure === 'left' ? structures.left : structures.right;
     st.cx += dx / (RX / 780);
     st.cy += dy / (RY / 390);
-
-    // Clamp inside the island roughly
     st.cx = Math.max(-600, Math.min(600, st.cx));
     st.cy = Math.max(-300, Math.min(150, st.cy));
-
     lastX = e.clientX; lastY = e.clientY;
     dragMoved = true;
     return;
   }
 
   if (!isDragging) {
-    updateCursor(e.clientX, e.clientY);
+    if (state.placingItem) canvas.className = 'placing';
+    else canvas.className = '';
     return;
   }
 
@@ -2483,7 +2508,6 @@ canvas.addEventListener('pointermove', (e) => {
 });
 
 canvas.addEventListener('pointerup', (e) => {
-  // End structure drag
   if (state.draggingStructure) {
     state.draggingStructure = null;
     canvas.classList.remove('dragging-structure');
@@ -2494,19 +2518,17 @@ canvas.addEventListener('pointerup', (e) => {
   isDragging = false;
   if (dragMoved) return;
 
-  const w = screenToIslandWorld(e.clientX, e.clientY);
+  const isp = screenToIslandSpace(e.clientX, e.clientY);
 
   if (state.placingItem) {
     confirmPlacement();
     return;
   }
 
-  // Monster tap?
-  const rx = w.x / (RX / 780);
-  const ry = w.y / (RY / 390);
+  // Check monster tap
   for (const m of state.monsters) {
-    const dx = rx - m.offsetX;
-    const dy = ry - m.offsetY;
+    const dx = isp.x - m.offsetX;
+    const dy = isp.y - m.offsetY;
     if (dx * dx + dy * dy < 60 * 60) {
       if (m.id === 'stellarius') showToast('♪ Stellarius drums to the beat ♪');
       break;
@@ -2556,20 +2578,18 @@ function beginPlacement(item) {
   document.getElementById('placement-name').textContent = item.name;
   document.getElementById('placement-panel').classList.add('show');
   canvas.classList.add('placing');
+  hatchBtn.classList.remove('show');
 }
 
 function confirmPlacement() {
   if (!state.placingItem) return;
   const { item, offsetX, offsetY } = state.placingItem;
-
   state.monsters.push({ id: item.id, name: item.name, offsetX, offsetY });
-
   state.incubating = null;
   state.placingItem = null;
   document.getElementById('incubator-status').classList.remove('show', 'ready');
   document.getElementById('placement-panel').classList.remove('show');
   canvas.classList.remove('placing');
-
   showToast(`${item.name} placed on Nyxara!`, 'success');
 }
 
@@ -2671,14 +2691,6 @@ function buildMonsterGrid() {
   monsterGrid.innerHTML = '';
   previewCanvases.length = 0;
 
-  if (CATALOGUE.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'market-empty';
-    empty.textContent = 'No monsters available yet. Check back soon!';
-    monsterGrid.appendChild(empty);
-    return;
-  }
-
   CATALOGUE.forEach(item => {
     const card = document.createElement('div');
     card.className = 'm-card';
@@ -2763,7 +2775,6 @@ confirmBtn.addEventListener('click', () => {
   if (incubating || placed) { showToast('Already owned!', 'error'); return; }
   if (!selectedItem.available) { showToast('Coming soon!', 'error'); return; }
   if (state.shards < selectedItem.price) { showToast('Not enough shards!', 'error'); return; }
-
   state.shards -= selectedItem.price;
   state.ownedIds.add(selectedItem.id);
   startIncubation(selectedItem);
