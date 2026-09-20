@@ -109,6 +109,89 @@
     color:rgba(230,205,255,.95); text-transform:uppercase;
   }
 
+  /* ---------- Action Menu (floating above selected entity) ---------- */
+  #action-menu {
+    position:fixed; z-index:60;
+    display:flex; gap:8px;
+    padding:8px;
+    background:linear-gradient(180deg, rgba(60,25,105,.98), rgba(25,8,50,.99));
+    border:1.5px solid rgba(220,170,255,.7);
+    border-radius:20px;
+    box-shadow:0 12px 32px rgba(120,60,220,.7), inset 0 1px 0 rgba(255,255,255,.15);
+    pointer-events:none; opacity:0;
+    transform:translate(-50%, -50%) scale(.85);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  #action-menu.show {
+    opacity:1; pointer-events:auto;
+    transform:translate(-50%, -50%) scale(1);
+  }
+  .action-menu-btn {
+    padding:10px 16px; border-radius:14px; cursor:pointer;
+    font-family:inherit; font-size:12px; font-weight:900; letter-spacing:1px;
+    text-transform:uppercase;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    border:1.5px solid;
+    transition:transform .1s, filter .15s;
+    min-width:70px;
+  }
+  .action-menu-btn:hover { filter:brightness(1.15); transform:translateY(-2px); }
+  .action-menu-btn:active { transform:translateY(1px); }
+  .action-menu-btn .btn-icon { font-size:20px; line-height:1; }
+  .action-menu-btn.feed {
+    background:linear-gradient(180deg, rgba(255,180,90,.95), rgba(200,110,20,.98));
+    border-color:rgba(255,220,150,.8);
+    box-shadow:0 4px 0 rgba(120,60,10,.9), 0 8px 16px rgba(255,150,60,.4);
+    color:#fff;
+  }
+  .action-menu-btn.move {
+    background:linear-gradient(180deg, rgba(120,180,255,.95), rgba(50,90,200,.98));
+    border-color:rgba(180,220,255,.8);
+    box-shadow:0 4px 0 rgba(20,50,120,.9), 0 8px 16px rgba(90,150,255,.4);
+    color:#fff;
+  }
+  .action-menu-btn.synth {
+    background:linear-gradient(180deg, rgba(200,120,255,.95), rgba(120,50,200,.98));
+    border-color:rgba(240,200,255,.8);
+    box-shadow:0 4px 0 rgba(60,10,120,.9), 0 8px 16px rgba(180,80,255,.4);
+    color:#fff;
+  }
+  .action-menu-btn.cancel {
+    background:linear-gradient(180deg, rgba(200,60,80,.9), rgba(120,20,40,.95));
+    border-color:rgba(255,150,170,.7);
+    box-shadow:0 4px 0 rgba(80,10,20,.9), 0 8px 16px rgba(200,50,80,.4);
+    color:#fff;
+  }
+  .action-menu-btn:disabled {
+    filter:grayscale(.8) brightness(.6);
+    cursor:not-allowed; pointer-events:none;
+  }
+
+  /* ---------- Monster info panel ---------- */
+  #monster-info {
+    position:fixed; z-index:60;
+    padding:8px 14px; border-radius:14px;
+    background:linear-gradient(180deg, rgba(60,25,105,.96), rgba(25,8,50,.98));
+    border:1.5px solid rgba(220,170,255,.6);
+    box-shadow:0 8px 22px rgba(120,60,220,.55);
+    pointer-events:none; opacity:0;
+    transform:translate(-50%, -50%);
+    transition:opacity .2s ease;
+  }
+  #monster-info.show { opacity:1; }
+  .monster-info-name {
+    color:#fff; font-size:14px; font-weight:900; letter-spacing:1px;
+    text-shadow:0 0 12px rgba(180,100,255,.7);
+  }
+  .monster-info-stats {
+    display:flex; gap:10px; margin-top:4px;
+    font-size:10px; font-weight:800; letter-spacing:.5px;
+    color:rgba(220,200,255,.85);
+  }
+  .monster-info-stats .stat {
+    display:flex; align-items:center; gap:3px;
+  }
+
   /* ---------- Settings modal ---------- */
   .modal-backdrop {
     position:fixed; inset:0; background:rgba(5,0,15,.7);
@@ -208,7 +291,7 @@
   }
 
   /* ======================================================
-     FULL-SCREEN MARKET
+     MARKET
      ====================================================== */
   #market-screen {
     position:fixed; inset:0; z-index:150;
@@ -355,6 +438,7 @@
   }
   .m-elem svg { width:16px; height:16px; }
   .m-elem.star svg { fill:#ffe066; filter:drop-shadow(0 0 3px #ffd76a); }
+  .m-elem.ice svg { fill:#a5e8ff; filter:drop-shadow(0 0 3px #7fdcff); }
   .m-cost {
     position:absolute; bottom:0; left:0; right:0; z-index:2;
     padding:7px 10px;
@@ -539,7 +623,7 @@
   }
   #incubator-status.ready .inc-speed-btn { display:none; }
 
-  /* ---------- Hatch button floating above incubator ---------- */
+  /* ---------- Hatch button ---------- */
   #hatch-btn {
     position:fixed; z-index:45;
     padding:12px 22px; border-radius:16px; cursor:pointer;
@@ -557,7 +641,6 @@
   }
   #hatch-btn.show {
     opacity:1; pointer-events:auto;
-    transform:translate(-50%, -50%) scale(1);
     animation:hatchBob 1.2s ease-in-out infinite;
   }
   @keyframes hatchBob {
@@ -565,14 +648,9 @@
     50%     { margin-top:-8px; }
   }
   #hatch-btn:hover { filter:brightness(1.12); }
-  #hatch-btn:active {
-    transform:translate(-50%, -50%) scale(.95);
-    box-shadow:0 3px 0 rgba(20,80,20,.95), 0 6px 14px rgba(100,220,80,.5),
-               0 0 20px rgba(180,255,140,.5);
-  }
+  #hatch-btn:active { transform:translate(-50%, -50%) scale(.95); }
   #hatch-btn .hatch-star {
-    font-size:18px;
-    color:#fff8a0;
+    font-size:18px; color:#fff8a0;
     text-shadow:0 0 8px rgba(255,240,150,.9);
     animation:hatchStarSpin 2s linear infinite;
   }
@@ -635,6 +713,195 @@
     border-color:rgba(255,150,170,.6);
     color:#fff;
     box-shadow:0 4px 0 rgba(80,10,20,.9), 0 8px 16px rgba(200,50,80,.4);
+  }
+
+  /* ---------- Breed modal ---------- */
+  #breed-modal {
+    position:fixed; inset:0; z-index:160;
+    background:rgba(5,0,15,.75); backdrop-filter:blur(10px);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  #breed-modal.open { opacity:1; pointer-events:auto; }
+  .breed-card {
+    width:min(92vw, 720px); max-height:88vh; overflow:hidden;
+    background:linear-gradient(180deg, rgba(38,15,70,.99), rgba(18,5,40,.99));
+    border:1.5px solid rgba(200,150,255,.5);
+    border-radius:28px;
+    box-shadow:0 0 100px rgba(180,100,255,.5), 0 30px 60px rgba(0,0,0,.8);
+    display:flex; flex-direction:column;
+    transform:scale(.94) translateY(20px);
+    transition:transform .32s cubic-bezier(.2,.9,.3,1.3);
+  }
+  #breed-modal.open .breed-card { transform:scale(1) translateY(0); }
+
+  .breed-header {
+    padding:22px 26px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid rgba(200,150,255,.15);
+  }
+  .breed-title {
+    font-size:22px; font-weight:900; color:#fff; letter-spacing:1px;
+    text-shadow:0 0 20px rgba(180,100,255,.7);
+    display:flex; align-items:center; gap:12px;
+  }
+  .breed-title .dot {
+    width:36px; height:36px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #e9d5ff, #a855f7 55%, #6b21a8);
+    box-shadow:0 0 22px rgba(180,110,255,.85);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px;
+  }
+
+  .breed-body {
+    padding:26px;
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+  }
+
+  .breed-slots {
+    display:flex; align-items:center; justify-content:center;
+    gap:24px; width:100%;
+  }
+  .breed-slot {
+    width:130px; height:150px; border-radius:20px;
+    background:radial-gradient(ellipse 90% 70% at 50% 30%, rgba(90,50,140,.55), rgba(20,8,40,.9) 75%);
+    border:2.5px dashed rgba(200,150,255,.4);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; position:relative;
+    transition:all .18s ease;
+  }
+  .breed-slot:hover {
+    border-color:rgba(220,170,255,.85);
+    transform:translateY(-3px);
+  }
+  .breed-slot.filled {
+    border-style:solid;
+    border-color:rgba(220,170,255,.75);
+    background:radial-gradient(ellipse 90% 70% at 50% 30%, rgba(120,70,190,.65), rgba(30,10,60,.9) 75%);
+    box-shadow:0 0 22px rgba(180,100,255,.5);
+  }
+  .breed-slot canvas {
+    width:100%; height:100%;
+  }
+  .breed-slot .slot-hint {
+    font-size:11px; font-weight:800; letter-spacing:1.5px;
+    color:rgba(200,170,255,.55); text-transform:uppercase;
+  }
+  .breed-plus {
+    font-size:36px; font-weight:900;
+    color:rgba(220,170,255,.85);
+    text-shadow:0 0 20px rgba(180,100,255,.8);
+  }
+
+  .breed-result {
+    display:flex; align-items:center; justify-content:center; gap:16px;
+    padding:16px 24px; border-radius:20px;
+    background:linear-gradient(180deg, rgba(80,35,140,.5), rgba(35,12,70,.7));
+    border:1.5px solid rgba(200,150,255,.4);
+    min-height:130px; width:100%;
+    flex-direction:column;
+  }
+  .breed-result-label {
+    font-size:11px; font-weight:800; letter-spacing:2px;
+    color:rgba(200,170,255,.7); text-transform:uppercase;
+  }
+  .breed-result-name {
+    font-size:22px; font-weight:900; color:#fff; letter-spacing:1px;
+    text-shadow:0 0 16px rgba(180,100,255,.7);
+  }
+  .breed-result-el {
+    display:flex; gap:6px;
+  }
+  .breed-result-el .m-elem {
+    width:30px; height:30px;
+  }
+  .breed-result-el .m-elem svg { width:18px; height:18px; }
+  .breed-result .empty-text {
+    color:rgba(200,170,255,.55); font-size:14px; font-weight:700;
+    font-style:italic; letter-spacing:.5px;
+  }
+
+  .breed-actions {
+    display:flex; gap:12px; width:100%;
+    justify-content:center;
+  }
+  .breed-btn {
+    padding:14px 32px; border-radius:16px; cursor:pointer;
+    font-family:inherit; font-size:14px; font-weight:900; letter-spacing:1.2px;
+    text-transform:uppercase;
+    border:1.5px solid;
+    transition:transform .1s, filter .15s;
+  }
+  .breed-btn:hover { filter:brightness(1.12); }
+  .breed-btn:active { transform:translateY(3px); }
+  .breed-btn.breed-start {
+    background:linear-gradient(180deg, rgba(120,220,90,.95), rgba(60,150,40,.98));
+    border-color:rgba(180,255,140,.7);
+    color:#fff;
+    box-shadow:0 5px 0 rgba(20,80,20,.9), 0 10px 20px rgba(100,220,80,.5);
+  }
+  .breed-btn.breed-start:disabled {
+    filter:grayscale(.85) brightness(.6);
+    cursor:not-allowed; pointer-events:none;
+  }
+  .breed-btn.breed-cancel {
+    background:linear-gradient(180deg, rgba(200,60,80,.92), rgba(120,20,40,.95));
+    border-color:rgba(255,150,170,.6);
+    color:#fff;
+    box-shadow:0 5px 0 rgba(80,10,20,.9), 0 10px 20px rgba(200,50,80,.4);
+  }
+
+  /* Slot picker */
+  .slot-picker {
+    position:absolute; z-index:170;
+    background:linear-gradient(180deg, rgba(38,15,70,.99), rgba(18,5,40,.99));
+    border:1.5px solid rgba(200,150,255,.5);
+    border-radius:18px;
+    padding:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.8);
+    max-width:340px;
+    opacity:0; pointer-events:none;
+    transform:scale(.95); transition:opacity .2s, transform .2s;
+  }
+  .slot-picker.open { opacity:1; pointer-events:auto; transform:scale(1); }
+  .slot-picker-title {
+    font-size:11px; font-weight:800; letter-spacing:2px;
+    color:rgba(200,170,255,.7); text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .slot-picker-list {
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+  }
+  .slot-picker-item {
+    width:90px; padding:10px 6px; border-radius:14px;
+    background:radial-gradient(ellipse 90% 70% at 50% 30%, rgba(90,50,140,.5), rgba(20,8,40,.9) 75%);
+    border:1.5px solid rgba(200,150,255,.35);
+    cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    transition:all .15s ease;
+  }
+  .slot-picker-item:hover {
+    border-color:rgba(220,170,255,.8);
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(120,60,220,.5);
+  }
+  .slot-picker-item canvas {
+    width:64px; height:64px;
+  }
+  .slot-picker-item .item-name {
+    font-size:10px; font-weight:800; color:#e0c8ff;
+    text-align:center;
+  }
+  .slot-picker-item .item-elem {
+    display:flex; gap:2px;
+  }
+  .slot-picker-item .item-elem .m-elem {
+    width:16px; height:16px; border-width:1px;
+  }
+  .slot-picker-item .item-elem .m-elem svg { width:10px; height:10px; }
+  .slot-picker-empty {
+    color:rgba(200,170,255,.55); font-size:12px; font-style:italic;
+    padding:20px; text-align:center;
   }
 
   /* ---------- Toast ---------- */
@@ -701,7 +968,6 @@
   </div>
 </div>
 
-<!-- Incubator status pill -->
 <div id="incubator-status">
   <div class="inc-egg"><span class="inc-star">✦</span></div>
   <div class="inc-info">
@@ -715,16 +981,25 @@
   </button>
 </div>
 
-<!-- Floating Hatch button (positioned via JS above the incubator) -->
 <button id="hatch-btn">
   <span class="hatch-star">✦</span>
   <span>Hatch!</span>
 </button>
 
-<!-- Drag hint -->
 <div id="drag-hint">Drag the structure to reposition</div>
 
-<!-- Placement panel -->
+<!-- Action menu -->
+<div id="action-menu"></div>
+
+<!-- Monster info panel -->
+<div id="monster-info">
+  <div class="monster-info-name" id="mi-name">Monster</div>
+  <div class="monster-info-stats">
+    <span class="stat">🍖 <span id="mi-feed">0</span></span>
+    <span class="stat">⭐ Lv <span id="mi-level">1</span></span>
+  </div>
+</div>
+
 <div id="placement-panel">
   <div class="placement-text">
     Place <span id="placement-name">Monster</span>
@@ -756,7 +1031,7 @@
   </button>
 </div>
 
-<!-- ================= SETTINGS MODAL ================= -->
+<!-- ================= SETTINGS ================= -->
 <div class="modal-backdrop" id="settings-modal">
   <div class="modal">
     <div class="modal-header">
@@ -824,6 +1099,48 @@
   </div>
 </div>
 
+<!-- ================= BREED MODAL ================= -->
+<div id="breed-modal">
+  <div class="breed-card">
+    <div class="breed-header">
+      <div class="breed-title">
+        <span class="dot">◈</span>
+        Breed Synthesizer
+      </div>
+      <button class="modal-close" id="breed-close">✕</button>
+    </div>
+    <div class="breed-body">
+      <div class="breed-slots">
+        <div class="breed-slot" id="slot-a" data-slot="a">
+          <span class="slot-hint">+ Pick</span>
+        </div>
+        <div class="breed-plus">+</div>
+        <div class="breed-slot" id="slot-b" data-slot="b">
+          <span class="slot-hint">+ Pick</span>
+        </div>
+      </div>
+
+      <div class="breed-result">
+        <div class="breed-result-label">Result</div>
+        <div id="breed-result-content">
+          <div class="empty-text">Select two monsters to see the result</div>
+        </div>
+      </div>
+
+      <div class="breed-actions">
+        <button class="breed-btn breed-cancel" id="breed-cancel">Cancel</button>
+        <button class="breed-btn breed-start" id="breed-start" disabled>Breed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slot picker (popover) -->
+<div class="slot-picker" id="slot-picker">
+  <div class="slot-picker-title" id="slot-picker-title">Choose a monster</div>
+  <div class="slot-picker-list" id="slot-picker-list"></div>
+</div>
+
 <div id="toast"></div>
 
 <div id="audio-prompt">
@@ -835,24 +1152,20 @@
 
 <script>
 /* =========================================================================
-   NYXARA — Islet with Stellarius, movable structures, sped-up incubation
-   Fixed: monster tracks island during pan/zoom; floating Hatch button.
+   NYXARA — Monsters, feeding, breeding, selection system
    ========================================================================= */
 
-/* ------------------------------ CANVAS ------------------------------ */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 let DPR = 1, W = 0, H = 0;
-
 let skyCache = null, skyCtx = null, skyFrameCounter = 0;
 
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width  = Math.floor(W * DPR);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = Math.floor(W * DPR);
   canvas.height = Math.floor(H * DPR);
-  canvas.style.width  = W + 'px';
+  canvas.style.width = W + 'px';
   canvas.style.height = H + 'px';
   skyCache = null;
 }
@@ -868,12 +1181,13 @@ const state = {
   lowDetail: false,
   shards: 999999,
   gems: 999999,
-  monsters: [],
+  monsters: [],       // placed monsters
   ownedIds: new Set(),
-  incubating: null,
+  incubating: null,   // { item, startTime, duration, elapsed, ready }
   placingItem: null,
   hoverIsland: null,
   draggingStructure: null,
+  selectedEntity: null, // { type: 'monster'|'structure', ref }
 };
 
 /* --------------------------- HELPERS --------------------------- */
@@ -900,7 +1214,7 @@ function showToast(msg, type) {
   t.textContent = msg;
   t.className = 'show' + (type ? ' ' + type : '');
   clearTimeout(t._to);
-  t._to = setTimeout(() => t.classList.remove('show'), 2000);
+  t._to = setTimeout(() => t.classList.remove('show'), 2200);
 }
 function updateCurrencyUI() {
   const s = state.shards.toLocaleString();
@@ -920,6 +1234,62 @@ function formatTime(sec) {
 }
 
 /* =========================================================================
+   MONSTER CATALOGUE
+   ========================================================================= */
+const MONSTERS = {
+  stellarius: {
+    id: 'stellarius',
+    name: 'Stellarius',
+    elements: ['star'],
+    price: 750,
+    currency: 'shards',
+    size: 2,
+    available: true,
+    description: 'A cosmic percussionist born from a fallen star.',
+    breedTime: 60,
+  },
+  frostling: {
+    id: 'frostling',
+    name: 'Frostling',
+    elements: ['ice'],
+    price: 500,
+    currency: 'shards',
+    size: 2,
+    available: true,
+    description: 'A tiny cryomancer with frozen breath.',
+    breedTime: 90,
+  },
+  glacieris: {
+    id: 'glacieris',
+    name: 'Glacieris',
+    elements: ['star', 'ice'],
+    price: 0,
+    currency: 'shards',
+    size: 2,
+    available: false, // only breedable
+    description: 'A fusion of star and ice — born only from breeding.',
+    breedTime: 120,
+  },
+};
+
+/* Combos: sorted key of two element arrays → result id */
+function comboKey(elements1, elements2) {
+  const all = [...elements1, ...elements2].sort();
+  return all.join('+');
+}
+const BREED_COMBOS = {
+  'ice+star': 'glacieris',
+};
+
+function getBreedResult(itemA, itemB) {
+  if (!itemA || !itemB) return null;
+  if (itemA.id === itemB.id) return null;
+  const key = comboKey(itemA.elements, itemB.elements);
+  const resultId = BREED_COMBOS[key];
+  return resultId ? MONSTERS[resultId] : null;
+}
+
+/* =========================================================================
    AUDIO
    ========================================================================= */
 let audioCtx = null, castleGain = null, audioStarted = false;
@@ -933,18 +1303,15 @@ function initAudio() {
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   } catch (err) {
-    console.warn('Audio not supported:', err);
     document.getElementById('audio-prompt').classList.add('hide');
     return;
   }
   castleGain = audioCtx.createGain();
   castleGain.gain.value = 0.0;
   castleGain.connect(audioCtx.destination);
-
   const lp = audioCtx.createBiquadFilter();
   lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 0.8;
   lp.connect(castleGain);
-
   const lfoFilter = audioCtx.createOscillator();
   lfoFilter.frequency.value = 0.07;
   const lfoFilterGain = audioCtx.createGain();
@@ -968,14 +1335,12 @@ function initAudio() {
   ];
   notes.forEach((n, i) => {
     const osc = audioCtx.createOscillator();
-    osc.type = n.type;
-    osc.frequency.value = n.f;
+    osc.type = n.type; osc.frequency.value = n.f;
     osc.detune.value = (i - 2) * 4;
     const g = audioCtx.createGain();
     g.gain.value = n.g;
     lfoAmpGain.connect(g.gain);
-    osc.connect(g);
-    g.connect(lp);
+    osc.connect(g); g.connect(lp);
     osc.start();
   });
   lfoAmp.start();
@@ -983,11 +1348,9 @@ function initAudio() {
   monsterGain = audioCtx.createGain();
   monsterGain.gain.value = 0.0;
   monsterGain.connect(audioCtx.destination);
-
   applyAudioSettings(true);
   document.getElementById('audio-prompt').classList.add('hide');
 }
-
 function applyAudioSettings(instant = false) {
   if (!castleGain || !monsterGain) return;
   const now = audioCtx.currentTime;
@@ -1003,17 +1366,12 @@ function applyAudioSettings(instant = false) {
     monsterGain.gain.linearRampToValueAtTime(mTarget, now + 0.4);
   }
 }
-
 document.getElementById('audio-prompt').addEventListener('click', initAudio);
 canvas.addEventListener('pointerdown', initAudio, { once: true });
 
-/* ---------------------- STELLARIUS PERCUSSION ---------------------- */
-const STELL_BEATS = [
-  { type: 'kick' },
-  { type: 'shimmer' },
-  { type: 'tom' },
-  { type: 'rest' },
-];
+const STELL_BPM = 96;
+const STELL_LOOP = 2.0;
+const STELL_BEATS = ['kick','shimmer','tom','rest'];
 
 function playStellHit(type, when) {
   if (!audioCtx || !monsterGain) return;
@@ -1039,16 +1397,6 @@ function playStellHit(type, when) {
     g.gain.exponentialRampToValueAtTime(0.0001, when + 0.28);
     osc.connect(g); g.connect(monsterGain);
     osc.start(when); osc.stop(when + 0.3);
-
-    const osc2 = audioCtx.createOscillator();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(3300, when);
-    const g2 = audioCtx.createGain();
-    g2.gain.setValueAtTime(0.0001, when);
-    g2.gain.exponentialRampToValueAtTime(0.14, when + 0.005);
-    g2.gain.exponentialRampToValueAtTime(0.0001, when + 0.20);
-    osc2.connect(g2); g2.connect(monsterGain);
-    osc2.start(when); osc2.stop(when + 0.22);
   } else if (type === 'tom') {
     const osc = audioCtx.createOscillator();
     osc.type = 'sine';
@@ -1062,22 +1410,16 @@ function playStellHit(type, when) {
     osc.start(when); osc.stop(when + 0.22);
   }
 }
-
-const STELL_BPM = 96;
-const STELL_LOOP = 2.0;
-
 function tickStellariusAudio(t) {
   if (!audioCtx || !monsterGain) return;
-  if (state.monsters.length === 0) return;
   if (!state.audioOn) return;
   const hasStell = state.monsters.some(m => m.id === 'stellarius');
   if (!hasStell) return;
-
   const now = audioCtx.currentTime;
   if (lastBeatTime === 0) lastBeatTime = now;
   while (lastBeatTime < now + 0.1) {
     const beat = STELL_BEATS[beatIndex];
-    if (beat.type !== 'rest') playStellHit(beat.type, lastBeatTime);
+    if (beat !== 'rest') playStellHit(beat, lastBeatTime);
     lastBeatTime += STELL_LOOP / 4;
     beatIndex = (beatIndex + 1) % STELL_BEATS.length;
   }
@@ -1097,13 +1439,11 @@ const stars = (() => {
   }
   return out;
 })();
-
 const nebulae = [
   { x: 0.15, y: 0.25, r: 460, c1: 'rgba(255,0,150,0.14)', c2: 'rgba(255,0,150,0)' },
   { x: 0.85, y: 0.35, r: 540, c1: 'rgba(0,200,255,0.12)', c2: 'rgba(0,200,255,0)' },
   { x: 0.50, y: 0.80, r: 620, c1: 'rgba(150,0,255,0.12)', c2: 'rgba(150,0,255,0)' },
 ];
-
 function drawSky(t) {
   if (!skyCache || skyCache.width !== canvas.width || skyCache.height !== canvas.height) {
     skyCache = document.createElement('canvas');
@@ -1120,19 +1460,15 @@ function drawSky(t) {
     s.setTransform(DPR, 0, 0, DPR, 0, 0);
     s.clearRect(0, 0, W, H);
     const g = s.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0.0, '#05000a');
-    g.addColorStop(0.3, '#0f0025');
-    g.addColorStop(0.7, '#1a0035');
-    g.addColorStop(1.0, '#0d001a');
-    s.fillStyle = g;
-    s.fillRect(0, 0, W, H);
+    g.addColorStop(0.0, '#05000a'); g.addColorStop(0.3, '#0f0025');
+    g.addColorStop(0.7, '#1a0035'); g.addColorStop(1.0, '#0d001a');
+    s.fillStyle = g; s.fillRect(0, 0, W, H);
     s.save();
     s.globalCompositeOperation = 'lighter';
     for (const n of nebulae) {
       const nx = n.x * W, ny = n.y * H;
       const rg = s.createRadialGradient(nx, ny, 10, nx, ny, n.r);
-      rg.addColorStop(0, n.c1);
-      rg.addColorStop(1, n.c2);
+      rg.addColorStop(0, n.c1); rg.addColorStop(1, n.c2);
       s.fillStyle = rg;
       s.fillRect(nx - n.r, ny - n.r, n.r * 2, n.r * 2);
     }
@@ -1145,9 +1481,7 @@ function drawSky(t) {
       const twinkle = 0.7 + 0.3 * Math.sin(t * st.spd + st.tw);
       s.fillStyle = st.col;
       s.globalAlpha = st.a * twinkle;
-      s.beginPath();
-      s.arc(sx, sy, st.r, 0, Math.PI * 2);
-      s.fill();
+      s.beginPath(); s.arc(sx, sy, st.r, 0, Math.PI * 2); s.fill();
     }
     s.globalAlpha = 1;
   }
@@ -1155,43 +1489,29 @@ function drawSky(t) {
 }
 
 /* ======================== ISLAND GEOMETRY ======================== */
-const RX  = 780;
-const RY  = 390;
-const GRX = 655;
-const GRY = 300;
-const BOT = 650;
+const RX  = 780, RY  = 390, GRX = 655, GRY = 300, BOT = 650;
 
 function drawCrystalSpikeFast(x, y, angle, size, hue, alpha = 1) {
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(angle);
-  const len = size * 2.3;
-  const wid = size * 0.75;
+  ctx.translate(x, y); ctx.rotate(angle);
+  const len = size * 2.3, wid = size * 0.75;
   ctx.fillStyle = `hsla(${hue}, 100%, 62%, ${alpha * 0.28})`;
   ctx.beginPath();
   ctx.moveTo(-len * 0.1, -wid * 1.5);
-  ctx.lineTo(len * 1.15, 0);
-  ctx.lineTo(-len * 0.1, wid * 1.5);
-  ctx.closePath();
-  ctx.fill();
+  ctx.lineTo(len * 1.15, 0); ctx.lineTo(-len * 0.1, wid * 1.5);
+  ctx.closePath(); ctx.fill();
   const grad = ctx.createLinearGradient(0, 0, len, 0);
   grad.addColorStop(0.0, `hsla(${hue}, 90%, 45%, ${alpha})`);
   grad.addColorStop(0.5, `hsla(${hue + 25}, 92%, 66%, ${alpha})`);
   grad.addColorStop(1.0, `hsla(${hue + 55}, 95%, 85%, ${alpha})`);
   ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.moveTo(0, -wid);
-  ctx.lineTo(len, 0);
-  ctx.lineTo(0, wid);
-  ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(0, -wid); ctx.lineTo(len, 0); ctx.lineTo(0, wid);
+  ctx.closePath(); ctx.fill();
   ctx.fillStyle = `hsla(${hue + 60}, 100%, 93%, ${alpha * 0.55})`;
   ctx.beginPath();
-  ctx.moveTo(0, -wid * 0.35);
-  ctx.lineTo(len * 0.78, 0);
-  ctx.lineTo(0, 0);
-  ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(0, -wid * 0.35); ctx.lineTo(len * 0.78, 0); ctx.lineTo(0, 0);
+  ctx.closePath(); ctx.fill();
   ctx.restore();
 }
 
@@ -1200,7 +1520,6 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.translate(x, y);
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.beginPath(); ctx.ellipse(0, 0, w * 0.85, 6, 0, 0, Math.PI * 2); ctx.fill();
-
   if (!state.lowDetail) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1208,9 +1527,7 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
     halo.addColorStop(0, `hsla(${hue}, 95%, 62%, ${0.32 * pulse})`);
     halo.addColorStop(1, `hsla(${hue}, 95%, 62%, 0)`);
     ctx.fillStyle = halo;
-    ctx.beginPath();
-    ctx.ellipse(0, -h * 0.5, w * 2.4, h * 0.75, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, -h * 0.5, w * 2.4, h * 0.75, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
   const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
@@ -1225,19 +1542,14 @@ function drawTallBackSpike(x, y, h, w, hue, pulse) {
   ctx.lineTo(0, -h);
   ctx.lineTo(w * 0.18, -h * 0.62);
   ctx.lineTo(w / 2, 0);
-  ctx.closePath();
-  ctx.fill();
+  ctx.closePath(); ctx.fill();
   ctx.strokeStyle = `hsla(${hue + 50}, 100%, 82%, ${0.9 * pulse})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(0, -h);
-  ctx.lineTo(w * 0.18, -h * 0.62);
-  ctx.lineTo(w / 2, 0);
+  ctx.moveTo(0, -h); ctx.lineTo(w * 0.18, -h * 0.62); ctx.lineTo(w / 2, 0);
   ctx.stroke();
   ctx.fillStyle = `hsla(${hue + 60}, 100%, 95%, ${pulse})`;
-  ctx.beginPath();
-  ctx.arc(0, -h, 3 + pulse * 1.8, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -h, 3 + pulse * 1.8, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
 
@@ -1246,15 +1558,11 @@ function drawBackSpikes(t) {
   for (let i = 0; i < N; i++) {
     const u = (i / (N - 1)) * 2 - 1;
     const a = -Math.PI / 2 + u * 0.95;
-    const bx = Math.cos(a) * (RX - 22);
-    const by = Math.sin(a) * (RY - 22);
+    const bx = Math.cos(a) * (RX - 22), by = Math.sin(a) * (RY - 22);
     if (Math.abs(u) < 0.12) continue;
     const hFactor = Math.cos(u * 1.15);
-    const h = 120 + hFactor * 170;
-    const w = 36 + hFactor * 22;
-    const hue = 265 + hFactor * 40;
-    const pulse = 0.65 + 0.35 * Math.sin(t * 1.3 + i * 0.9);
-    drawTallBackSpike(bx, by, h, w, hue, pulse);
+    drawTallBackSpike(bx, by, 120 + hFactor * 170, 36 + hFactor * 22,
+      265 + hFactor * 40, 0.65 + 0.35 * Math.sin(t * 1.3 + i * 0.9));
   }
 }
 
@@ -1263,8 +1571,6 @@ const structures = {
   right: { cx:  460, cy: -190, rx: 170, ry: 82, id: 'right', name: 'Incubation Center' },
 };
 
-/* Compute screen position of a structure origin.
-   Used by hit-testing (which happens in screen space). */
 function structureScreenPos(st) {
   return {
     x: W / 2 + state.cam.x + st.cx * (RX / 780) * state.cam.zoom,
@@ -1276,38 +1582,23 @@ function drawPlatformBase(p) {
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#000';
-  ctx.beginPath();
-  ctx.ellipse(p.cx, p.cy + 26, p.rx * 0.95, p.ry * 0.75, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(p.cx, p.cy + 26, p.rx * 0.95, p.ry * 0.75, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
-
   const g = ctx.createLinearGradient(0, p.cy - p.ry, 0, p.cy + p.ry + 40);
-  g.addColorStop(0, '#0089aa');
-  g.addColorStop(0.6, '#00b8d8');
-  g.addColorStop(1, '#005a77');
+  g.addColorStop(0, '#0089aa'); g.addColorStop(0.6, '#00b8d8'); g.addColorStop(1, '#005a77');
   ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.ellipse(p.cx, p.cy, p.rx, p.ry, 0, 0, Math.PI * 2);
-  ctx.fill();
-
+  ctx.beginPath(); ctx.ellipse(p.cx, p.cy, p.rx, p.ry, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save();
   ctx.globalAlpha = 0.4;
   ctx.fillStyle = '#00232e';
-  ctx.beginPath();
-  ctx.ellipse(p.cx, p.cy + 18, p.rx * 0.9, p.ry * 0.85, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(p.cx, p.cy + 18, p.rx * 0.9, p.ry * 0.85, 0, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
-
   const BUMPS = state.lowDetail ? 10 : 18;
   for (let i = 0; i < BUMPS; i++) {
     const a = (i / BUMPS) * Math.PI * 2;
-    const bx = p.cx + Math.cos(a) * p.rx;
-    const by = p.cy + Math.sin(a) * p.ry;
-    const size = 9 + Math.sin(i * 1.9) * 3.5;
-    const hue = 195 + Math.sin(a) * 40;
-    drawCrystalSpikeFast(bx, by, a, size, hue, 0.85);
+    drawCrystalSpikeFast(p.cx + Math.cos(a) * p.rx, p.cy + Math.sin(a) * p.ry, a,
+      9 + Math.sin(i * 1.9) * 3.5, 195 + Math.sin(a) * 40, 0.85);
   }
-
   if (!state.lowDetail) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1315,21 +1606,17 @@ function drawPlatformBase(p) {
     pg.addColorStop(0, 'rgba(180,255,255,0.35)');
     pg.addColorStop(1, 'rgba(0,120,180,0)');
     ctx.fillStyle = pg;
-    ctx.beginPath();
-    ctx.ellipse(p.cx, p.cy - 4, p.rx * 0.85, p.ry * 0.85, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(p.cx, p.cy - 4, p.rx * 0.85, p.ry * 0.85, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 }
 
-/* ----------------------------- CASTLE ----------------------------- */
+/* ------------------------- CASTLE ------------------------- */
 const castle = { cx: 0, cy: -290, s: 0.92 };
-
 function drawCastle(t) {
   const { cx, cy, s } = castle;
   ctx.save();
-  ctx.translate(cx, cy);
-  ctx.scale(s, s);
+  ctx.translate(cx, cy); ctx.scale(s, s);
   const pulse = 0.85 + 0.15 * Math.sin(t * 1.4);
 
   ctx.save();
@@ -1365,8 +1652,7 @@ function drawCastle(t) {
   const orbs = state.lowDetail ? 0 : 3;
   for (let i = 0; i < orbs; i++) {
     const a = t * 0.6 + i * (Math.PI * 2 / 3);
-    const orbitX = Math.cos(a) * 90;
-    const orbitY = -160 + Math.sin(a) * 18;
+    const orbitX = Math.cos(a) * 90, orbitY = -160 + Math.sin(a) * 18;
     const sz = 7 + Math.sin(t * 2 + i) * 2;
     ctx.save();
     ctx.translate(orbitX, orbitY); ctx.rotate(a);
@@ -1380,24 +1666,19 @@ function drawCastle(t) {
   }
   ctx.restore();
 }
-
 function drawTower(x, baseY, w, h, hue, t) {
   const g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
   g.addColorStop(0, '#10001f'); g.addColorStop(0.5, '#2a004a'); g.addColorStop(1, '#08001a');
   ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.moveTo(x - w / 2, baseY);
-  ctx.lineTo(x - w * 0.32, baseY - h);
-  ctx.lineTo(x + w * 0.32, baseY - h);
-  ctx.lineTo(x + w / 2, baseY);
+  ctx.moveTo(x - w / 2, baseY); ctx.lineTo(x - w * 0.32, baseY - h);
+  ctx.lineTo(x + w * 0.32, baseY - h); ctx.lineTo(x + w / 2, baseY);
   ctx.closePath(); ctx.fill();
 
   ctx.fillStyle = 'rgba(180,120,255,0.20)';
   ctx.beginPath();
-  ctx.moveTo(x - w / 2, baseY);
-  ctx.lineTo(x - w * 0.32, baseY - h);
-  ctx.lineTo(x - w * 0.20, baseY - h);
-  ctx.lineTo(x - w * 0.34, baseY);
+  ctx.moveTo(x - w / 2, baseY); ctx.lineTo(x - w * 0.32, baseY - h);
+  ctx.lineTo(x - w * 0.20, baseY - h); ctx.lineTo(x - w * 0.34, baseY);
   ctx.closePath(); ctx.fill();
 
   const capSz = w * 0.42;
@@ -1406,10 +1687,8 @@ function drawTower(x, baseY, w, h, hue, t) {
   if (!state.lowDetail) { ctx.shadowColor = `hsl(${hue}, 100%, 65%)`; ctx.shadowBlur = 18 * pulse; }
   ctx.fillStyle = `hsl(${hue}, 90%, 70%)`;
   ctx.beginPath();
-  ctx.moveTo(x, baseY - h - capSz * 1.8);
-  ctx.lineTo(x + capSz, baseY - h);
-  ctx.lineTo(x, baseY - h + capSz * 0.4);
-  ctx.lineTo(x - capSz, baseY - h);
+  ctx.moveTo(x, baseY - h - capSz * 1.8); ctx.lineTo(x + capSz, baseY - h);
+  ctx.lineTo(x, baseY - h + capSz * 0.4); ctx.lineTo(x - capSz, baseY - h);
   ctx.closePath(); ctx.fill();
   ctx.restore();
 
@@ -1419,7 +1698,6 @@ function drawTower(x, baseY, w, h, hue, t) {
   roundRect(ctx, x - w * 0.14, baseY - h * 0.6, w * 0.28, h * 0.16, 4); ctx.fill();
   ctx.restore();
 }
-
 function drawMainSpire(x, baseY, t, pulse) {
   const H = 320, W0 = 62;
   const g = ctx.createLinearGradient(x - W0 / 2, 0, x + W0 / 2, 0);
@@ -1446,8 +1724,7 @@ function drawMainSpire(x, baseY, t, pulse) {
   for (let i = 1; i <= 5; i++) {
     const ry = baseY - H * 0.72 * (i / 6);
     const rw = W0 * 0.5 * (1 - i * 0.12);
-    ctx.beginPath();
-    ctx.moveTo(x - rw, ry); ctx.lineTo(x + rw, ry); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - rw, ry); ctx.lineTo(x + rw, ry); ctx.stroke();
   }
 
   ctx.save();
@@ -1467,8 +1744,7 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.lineTo(x + W0 * 0.22, baseY - H * 0.72);
   ctx.closePath(); ctx.fill();
 
-  const cy = baseY - H * 0.95 - 40;
-  const cr = 30;
+  const cy = baseY - H * 0.95 - 40, cr = 30;
   ctx.save();
   if (!state.lowDetail) { ctx.shadowColor = '#d090ff'; ctx.shadowBlur = 30 * pulse; }
   const cg = ctx.createRadialGradient(x, cy, 4, x, cy, cr);
@@ -1488,29 +1764,24 @@ function drawMainSpire(x, baseY, t, pulse) {
   ctx.restore();
 }
 
+/* ---------------------- STRUCTURES ---------------------- */
 function drawBreedSynthesizer(t, st) {
   const p = st;
   ctx.save();
-  ctx.translate(p.cx, p.cy - 6);
-  ctx.scale(0.95, 0.95);
-
+  ctx.translate(p.cx, p.cy - 6); ctx.scale(0.95, 0.95);
   const pods = [-52, 52];
   for (const px of pods) {
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath(); ctx.ellipse(px, 16, 34, 10, 0, 0, Math.PI * 2); ctx.fill();
     const pg = ctx.createLinearGradient(px, -60, px, 20);
-    pg.addColorStop(0, '#4a1f7a');
-    pg.addColorStop(0.5, '#2a0f4a');
-    pg.addColorStop(1, '#0d0520');
+    pg.addColorStop(0, '#4a1f7a'); pg.addColorStop(0.5, '#2a0f4a'); pg.addColorStop(1, '#0d0520');
     ctx.fillStyle = pg;
     ctx.beginPath();
     ctx.moveTo(px - 32, 16);
     ctx.bezierCurveTo(px - 34, -30, px + 34, -30, px + 32, 16);
     ctx.closePath(); ctx.fill();
-
     ctx.strokeStyle = 'rgba(180,120,255,0.6)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.ellipse(px, 16, 32, 9, 0, 0, Math.PI * 2); ctx.stroke();
-
     const pulse = 0.7 + 0.3 * Math.sin(t * 1.7 + px * 0.02);
     if (!state.lowDetail) {
       ctx.save();
@@ -1548,7 +1819,6 @@ function drawBreedSynthesizer(t, st) {
   }
   ctx.fillStyle = `rgba(255,240,255,${0.9 * topPulse})`;
   ctx.beginPath(); ctx.arc(0, -92, 5, 0, Math.PI * 2); ctx.fill();
-
   ctx.strokeStyle = 'rgba(150,90,220,0.55)';
   ctx.lineWidth = 6; ctx.lineCap = 'round';
   ctx.beginPath();
@@ -1566,19 +1836,28 @@ function drawBreedSynthesizer(t, st) {
   ctx.restore();
 }
 
+function drawStarPath(g, cx, cy, r, points) {
+  const inner = r * 0.42;
+  g.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const rad = i % 2 === 0 ? r : inner;
+    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+    const px = cx + Math.cos(a) * rad, py = cy + Math.sin(a) * rad;
+    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+  }
+  g.closePath();
+}
+
 function drawIncubationCenter(t, st) {
   const p = st;
   ctx.save();
-  ctx.translate(p.cx, p.cy - 6);
-  ctx.scale(0.95, 0.95);
-
+  ctx.translate(p.cx, p.cy - 6); ctx.scale(0.95, 0.95);
   const inc = state.incubating;
   const isActive = !!inc;
   const isReady  = inc && inc.ready;
   const pulse    = 0.75 + 0.25 * Math.sin(t * 1.5);
 
-  ctx.strokeStyle = '#1a4a5a';
-  ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#1a4a5a'; ctx.lineWidth = 8; ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(-52, 12); ctx.quadraticCurveTo(-64, -40, -30, -76);
   ctx.moveTo(52, 12);  ctx.quadraticCurveTo(64, -40, 30, -76);
@@ -1601,7 +1880,6 @@ function drawIncubationCenter(t, st) {
     const beatPulse = isReady
       ? (0.85 + 0.15 * Math.sin(t * 6))
       : (0.7 + 0.3 * Math.sin(t * 1.8));
-
     ctx.save();
     if (!state.lowDetail) {
       ctx.shadowColor = isReady ? '#b8ff8a' : '#ffd76a';
@@ -1649,24 +1927,8 @@ function drawIncubationCenter(t, st) {
     const spin = t * (isReady ? 1.4 : 0.6);
     ctx.save();
     ctx.translate(0, -46); ctx.rotate(spin);
-    drawStarPath(ctx, 0, 0, 12, 5);
-    ctx.fill();
+    drawStarPath(ctx, 0, 0, 12, 5); ctx.fill();
     ctx.restore();
-
-    const smallStars = [
-      { a: 0.6, r: 18, size: 5 },
-      { a: 2.6, r: 16, size: 4.5 },
-      { a: 4.6, r: 17, size: 5 },
-    ];
-    for (const s of smallStars) {
-      const sx = Math.cos(s.a + spin * 0.5) * s.r;
-      const sy = -52 + Math.sin(s.a + spin * 0.5) * s.r * 0.7;
-      ctx.save();
-      ctx.translate(sx, sy); ctx.rotate(-spin);
-      drawStarPath(ctx, 0, 0, s.size, 5);
-      ctx.fill();
-      ctx.restore();
-    }
     ctx.restore();
 
     if (isReady && !state.lowDetail) {
@@ -1676,8 +1938,7 @@ function drawIncubationCenter(t, st) {
       for (let i = 0; i < rays; i++) {
         const a = t * 0.8 + i * (Math.PI * 2 / rays);
         const len = 60 + Math.sin(t * 3 + i) * 10;
-        const gx = Math.cos(a) * len * 0.6;
-        const gy = -46 + Math.sin(a) * len * 0.4;
+        const gx = Math.cos(a) * len * 0.6, gy = -46 + Math.sin(a) * len * 0.4;
         const rg = ctx.createRadialGradient(gx, gy, 2, gx, gy, 22);
         rg.addColorStop(0, 'rgba(220,255,180,0.5)');
         rg.addColorStop(1, 'rgba(180,255,140,0)');
@@ -1702,7 +1963,6 @@ function drawIncubationCenter(t, st) {
     ctx.bezierCurveTo(-34, -56, -28, -88, 0, -88);
     ctx.closePath(); ctx.fill();
     ctx.restore();
-
     ctx.strokeStyle = `rgba(200,250,255,${0.6 * pulse})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1712,29 +1972,24 @@ function drawIncubationCenter(t, st) {
     ctx.bezierCurveTo(-14, 4, -30, -14, -30, -42);
     ctx.bezierCurveTo(-30, -56, -24, -84, 0, -84);
     ctx.closePath(); ctx.stroke();
-
     const sp = 0.5 + 0.5 * Math.sin(t * 3);
     ctx.fillStyle = `rgba(255,255,255,${0.6 * sp})`;
     ctx.beginPath(); ctx.arc(-4, -50, 3 + sp * 1.2, 0, Math.PI * 2); ctx.fill();
   }
-
   if (!isActive) {
     ctx.save();
     ctx.translate(0, -44); ctx.rotate(t * 0.6);
     ctx.strokeStyle = 'rgba(120,230,255,0.55)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 12]);
+    ctx.lineWidth = 2; ctx.setLineDash([10, 12]);
     ctx.beginPath(); ctx.ellipse(0, 0, 52, 18, 0, 0, Math.PI * 2); ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
   }
-
   ctx.fillStyle = '#0e4a5a';
   roundRect(ctx, -30, 6, 60, 12, 5); ctx.fill();
   ctx.strokeStyle = 'rgba(120,240,255,0.5)';
   ctx.lineWidth = 1.5;
   roundRect(ctx, -30, 6, 60, 12, 5); ctx.stroke();
-
   ctx.restore();
 
   ctx.save();
@@ -1756,45 +2011,28 @@ function drawIncubationCenter(t, st) {
   ctx.restore();
 
   if (isActive) {
-    const barW = 200;
-    const barH = 12;
-    const barX = p.cx - barW / 2;
-    const barY = p.cy + 100;
-
+    const barW = 200, barH = 12;
+    const barX = p.cx - barW / 2, barY = p.cy + 100;
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    roundRect(ctx, barX - 2, barY - 2, barW + 4, barH + 4, 8);
-    ctx.fill();
-
+    roundRect(ctx, barX - 2, barY - 2, barW + 4, barH + 4, 8); ctx.fill();
     const progress = isReady ? 1 : Math.min(1, inc.elapsed / inc.duration);
     const fillW = barW * progress;
-
     if (fillW > 0) {
       const fg = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-      if (isReady) {
-        fg.addColorStop(0, '#b8ff8a');
-        fg.addColorStop(1, '#22c55e');
-      } else {
-        fg.addColorStop(0, '#ffd54a');
-        fg.addColorStop(1, '#f59e0b');
-      }
+      if (isReady) { fg.addColorStop(0, '#b8ff8a'); fg.addColorStop(1, '#22c55e'); }
+      else { fg.addColorStop(0, '#ffd54a'); fg.addColorStop(1, '#f59e0b'); }
       ctx.fillStyle = fg;
-      roundRect(ctx, barX, barY, fillW, barH, 6);
-      ctx.fill();
-
+      roundRect(ctx, barX, barY, fillW, barH, 6); ctx.fill();
       if (!state.lowDetail) {
         ctx.shadowColor = isReady ? '#b8ff8a' : '#ffd76a';
         ctx.shadowBlur = 12;
-        roundRect(ctx, barX, barY, fillW, barH, 6);
-        ctx.fill();
+        roundRect(ctx, barX, barY, fillW, barH, 6); ctx.fill();
       }
     }
-
     ctx.strokeStyle = isReady ? 'rgba(200,255,150,0.8)' : 'rgba(255,220,140,0.7)';
     ctx.lineWidth = 1.5;
-    roundRect(ctx, barX, barY, barW, barH, 6);
-    ctx.stroke();
-
+    roundRect(ctx, barX, barY, barW, barH, 6); ctx.stroke();
     ctx.font = 'bold 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -1803,229 +2041,11 @@ function drawIncubationCenter(t, st) {
   }
 }
 
-function drawStarPath(g, cx, cy, r, points) {
-  const inner = r * 0.42;
-  g.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const rad = i % 2 === 0 ? r : inner;
-    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
-    const px = cx + Math.cos(a) * rad;
-    const py = cy + Math.sin(a) * rad;
-    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
-  }
-  g.closePath();
-}
-
-function drawStructureDraggableOutline(st, pulse) {
-  ctx.save();
-  ctx.globalAlpha = 0.55 + pulse * 0.35;
-  ctx.strokeStyle = '#facc15';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([12, 8]);
-  ctx.beginPath();
-  ctx.ellipse(st.cx, st.cy + 10, st.rx + 20, st.ry + 14, 0, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-}
-
-function drawIslandBase(t) {
-  const path = new Path2D();
-  path.moveTo(-RX, 0);
-  path.bezierCurveTo(-RX - 40, 260, -RX + 100, 520, -220, BOT - 40);
-  path.bezierCurveTo(-80, BOT + 30, 80, BOT + 30, 220, BOT - 40);
-  path.bezierCurveTo(RX - 100, 520, RX + 40, 260, RX, 0);
-  path.closePath();
-
-  const g = ctx.createLinearGradient(0, -50, 0, BOT + 30);
-  g.addColorStop(0.00, '#0a3a5c');
-  g.addColorStop(0.22, '#0e6083');
-  g.addColorStop(0.50, '#0aa8c5');
-  g.addColorStop(0.82, '#00d6ea');
-  g.addColorStop(1.00, '#0098b5');
-  ctx.fillStyle = g;
-  ctx.fill(path);
-
-  ctx.save();
-  ctx.clip(path);
-  for (let x = -RX - 60, i = 0; x < RX + 60; x += 140, i++) {
-    if (i % 2 === 1) {
-      ctx.fillStyle = 'rgba(0,20,45,0.14)';
-      ctx.fillRect(x, 0, 70, BOT + 60);
-    } else {
-      ctx.fillStyle = 'rgba(140,240,255,0.06)';
-      ctx.fillRect(x, 0, 70, BOT + 60);
-    }
-  }
-  ctx.globalAlpha = 0.10;
-  ctx.fillStyle = '#000';
-  for (let i = 0; i < 2; i++) {
-    const y = 260 + i * 170;
-    ctx.beginPath();
-    ctx.moveTo(-RX, y);
-    for (let x = -RX; x <= RX; x += 60) ctx.lineTo(x, y + Math.sin(x * 0.004 + i * 1.7) * 7);
-    ctx.lineTo(RX, y + 26);
-    for (let x = RX; x >= -RX; x -= 60) ctx.lineTo(x, y + 26 + Math.sin(x * 0.004 + i * 1.7) * 7);
-    ctx.closePath(); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  const windows = [
-    { x: -320, y: 300, w: 165, h: 105 }, { x: 320, y: 300, w: 165, h: 105 },
-    { x: -90, y: 470, w: 130, h: 80 }, { x: 90, y: 470, w: 130, h: 80 },
-  ];
-  for (const w of windows) {
-    if (!state.lowDetail) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      const og = ctx.createRadialGradient(w.x, w.y, 4, w.x, w.y, w.w * 0.95);
-      og.addColorStop(0, 'rgba(200,250,255,0.55)');
-      og.addColorStop(0.4, 'rgba(60,220,255,0.28)');
-      og.addColorStop(1, 'rgba(0,150,200,0)');
-      ctx.fillStyle = og;
-      roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30); ctx.fill();
-      ctx.restore();
-    }
-    const ig = ctx.createRadialGradient(w.x, w.y - 8, 3, w.x, w.y, w.w * 0.4);
-    ig.addColorStop(0, 'rgba(255,255,255,0.95)');
-    ig.addColorStop(0.6, 'rgba(140,235,255,0.55)');
-    ig.addColorStop(1, 'rgba(80,200,255,0)');
-    ctx.fillStyle = ig;
-    ctx.beginPath(); ctx.ellipse(w.x, w.y - 8, w.w * 0.34, w.h * 0.34, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = 'rgba(180,250,255,0.65)'; ctx.lineWidth = 2.5;
-    roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30); ctx.stroke();
-  }
-  ctx.strokeStyle = 'rgba(140,240,255,0.22)'; ctx.lineWidth = 1.5;
-  for (const w of windows) {
-    ctx.beginPath(); ctx.moveTo(w.x, w.y + w.h / 2 + 4); ctx.lineTo(w.x, BOT - 40); ctx.stroke();
-  }
-  ctx.restore();
-
-  if (!state.lowDetail) {
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const bg = ctx.createRadialGradient(0, BOT - 50, 20, 0, BOT - 50, 500);
-    bg.addColorStop(0, 'rgba(140,245,255,0.4)');
-    bg.addColorStop(0.55, 'rgba(60,200,255,0.12)');
-    bg.addColorStop(1, 'rgba(60,200,255,0)');
-    ctx.fillStyle = bg;
-    ctx.beginPath(); ctx.ellipse(0, BOT - 50, 500, 115, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-  ctx.strokeStyle = 'rgba(160,245,255,0.5)'; ctx.lineWidth = 3; ctx.stroke(path);
-}
-
-function drawCrystalRim(t) {
-  const BUMPS = state.lowDetail ? 20 : 36;
-  for (let i = 0; i < BUMPS; i++) {
-    const a = (i / BUMPS) * Math.PI * 2 - Math.PI / 2;
-    if (Math.sin(a) > 0.35) continue;
-    const bx = Math.cos(a) * RX;
-    const by = Math.sin(a) * RY;
-    const centerBias = Math.max(0, -Math.sin(a));
-    const sizeMod = 0.55 + 0.75 * centerBias;
-    const size = (20 + Math.sin(i * 1.7) * 7) * sizeMod;
-    const hue = 280 + 60 * centerBias;
-    drawCrystalSpikeFast(bx, by, a, size, hue, 0.9);
-  }
-}
-
-function drawVoidSurface(t) {
-  ctx.save();
-  const voidGrad = ctx.createRadialGradient(-60, -60, 25, 0, 0, GRX);
-  voidGrad.addColorStop(0, '#1a0033');
-  voidGrad.addColorStop(0.6, '#0d001a');
-  voidGrad.addColorStop(1, '#05000a');
-  ctx.fillStyle = voidGrad;
-  ctx.beginPath(); ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2); ctx.fill();
-
-  ctx.strokeStyle = 'rgba(140, 80, 220, 0.16)'; ctx.lineWidth = 48;
-  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.strokeStyle = 'rgba(180, 100, 255, 0.42)'; ctx.lineWidth = 14;
-  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.strokeStyle = 'rgba(225, 165, 255, 0.75)'; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
-
-  if (!state.lowDetail) {
-    ctx.globalAlpha = 0.07;
-    ctx.strokeStyle = '#cc88ff'; ctx.lineWidth = 16;
-    for (let i = 0; i < 3; i++) {
-      const off = Math.sin(t * 0.3 + i) * 24;
-      ctx.beginPath();
-      ctx.ellipse(off, -10 + off * 0.5, GRX * 0.72, GRY * 0.72, t * 0.1 + i, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  const rnd = mulberry32(777);
-  const crystalCount = state.lowDetail ? 2 : 4;
-  for (let i = 0; i < crystalCount; i++) {
-    const a = rnd() * Math.PI * 2;
-    const r = Math.sqrt(rnd()) * 0.7;
-    const px = Math.cos(a) * r * GRX;
-    const py = Math.sin(a) * r * GRY - 10;
-    if (Math.abs(px) < 320 && py < -80) continue;
-    const bob = Math.sin(t * 1.5 + i) * 4;
-    ctx.save();
-    ctx.translate(px, py + bob); ctx.rotate(rnd() * Math.PI);
-    ctx.fillStyle = 'rgba(200, 130, 255, 0.75)';
-    ctx.beginPath();
-    ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(255, 220, 255, 0.6)';
-    ctx.beginPath();
-    ctx.moveTo(0, -7); ctx.lineTo(3.5, 0); ctx.lineTo(0, 0);
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
-  }
-  ctx.restore();
-}
-
-const debris = (() => {
-  const rnd = mulberry32(1234);
-  const out = [];
-  for (let i = 0; i < 12; i++) {
-    const a = rnd() * Math.PI * 2;
-    const r = 1.1 + rnd() * 0.55;
-    out.push({
-      a, r, size: 2 + rnd() * 5, spd: 0.1 + rnd() * 0.3,
-      yOff: (rnd() - 0.5) * 460, hue: 260 + rnd() * 80, phase: rnd() * Math.PI * 2,
-    });
-  }
-  return out;
-})();
-
-function drawDebris(t) {
-  ctx.save();
-  ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
-  const count = state.lowDetail ? 5 : debris.length;
-  for (let i = 0; i < count; i++) {
-    const d = debris[i];
-    const angle = d.a + t * d.spd * 0.2;
-    const dx = Math.cos(angle) * RX * d.r;
-    const dy = Math.sin(angle) * RY * d.r + d.yOff + Math.sin(t * 0.5 + d.phase) * 18;
-    if (dy < 0 && dx > -RX * 1.05 && dx < RX * 1.05) continue;
-    const alpha = 0.55 + 0.4 * Math.sin(t * 2 + d.phase);
-    ctx.fillStyle = `hsla(${d.hue}, 85%, 72%, ${alpha})`;
-    if (d.size > 4) {
-      ctx.save();
-      ctx.translate(dx, dy); ctx.rotate(angle * 2);
-      ctx.beginPath();
-      ctx.moveTo(0, -d.size); ctx.lineTo(d.size * 0.55, 0);
-      ctx.lineTo(0, d.size); ctx.lineTo(-d.size * 0.55, 0);
-      ctx.closePath(); ctx.fill();
-      ctx.restore();
-    } else {
-      ctx.beginPath(); ctx.arc(dx, dy, d.size, 0, Math.PI * 2); ctx.fill();
-    }
-  }
-  ctx.restore();
-}
-
 /* =========================================================================
-   STELLARIUS SHAPE
+   MONSTER RENDERING
    ========================================================================= */
+
+/* ---------- STELLARIUS ---------- */
 function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false) {
   const hitPhase = Math.max(0, 1 - beatPhase * 3);
   const idleBob = Math.sin(t * 1.6) * 3;
@@ -2048,7 +2068,6 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
     g.beginPath(); g.arc(0, -34, 90, 0, Math.PI * 2); g.fill();
     g.restore();
   }
-
   g.save();
   g.scale(squashX, squashY);
   const bodyGrad = g.createLinearGradient(0, -90, 0, 10);
@@ -2063,10 +2082,8 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
   g.quadraticCurveTo(-34, 4, -30, -22);
   g.lineTo(-52, -46); g.lineTo(-24, -62);
   g.closePath(); g.fill();
-
   g.strokeStyle = `rgba(255,250,220,${0.7 + 0.3 * glow})`;
   g.lineWidth = 2; g.stroke();
-
   g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1.2;
   g.beginPath();
   g.moveTo(0, -95); g.lineTo(0, 14);
@@ -2124,8 +2141,7 @@ function drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode = false
     const shardCount = state.lowDetail ? 3 : 5;
     for (let i = 0; i < shardCount; i++) {
       const a = t * 1.1 + i * (Math.PI * 2 / shardCount);
-      const ox = Math.cos(a) * 58;
-      const oy = -46 + Math.sin(a) * 18;
+      const ox = Math.cos(a) * 58, oy = -46 + Math.sin(a) * 18;
       if (Math.sin(a) < -0.2) continue;
       const sz = 6 + Math.sin(t * 2 + i) * 1.5;
       g.save();
@@ -2153,22 +2169,329 @@ function drawStarBadgeOn(g, x, y, t, glow, small) {
   g.strokeStyle = `rgba(255,220,140,${0.7 + 0.3 * glow})`;
   g.lineWidth = 1.6;
   g.beginPath(); g.arc(0, 0, r1, 0, Math.PI * 2); g.stroke();
-
   g.rotate(t * 0.8);
   if (!state.lowDetail && !small) { g.shadowColor = '#ffd76a'; g.shadowBlur = 8; }
   g.fillStyle = '#ffe066';
   g.beginPath();
-  const rStar = small ? 5.5 : 7;
-  const rInner = small ? 2.3 : 3;
+  const rStar = small ? 5.5 : 7, rInner = small ? 2.3 : 3;
   for (let i = 0; i < 10; i++) {
     const r = i % 2 === 0 ? rStar : rInner;
     const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
-    const px = Math.cos(a) * r;
-    const py = Math.sin(a) * r;
+    const px = Math.cos(a) * r, py = Math.sin(a) * r;
     if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
   }
   g.closePath(); g.fill();
   g.restore();
+}
+
+/* ---------- FROSTLING (Ice element) ---------- */
+function drawFrostlingShape(g, cx, cy, scale, t, beatPhase, previewMode = false) {
+  const hitPhase = Math.max(0, 1 - beatPhase * 3);
+  const idleBob = Math.sin(t * 1.8) * 3;
+  const squashY = 1 - hitPhase * 0.12;
+  const squashX = 1 + hitPhase * 0.08;
+  const glow = 0.55 + 0.45 * hitPhase;
+
+  g.save();
+  g.translate(cx, cy + idleBob);
+  g.scale(scale, scale);
+
+  // Cold aura
+  if (!state.lowDetail && !previewMode) {
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const halo = g.createRadialGradient(0, -30, 5, 0, -30, 85);
+    halo.addColorStop(0, `rgba(180,240,255,${0.35 * glow})`);
+    halo.addColorStop(0.5, `rgba(120,200,255,${0.15 * glow})`);
+    halo.addColorStop(1, 'rgba(120,200,255,0)');
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(0, -30, 85, 0, Math.PI * 2); g.fill();
+    g.restore();
+  }
+
+  // Body (rounded snowman-ish crystal)
+  g.save();
+  g.scale(squashX, squashY);
+  const bodyGrad = g.createLinearGradient(0, -80, 0, 12);
+  bodyGrad.addColorStop(0.0, '#eaf9ff');
+  bodyGrad.addColorStop(0.4, '#a5e8ff');
+  bodyGrad.addColorStop(0.75, '#5cb4e8');
+  bodyGrad.addColorStop(1.0, '#1e5a8a');
+  g.fillStyle = bodyGrad;
+  g.beginPath();
+  g.moveTo(0, -88);
+  g.bezierCurveTo(28, -88, 44, -60, 42, -30);
+  g.bezierCurveTo(40, 0, 28, 14, 0, 14);
+  g.bezierCurveTo(-28, 14, -40, 0, -42, -30);
+  g.bezierCurveTo(-44, -60, -28, -88, 0, -88);
+  g.closePath(); g.fill();
+
+  g.strokeStyle = `rgba(230,250,255,${0.75 + 0.25 * glow})`;
+  g.lineWidth = 2; g.stroke();
+
+  // Frosty facets
+  g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(0, -88); g.lineTo(0, 14);
+  g.moveTo(-30, -50); g.lineTo(30, -50);
+  g.moveTo(-36, -20); g.lineTo(36, -20);
+  g.stroke();
+  g.restore();
+
+  // Eyes (icy blue)
+  const blink = (Math.sin(t * 2.4 + 1) > 0.93) ? 0.15 : 1;
+  g.save();
+  g.globalAlpha = blink;
+  if (!state.lowDetail && !previewMode) { g.shadowColor = '#ffffff'; g.shadowBlur = 10; }
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(-13, -52, 7, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 13, -52, 7, 0, Math.PI * 2); g.fill();
+  g.shadowBlur = 0;
+  g.fillStyle = '#0a3a5a';
+  g.beginPath(); g.arc(-13, -50, 3, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 13, -50, 3, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff';
+  g.beginPath(); g.arc(-14, -51.5, 1.2, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 12, -51.5, 1.2, 0, Math.PI * 2); g.fill();
+  g.restore();
+
+  // Mouth
+  g.fillStyle = '#0a3a5a';
+  g.beginPath();
+  g.ellipse(0, -36, 5 + hitPhase * 2, 3 + hitPhase * 3, 0, 0, Math.PI * 2);
+  g.fill();
+
+  // Ice crystal crown
+  const crownPulse = 0.8 + 0.2 * Math.sin(t * 2.5);
+  g.save();
+  if (!state.lowDetail && !previewMode) {
+    g.shadowColor = '#7fdcff';
+    g.shadowBlur = 10 * crownPulse;
+  }
+  g.fillStyle = `rgba(180,240,255,${0.9 * crownPulse})`;
+  for (let i = -1; i <= 1; i++) {
+    const cx2 = i * 14;
+    const ch = 18 + Math.abs(i) * -4;
+    g.beginPath();
+    g.moveTo(cx2, -88);
+    g.lineTo(cx2 + 6, -88 - ch);
+    g.lineTo(cx2, -88 - ch - 4);
+    g.lineTo(cx2 - 6, -88 - ch);
+    g.closePath();
+    g.fill();
+  }
+  g.restore();
+
+  // Ice badge
+  drawIceBadgeOn(g, 0, 6, t, glow, previewMode);
+
+  // Snowball in hand
+  const snowY = 22;
+  g.fillStyle = 'rgba(0,0,0,0.35)';
+  g.beginPath(); g.ellipse(0, snowY + 14, 20, 6, 0, 0, Math.PI * 2); g.fill();
+  const sb = g.createRadialGradient(-4, snowY - 4, 2, 0, snowY, 18);
+  sb.addColorStop(0, '#ffffff');
+  sb.addColorStop(0.6, '#c8e8f8');
+  sb.addColorStop(1, '#6a9ec0');
+  g.fillStyle = sb;
+  g.beginPath(); g.arc(0, snowY, 16, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1.5;
+  g.beginPath(); g.arc(0, snowY, 16, 0, Math.PI * 2); g.stroke();
+
+  // Little arms
+  const armSway = Math.sin(t * 2 + 0.5) * 0.15 + hitPhase * 0.3;
+  g.strokeStyle = '#a5e8ff'; g.lineWidth = 4; g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(-30, -10);
+  g.quadraticCurveTo(-42, -22 - armSway * 10, -36, snowY - 8);
+  g.moveTo(30, -10);
+  g.quadraticCurveTo(42, -22 + armSway * 10, 36, snowY - 8);
+  g.stroke();
+
+  g.restore();
+}
+
+function drawIceBadgeOn(g, x, y, t, glow, small) {
+  g.save();
+  g.translate(x, y);
+  const r1 = small ? 8 : 11;
+  g.fillStyle = 'rgba(10, 30, 50, 0.85)';
+  g.beginPath(); g.arc(0, 0, r1, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = `rgba(180,240,255,${0.7 + 0.3 * glow})`;
+  g.lineWidth = 1.6;
+  g.beginPath(); g.arc(0, 0, r1, 0, Math.PI * 2); g.stroke();
+
+  const spin = t * 0.5;
+  g.rotate(spin);
+  if (!state.lowDetail && !small) { g.shadowColor = '#7fdcff'; g.shadowBlur = 8; }
+  g.fillStyle = '#a5e8ff';
+
+  // Snowflake shape (6 arms)
+  const size = small ? 5.5 : 7;
+  g.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const ax = Math.cos(a) * size;
+    const ay = Math.sin(a) * size;
+    if (i === 0) g.moveTo(ax, ay); else g.lineTo(ax, ay);
+    // little branches
+    const bx = Math.cos(a + 0.35) * size * 0.55;
+    const by = Math.sin(a + 0.35) * size * 0.55;
+    const cx2 = Math.cos(a - 0.35) * size * 0.55;
+    const cy2 = Math.sin(a - 0.35) * size * 0.55;
+    g.moveTo(ax, ay); g.lineTo(bx, by);
+    g.moveTo(ax, ay); g.lineTo(cx2, cy2);
+  }
+  g.strokeStyle = '#a5e8ff';
+  g.lineWidth = 1.5;
+  g.lineCap = 'round';
+  g.stroke();
+
+  // centre
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(0, 0, 1.8, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
+
+/* ---------- GLACIERIS (Star + Ice hybrid) ---------- */
+function drawGlacierisShape(g, cx, cy, scale, t, beatPhase, previewMode = false) {
+  const hitPhase = Math.max(0, 1 - beatPhase * 3);
+  const idleBob = Math.sin(t * 1.5) * 3.5;
+  const squashY = 1 - hitPhase * 0.13;
+  const squashX = 1 + hitPhase * 0.10;
+  const glow = 0.55 + 0.45 * hitPhase;
+
+  g.save();
+  g.translate(cx, cy + idleBob);
+  g.scale(scale, scale);
+
+  // Dual-color aura
+  if (!state.lowDetail && !previewMode) {
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const halo1 = g.createRadialGradient(-20, -50, 5, -20, -50, 80);
+    halo1.addColorStop(0, `rgba(255,220,140,${0.3 * glow})`);
+    halo1.addColorStop(1, 'rgba(255,220,140,0)');
+    g.fillStyle = halo1;
+    g.beginPath(); g.arc(-20, -50, 80, 0, Math.PI * 2); g.fill();
+
+    const halo2 = g.createRadialGradient(20, -30, 5, 20, -30, 80);
+    halo2.addColorStop(0, `rgba(140,220,255,${0.3 * glow})`);
+    halo2.addColorStop(1, 'rgba(140,220,255,0)');
+    g.fillStyle = halo2;
+    g.beginPath(); g.arc(20, -30, 80, 0, Math.PI * 2); g.fill();
+    g.restore();
+  }
+
+  // Body — a larger, elongated crystal form
+  g.save();
+  g.scale(squashX, squashY);
+  const bodyGrad = g.createLinearGradient(-50, -70, 50, 30);
+  bodyGrad.addColorStop(0.0, '#fff2a8');
+  bodyGrad.addColorStop(0.28, '#d4b8ff');
+  bodyGrad.addColorStop(0.55, '#a5c8ff');
+  bodyGrad.addColorStop(0.82, '#5cb4e8');
+  bodyGrad.addColorStop(1.0, '#1e5a8a');
+  g.fillStyle = bodyGrad;
+  g.beginPath();
+  g.moveTo(0, -100);
+  g.bezierCurveTo(34, -100, 56, -70, 56, -30);
+  g.bezierCurveTo(56, 6, 34, 20, 0, 20);
+  g.bezierCurveTo(-34, 20, -56, 6, -56, -30);
+  g.bezierCurveTo(-56, -70, -34, -100, 0, -100);
+  g.closePath(); g.fill();
+
+  g.strokeStyle = `rgba(240,240,255,${0.75 + 0.25 * glow})`;
+  g.lineWidth = 2.2; g.stroke();
+
+  // Diagonal ice facets
+  g.strokeStyle = 'rgba(255,255,255,0.4)'; g.lineWidth = 1.2;
+  g.beginPath();
+  g.moveTo(-40, -60); g.lineTo(40, -10);
+  g.moveTo(-45, -30); g.lineTo(45, 12);
+  g.moveTo(-30, -85); g.lineTo(30, -30);
+  g.stroke();
+  g.restore();
+
+  // Eyes (glowing)
+  const blink = (Math.sin(t * 2 + 2) > 0.93) ? 0.15 : 1;
+  g.save();
+  g.globalAlpha = blink;
+  if (!state.lowDetail && !previewMode) { g.shadowColor = '#ffffff'; g.shadowBlur = 14; }
+  g.fillStyle = '#ffffff';
+  g.beginPath(); g.arc(-16, -56, 9, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 16, -56, 9, 0, Math.PI * 2); g.fill();
+  g.shadowBlur = 0;
+  g.fillStyle = '#1a0050';
+  g.beginPath(); g.arc(-16, -54, 4.5, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 16, -54, 4.5, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#a5e8ff';
+  g.beginPath(); g.arc(-16, -54, 2.2, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 16, -54, 2.2, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff';
+  g.beginPath(); g.arc(-17.5, -56, 1.4, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc( 14.5, -56, 1.4, 0, Math.PI * 2); g.fill();
+  g.restore();
+
+  // Smile
+  g.strokeStyle = '#1a0050'; g.lineWidth = 3;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.arc(0, -38, 9 + hitPhase * 2, 0.15 * Math.PI, 0.85 * Math.PI);
+  g.stroke();
+
+  // Dual element badges
+  drawStarBadgeOn(g, -18, 12, t, glow, previewMode);
+  drawIceBadgeOn(g, 18, 12, t, glow, previewMode);
+
+  // Star orbit above, ice crystals below
+  if (!previewMode) {
+    for (let i = 0; i < 3; i++) {
+      const a = t * 0.9 + i * (Math.PI * 2 / 3);
+      const ox = Math.cos(a) * 62, oy = -50 + Math.sin(a) * 14;
+      if (Math.sin(a) < -0.2) continue;
+      const sz = 5 + Math.sin(t * 2 + i) * 1.5;
+      g.save();
+      g.translate(ox, oy); g.rotate(a * 1.4);
+      if (!state.lowDetail) { g.shadowColor = '#ffd76a'; g.shadowBlur = 10 * glow; }
+      g.fillStyle = `rgba(255,230,140,${0.75 + 0.25 * glow})`;
+      g.beginPath();
+      g.moveTo(0, -sz * 1.5); g.lineTo(sz * 0.45, -sz * 0.45);
+      g.lineTo(sz * 1.5, 0); g.lineTo(sz * 0.45, sz * 0.45);
+      g.lineTo(0, sz * 1.5); g.lineTo(-sz * 0.45, sz * 0.45);
+      g.lineTo(-sz * 1.5, 0); g.lineTo(-sz * 0.45, -sz * 0.45);
+      g.closePath(); g.fill();
+      g.restore();
+    }
+
+    // Ice shards orbiting below
+    for (let i = 0; i < 3; i++) {
+      const a = -t * 0.7 + i * (Math.PI * 2 / 3);
+      const ox = Math.cos(a) * 55, oy = 26 + Math.sin(a) * 8;
+      const sz = 4 + Math.sin(t * 2.3 + i) * 1.2;
+      g.save();
+      g.translate(ox, oy); g.rotate(a * 1.2);
+      if (!state.lowDetail) { g.shadowColor = '#7fdcff'; g.shadowBlur = 10 * glow; }
+      g.fillStyle = `rgba(180,240,255,${0.75 + 0.25 * glow})`;
+      g.beginPath();
+      g.moveTo(0, -sz * 1.4); g.lineTo(sz * 0.5, 0); g.lineTo(0, sz * 1.4);
+      g.lineTo(-sz * 0.5, 0);
+      g.closePath(); g.fill();
+      g.restore();
+    }
+  }
+  g.restore();
+}
+
+/* =========================================================================
+   DRAW MONSTERS BY ID
+   ========================================================================= */
+function drawMonsterShape(g, monster, cx, cy, scale, t, beatPhase, previewMode = false) {
+  switch (monster.id) {
+    case 'stellarius': drawStellariusShape(g, cx, cy, scale, t, beatPhase, previewMode); break;
+    case 'frostling':  drawFrostlingShape(g, cx, cy, scale, t, beatPhase, previewMode); break;
+    case 'glacieris':  drawGlacierisShape(g, cx, cy, scale, t, beatPhase, previewMode); break;
+  }
 }
 
 function drawFootprintOverlay(wx, wy, size) {
@@ -2185,56 +2508,233 @@ function drawFootprintOverlay(wx, wy, size) {
       const tx = (gx - gy) * (TW / 2);
       const ty = (gx + gy) * (TH / 2) - size * TH / 2;
       ctx.beginPath();
-      ctx.moveTo(tx, ty - TH / 2);
-      ctx.lineTo(tx + TW / 2, ty);
-      ctx.lineTo(tx, ty + TH / 2);
-      ctx.lineTo(tx - TW / 2, ty);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
+      ctx.moveTo(tx, ty - TH / 2); ctx.lineTo(tx + TW / 2, ty);
+      ctx.lineTo(tx, ty + TH / 2); ctx.lineTo(tx - TW / 2, ty);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
     }
   }
   ctx.restore();
 }
 
-/* ----------------------------- MONSTERS -----------------------------
-   IMPORTANT: Monsters are drawn INSIDE the world-space transform,
-   so their island-space offsets move correctly with pan & zoom.
-   ----------------------------------------------------------------------- */
-function drawStellariusWorld(m, t) {
-  // m.offsetX / m.offsetY are in ISLAND-SPACE units (same scale as structures).
-  // Convert to world-space by scaling against RX/RY ratios, similar to how
-  // structures use (RX/780) and (RY/390). This keeps everything anchored.
-  const wx = m.offsetX * (RX / 780);
-  const wy = m.offsetY * (RY / 390);
-  const beat = (t * (STELL_BPM / 60)) % 1;
-
+/* Selection highlight ring */
+function drawSelectionRing(wx, wy, color, pulse, scale = 1) {
   ctx.save();
-  ctx.globalAlpha = 0.4;
-  ctx.fillStyle = '#000';
-  ctx.beginPath(); ctx.ellipse(wx, wy + 8, 46, 14, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
+  ctx.translate(wx, wy + 10 * scale);
+  const rx = 55 * scale, ry = 22 * scale;
+  ctx.globalAlpha = 0.6 + pulse * 0.35;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.setLineDash([10, 6]);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
 
-  drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
+  // Inner glow
+  if (!state.lowDetail) {
+    ctx.globalAlpha = 0.25 + pulse * 0.2;
+    const rg = ctx.createRadialGradient(0, 0, 4, 0, 0, rx);
+    rg.addColorStop(0, color.replace(')', ', 0.4)').replace('rgb', 'rgba'));
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawMonstersInWorld(t) {
   const sorted = [...state.monsters].sort((a, b) => a.offsetY - b.offsetY);
-  for (const m of sorted) if (m.id === 'stellarius') drawStellariusWorld(m, t);
-
-  // Ghost placement preview
-  if (state.placingItem && state.hoverIsland) {
-    const m = state.placingItem;
+  for (const m of sorted) {
+    const monster = MONSTERS[m.id];
+    if (!monster) continue;
     const wx = m.offsetX * (RX / 780);
     const wy = m.offsetY * (RY / 390);
     const beat = (t * (STELL_BPM / 60)) % 1;
+
+    // Selection highlight
+    const isSelected = state.selectedEntity?.type === 'monster' && state.selectedEntity.ref === m;
+    if (isSelected) {
+      drawSelectionRing(wx, wy, 'rgb(250, 204, 21)', 0.5 + 0.5 * Math.sin(t * 4));
+    }
+
+    // Shadow
     ctx.save();
-    ctx.globalAlpha = 0.7;
-    drawFootprintOverlay(wx, wy, 2);
-    drawStellariusShape(ctx, wx, wy, 1, t, beat, false);
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(wx, wy + 8, 46, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+
+    drawMonsterShape(ctx, monster, wx, wy, 1, t, beat, false);
+  }
+
+  if (state.placingItem && state.hoverIsland) {
+    const m = state.placingItem;
+    const monster = MONSTERS[m.itemId];
+    if (monster) {
+      const wx = m.offsetX * (RX / 780);
+      const wy = m.offsetY * (RY / 390);
+      const beat = (t * (STELL_BPM / 60)) % 1;
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      drawFootprintOverlay(wx, wy, monster.size);
+      drawMonsterShape(ctx, monster, wx, wy, 1, t, beat, false);
+      ctx.restore();
+    }
   }
 }
 
+/* =========================================================================
+   ISLAND BASE
+   ========================================================================= */
+function drawIslandBase(t) {
+  const path = new Path2D();
+  path.moveTo(-RX, 0);
+  path.bezierCurveTo(-RX - 40, 260, -RX + 100, 520, -220, BOT - 40);
+  path.bezierCurveTo(-80, BOT + 30, 80, BOT + 30, 220, BOT - 40);
+  path.bezierCurveTo(RX - 100, 520, RX + 40, 260, RX, 0);
+  path.closePath();
+
+  const g = ctx.createLinearGradient(0, -50, 0, BOT + 30);
+  g.addColorStop(0.00, '#0a3a5c');
+  g.addColorStop(0.22, '#0e6083');
+  g.addColorStop(0.50, '#0aa8c5');
+  g.addColorStop(0.82, '#00d6ea');
+  g.addColorStop(1.00, '#0098b5');
+  ctx.fillStyle = g;
+  ctx.fill(path);
+
+  ctx.save();
+  ctx.clip(path);
+  for (let x = -RX - 60, i = 0; x < RX + 60; x += 140, i++) {
+    if (i % 2 === 1) {
+      ctx.fillStyle = 'rgba(0,20,45,0.14)';
+      ctx.fillRect(x, 0, 70, BOT + 60);
+    } else {
+      ctx.fillStyle = 'rgba(140,240,255,0.06)';
+      ctx.fillRect(x, 0, 70, BOT + 60);
+    }
+  }
+  const windows = [
+    { x: -320, y: 300, w: 165, h: 105 }, { x: 320, y: 300, w: 165, h: 105 },
+    { x: -90, y: 470, w: 130, h: 80 }, { x: 90, y: 470, w: 130, h: 80 },
+  ];
+  for (const w of windows) {
+    if (!state.lowDetail) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const og = ctx.createRadialGradient(w.x, w.y, 4, w.x, w.y, w.w * 0.95);
+      og.addColorStop(0, 'rgba(200,250,255,0.55)');
+      og.addColorStop(0.4, 'rgba(60,220,255,0.28)');
+      og.addColorStop(1, 'rgba(0,150,200,0)');
+      ctx.fillStyle = og;
+      roundRect(ctx, w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 30); ctx.fill();
+      ctx.restore();
+    }
+    const ig = ctx.createRadialGradient(w.x, w.y - 8, 3, w.x, w.y, w.w * 0.4);
+    ig.addColorStop(0, 'rgba(255,255,255,0.95)');
+    ig.addColorStop(0.6, 'rgba(140,235,255,0.55)');
+    ig.addColorStop(1, 'rgba(80,200,255,0)');
+    ctx.fillStyle = ig;
+    ctx.beginPath(); ctx.ellipse(w.x, w.y - 8, w.w * 0.34, w.h * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  if (!state.lowDetail) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const bg = ctx.createRadialGradient(0, BOT - 50, 20, 0, BOT - 50, 500);
+    bg.addColorStop(0, 'rgba(140,245,255,0.4)');
+    bg.addColorStop(0.55, 'rgba(60,200,255,0.12)');
+    bg.addColorStop(1, 'rgba(60,200,255,0)');
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.ellipse(0, BOT - 50, 500, 115, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.strokeStyle = 'rgba(160,245,255,0.5)';
+  ctx.lineWidth = 3;
+  ctx.stroke(path);
+}
+
+function drawCrystalRim(t) {
+  const BUMPS = state.lowDetail ? 20 : 36;
+  for (let i = 0; i < BUMPS; i++) {
+    const a = (i / BUMPS) * Math.PI * 2 - Math.PI / 2;
+    if (Math.sin(a) > 0.35) continue;
+    const bx = Math.cos(a) * RX, by = Math.sin(a) * RY;
+    const centerBias = Math.max(0, -Math.sin(a));
+    const sizeMod = 0.55 + 0.75 * centerBias;
+    const size = (20 + Math.sin(i * 1.7) * 7) * sizeMod;
+    const hue = 280 + 60 * centerBias;
+    drawCrystalSpikeFast(bx, by, a, size, hue, 0.9);
+  }
+}
+
+function drawVoidSurface(t) {
+  ctx.save();
+  const voidGrad = ctx.createRadialGradient(-60, -60, 25, 0, 0, GRX);
+  voidGrad.addColorStop(0, '#1a0033');
+  voidGrad.addColorStop(0.6, '#0d001a');
+  voidGrad.addColorStop(1, '#05000a');
+  ctx.fillStyle = voidGrad;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.strokeStyle = 'rgba(140, 80, 220, 0.16)'; ctx.lineWidth = 48;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(180, 100, 255, 0.42)'; ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(225, 165, 255, 0.75)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.ellipse(0, -10, GRX - 4, GRY - 4, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+const debris = (() => {
+  const rnd = mulberry32(1234);
+  const out = [];
+  for (let i = 0; i < 12; i++) {
+    const a = rnd() * Math.PI * 2;
+    const r = 1.1 + rnd() * 0.55;
+    out.push({
+      a, r, size: 2 + rnd() * 5, spd: 0.1 + rnd() * 0.3,
+      yOff: (rnd() - 0.5) * 460, hue: 260 + rnd() * 80, phase: rnd() * Math.PI * 2,
+    });
+  }
+  return out;
+})();
+
+function drawDebris(t) {
+  ctx.save();
+  ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
+  const count = state.lowDetail ? 5 : debris.length;
+  for (let i = 0; i < count; i++) {
+    const d = debris[i];
+    const angle = d.a + t * d.spd * 0.2;
+    const dx = Math.cos(angle) * RX * d.r;
+    const dy = Math.sin(angle) * RY * d.r + d.yOff + Math.sin(t * 0.5 + d.phase) * 18;
+    if (dy < 0 && dx > -RX * 1.05 && dx < RX * 1.05) continue;
+    const alpha = 0.55 + 0.4 * Math.sin(t * 2 + d.phase);
+    ctx.fillStyle = `hsla(${d.hue}, 85%, 72%, ${alpha})`;
+    if (d.size > 4) {
+      ctx.save();
+      ctx.translate(dx, dy); ctx.rotate(angle * 2);
+      ctx.beginPath();
+      ctx.moveTo(0, -d.size); ctx.lineTo(d.size * 0.55, 0);
+      ctx.lineTo(0, d.size); ctx.lineTo(-d.size * 0.55, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.beginPath(); ctx.arc(dx, dy, d.size, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/* =========================================================================
+   DRAW ISLAND
+   ========================================================================= */
 function drawIsland(t) {
   ctx.save();
   ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
@@ -2254,20 +2754,40 @@ function drawIsland(t) {
   drawPlatformBase(structures.left);
   drawPlatformBase(structures.right);
 
+  // Structure selection rings
+  for (const st of [structures.left, structures.right]) {
+    if (state.selectedEntity?.type === 'structure' && state.selectedEntity.ref === st) {
+      ctx.save();
+      ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 4);
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([14, 10]);
+      ctx.beginPath();
+      ctx.ellipse(st.cx, st.cy + 10, st.rx + 20, st.ry + 14, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
   drawBreedSynthesizer(t, structures.left);
   drawIncubationCenter(t, structures.right);
 
   if (state.draggingStructure) {
     const st = state.draggingStructure === 'left' ? structures.left : structures.right;
-    drawStructureDraggableOutline(st, 0.5 + 0.5 * Math.sin(t * 6));
+    ctx.save();
+    ctx.globalAlpha = 0.55 + 0.35 * Math.sin(t * 6);
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([12, 8]);
+    ctx.beginPath();
+    ctx.ellipse(st.cx, st.cy + 10, st.rx + 20, st.ry + 14, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
   }
 
-  // Monsters are drawn inside the world transform → anchored to the island.
   drawMonstersInWorld(t);
-
-  ctx.strokeStyle = 'rgba(255, 150, 255, 0.3)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.ellipse(0, -10, GRX, GRY, 0, 0, Math.PI * 2); ctx.stroke();
 
   ctx.restore();
 }
@@ -2283,10 +2803,10 @@ function drawVignette() {
 
 /* ============================== LOOP ============================== */
 let marketOpen = false;
+let breedOpen = false;
 
 function render(now) {
   const t = now / 1000;
-
   if (!marketOpen) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     drawSky(t);
@@ -2294,10 +2814,10 @@ function render(now) {
     drawDebris(t);
     drawVignette();
   }
-
   tickStellariusAudio(t);
   updateIncubation(t);
   updateHatchButton();
+  updateActionMenuPosition();
   updateMonsterCardPreviews(t);
   requestAnimationFrame(render);
 }
@@ -2309,7 +2829,7 @@ function startIncubation(item) {
   state.incubating = {
     item,
     startTime: performance.now() / 1000,
-    duration: INCUBATE_DURATION,
+    duration: item.breedTime || INCUBATE_DURATION,
     elapsed: 0,
     ready: false,
   };
@@ -2321,11 +2841,7 @@ function updateIncubation(t) {
   const barFill  = document.getElementById('inc-bar-fill');
   const speedLbl = document.getElementById('inc-speed-label');
 
-  if (!inc) {
-    statusEl.classList.remove('show', 'ready');
-    return;
-  }
-
+  if (!inc) { statusEl.classList.remove('show', 'ready'); return; }
   inc.elapsed = t - inc.startTime;
   const remaining = Math.max(0, inc.duration - inc.elapsed);
 
@@ -2342,76 +2858,182 @@ function updateIncubation(t) {
     statusEl.classList.remove('ready');
     document.getElementById('inc-title').textContent = `Incubating ${inc.item.name}`;
     document.getElementById('inc-timer').textContent = formatTime(remaining);
-  }
-
-  const progress = Math.min(1, inc.elapsed / inc.duration);
-  barFill.style.width = (progress * 100).toFixed(1) + '%';
-
-  if (!inc.ready) {
     const remainingMin = Math.max(1, Math.ceil(remaining / 60));
     speedLbl.textContent = `Speed Up (${remainingMin})`;
   }
+  const progress = Math.min(1, inc.elapsed / inc.duration);
+  barFill.style.width = (progress * 100).toFixed(1) + '%';
 }
 
-/* Position the floating Hatch button above the incubator whenever an egg is ready */
 const hatchBtn = document.getElementById('hatch-btn');
 function updateHatchButton() {
   const inc = state.incubating;
-  if (!inc || !inc.ready) {
-    hatchBtn.classList.remove('show');
-    return;
-  }
-
+  if (!inc || !inc.ready) { hatchBtn.classList.remove('show'); return; }
   const sp = structureScreenPos(structures.right);
-  // Float it ~120px above the incubator origin
   const bx = sp.x;
   const by = sp.y - 130 * state.cam.zoom;
-
   hatchBtn.style.left = bx + 'px';
   hatchBtn.style.top  = by + 'px';
-
-  // Scale down a bit when zoomed way out, so it doesn't dominate
   const s = Math.max(0.75, Math.min(1.15, state.cam.zoom));
   hatchBtn.style.transform = `translate(-50%, -50%) scale(${s})`;
-  hatchBtn.style.setProperty('--hatch-scale', s);
-
   hatchBtn.classList.add('show');
 }
 
 hatchBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   if (!state.incubating || !state.incubating.ready) return;
-  beginPlacement(state.incubating.item);
+  beginPlacement(state.incubating.item.id);
 });
 
-/* Speed up button: 1 gem per remaining minute */
 document.getElementById('inc-speed').addEventListener('click', (e) => {
   e.stopPropagation();
   const inc = state.incubating;
   if (!inc || inc.ready) return;
   const remaining = Math.max(0, inc.duration - inc.elapsed);
   const remainingMin = Math.max(1, Math.ceil(remaining / 60));
-
-  if (state.gems < remainingMin) {
-    showToast('Not enough gems!', 'error');
-    return;
-  }
+  if (state.gems < remainingMin) { showToast('Not enough gems!', 'error'); return; }
   state.gems -= remainingMin;
   updateCurrencyUI();
-
   inc.elapsed = inc.duration;
   inc.startTime = performance.now() / 1000 - inc.duration;
   showToast(`Sped up — used ${remainingMin} gem${remainingMin > 1 ? 's' : ''}!`, 'success');
 });
 
+/* ============================ ACTION MENU ============================ */
+const actionMenu = document.getElementById('action-menu');
+const monsterInfo = document.getElementById('monster-info');
+
+function clearSelection() {
+  state.selectedEntity = null;
+  actionMenu.classList.remove('show');
+  monsterInfo.classList.remove('show');
+  actionMenu.innerHTML = '';
+}
+
+function showMonsterMenu(monsterRef, sx, sy) {
+  actionMenu.innerHTML = '';
+  const monster = MONSTERS[monsterRef.id];
+  if (!monster) return;
+
+  const feedBtn = document.createElement('button');
+  feedBtn.className = 'action-menu-btn feed';
+  feedBtn.innerHTML = `<span class="btn-icon">🍖</span><span>Feed</span>`;
+  feedBtn.addEventListener('click', (e) => { e.stopPropagation(); feedMonster(monsterRef); });
+
+  const moveBtn = document.createElement('button');
+  moveBtn.className = 'action-menu-btn move';
+  moveBtn.innerHTML = `<span class="btn-icon">✋</span><span>Move</span>`;
+  moveBtn.addEventListener('click', (e) => { e.stopPropagation(); beginMoveMonster(monsterRef); });
+
+  actionMenu.appendChild(feedBtn);
+  actionMenu.appendChild(moveBtn);
+  actionMenu.classList.add('show');
+
+  // Position menu above the monster
+  actionMenu.style.left = sx + 'px';
+  actionMenu.style.top  = (sy - 90 * state.cam.zoom) + 'px';
+
+  // Show info panel below
+  const miName = document.getElementById('mi-name');
+  const miFeed = document.getElementById('mi-feed');
+  const miLevel = document.getElementById('mi-level');
+  miName.textContent = monster.name;
+  miFeed.textContent = monsterRef.feedCount || 0;
+  miLevel.textContent = Math.floor((monsterRef.feedCount || 0) / 5) + 1;
+  monsterInfo.classList.add('show');
+  monsterInfo.style.left = sx + 'px';
+  monsterInfo.style.top  = (sy + 40 * state.cam.zoom) + 'px';
+}
+
+function showStructureMenu(st, sx, sy) {
+  actionMenu.innerHTML = '';
+
+  const moveBtn = document.createElement('button');
+  moveBtn.className = 'action-menu-btn move';
+  moveBtn.innerHTML = `<span class="btn-icon">✋</span><span>Move</span>`;
+  moveBtn.addEventListener('click', (e) => { e.stopPropagation(); startStructureDrag(st); });
+
+  actionMenu.appendChild(moveBtn);
+
+  if (st.id === 'left') {
+    const synthBtn = document.createElement('button');
+    synthBtn.className = 'action-menu-btn synth';
+    synthBtn.innerHTML = `<span class="btn-icon">◈</span><span>Synthesize</span>`;
+    synthBtn.addEventListener('click', (e) => { e.stopPropagation(); openBreedModal(); });
+    actionMenu.appendChild(synthBtn);
+  }
+
+  actionMenu.classList.add('show');
+  actionMenu.style.left = sx + 'px';
+  actionMenu.style.top  = (sy - 110 * state.cam.zoom) + 'px';
+  monsterInfo.classList.remove('show');
+}
+
+function updateActionMenuPosition() {
+  const sel = state.selectedEntity;
+  if (!sel) return;
+  if (sel.type === 'monster') {
+    const m = sel.ref;
+    const wx = W / 2 + state.cam.x + m.offsetX * (RX / 780) * state.cam.zoom;
+    const wy = H * 0.45 + state.cam.y + m.offsetY * (RY / 390) * state.cam.zoom;
+    actionMenu.style.left = wx + 'px';
+    actionMenu.style.top  = (wy - 90 * state.cam.zoom) + 'px';
+    monsterInfo.style.left = wx + 'px';
+    monsterInfo.style.top  = (wy + 40 * state.cam.zoom) + 'px';
+  } else if (sel.type === 'structure') {
+    const sp = structureScreenPos(sel.ref);
+    actionMenu.style.left = sp.x + 'px';
+    actionMenu.style.top  = (sp.y - 110 * state.cam.zoom) + 'px';
+  }
+}
+
+/* Feed: cost shards, increment feedCount, level up */
+function feedMonster(monsterRef) {
+  const cost = 50;
+  if (state.shards < cost) { showToast('Not enough shards!', 'error'); return; }
+  state.shards -= cost;
+  monsterRef.feedCount = (monsterRef.feedCount || 0) + 1;
+  updateCurrencyUI();
+  const level = Math.floor(monsterRef.feedCount / 5) + 1;
+  if (monsterRef.feedCount % 5 === 0) {
+    showToast(`${MONSTERS[monsterRef.id].name} reached level ${level}!`, 'success');
+  } else {
+    showToast(`Fed ${MONSTERS[monsterRef.id].name}! (${monsterRef.feedCount % 5}/5)`);
+  }
+  // Update the info panel
+  document.getElementById('mi-feed').textContent = monsterRef.feedCount;
+  document.getElementById('mi-level').textContent = level;
+}
+
+/* Move monster: sets placingItem but keeps existing ref */
+let movingMonsterRef = null;
+function beginMoveMonster(monsterRef) {
+  state.placingItem = {
+    itemId: monsterRef.id,
+    offsetX: monsterRef.offsetX,
+    offsetY: monsterRef.offsetY,
+    movingRef: monsterRef,
+  };
+  const monster = MONSTERS[monsterRef.id];
+  document.getElementById('placement-name').textContent = monster.name;
+  document.getElementById('placement-panel').classList.add('show');
+  canvas.classList.add('placing');
+  clearSelection();
+}
+
+/* Structure drag */
+function startStructureDrag(st) {
+  state.draggingStructure = st.id;
+  canvas.classList.add('dragging-structure');
+  document.getElementById('drag-hint').classList.add('show');
+  clearSelection();
+}
+
 /* ============================ INTERACTION ============================ */
 let isDragging = false, lastX = 0, lastY = 0;
 let dragMoved = false;
 
-const CAM_LIMITS = {
-  zoomMin: 0.35, zoomMax: 3.0,
-  panXFrac: 0.55, panYFrac: 0.42,
-};
+const CAM_LIMITS = { zoomMin: 0.35, zoomMax: 3.0, panXFrac: 0.55, panYFrac: 0.42 };
 
 function clampCamera() {
   const maxX = W * CAM_LIMITS.panXFrac;
@@ -2421,22 +3043,23 @@ function clampCamera() {
   state.cam.zoom = Math.max(CAM_LIMITS.zoomMin, Math.min(CAM_LIMITS.zoomMax, state.cam.zoom));
 }
 
-/* Convert screen → island-space (offsetX/offsetY style),
-   so it matches structures AND monster positions. */
 function screenToIslandSpace(sx, sy) {
   const wx = (sx - W / 2 - state.cam.x) / state.cam.zoom;
   const wy = (sy - H * 0.45 - state.cam.y) / state.cam.zoom;
+  return { x: wx / (RX / 780), y: wy / (RY / 390) };
+}
+
+function islandToScreen(ix, iy) {
   return {
-    x: wx / (RX / 780),
-    y: wy / (RY / 390),
+    x: W / 2 + state.cam.x + ix * (RX / 780) * state.cam.zoom,
+    y: H * 0.45 + state.cam.y + iy * (RY / 390) * state.cam.zoom,
   };
 }
 
 function hitStructure(sx, sy) {
   for (const st of [structures.left, structures.right]) {
     const sp = structureScreenPos(st);
-    const dx = sx - sp.x;
-    const dy = sy - sp.y;
+    const dx = sx - sp.x, dy = sy - sp.y;
     const rx = st.rx * state.cam.zoom * 0.95;
     const ry = st.ry * state.cam.zoom * 0.95;
     if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1.2) return st;
@@ -2444,41 +3067,66 @@ function hitStructure(sx, sy) {
   return null;
 }
 
+function hitMonster(sx, sy) {
+  // Work backwards from screen → island-space → nearest monster
+  const isp = screenToIslandSpace(sx, sy);
+  let best = null, bestDist = 60 * 60;
+  for (const m of state.monsters) {
+    const dx = isp.x - m.offsetX;
+    const dy = isp.y - m.offsetY;
+    const d = dx * dx + dy * dy;
+    if (d < bestDist) { best = m; bestDist = d; }
+  }
+  return best;
+}
+
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
 
-  const st = hitStructure(e.clientX, e.clientY);
-  if (st && !state.placingItem) {
-    if (st.id === 'right' && state.incubating && state.incubating.ready) {
-      beginPlacement(state.incubating.item);
-      return;
-    }
-    state.draggingStructure = st.id;
-    canvas.classList.add('dragging-structure');
-    document.getElementById('drag-hint').classList.add('show');
-    lastX = e.clientX; lastY = e.clientY;
-    isDragging = false;
-    dragMoved = false;
+  // If placing, tap = place
+  if (state.placingItem) {
+    const isp = screenToIslandSpace(e.clientX, e.clientY);
+    state.placingItem.offsetX = Math.round(isp.x / 40) * 40;
+    state.placingItem.offsetY = Math.round(isp.y / 20) * 20;
+    confirmPlacement();
     return;
   }
 
+  // Check monster first (higher priority — they sit on top of structures)
+  const hitM = hitMonster(e.clientX, e.clientY);
+  if (hitM) {
+    // If already selected → just leave selection alone
+    if (state.selectedEntity?.type === 'monster' && state.selectedEntity.ref === hitM) return;
+    clearSelection();
+    state.selectedEntity = { type: 'monster', ref: hitM };
+    const sp = islandToScreen(hitM.offsetX, hitM.offsetY);
+    showMonsterMenu(hitM, sp.x, sp.y);
+    return;
+  }
+
+  // Then structures
+  const hitS = hitStructure(e.clientX, e.clientY);
+  if (hitS) {
+    if (hitS.id === 'right' && state.incubating && state.incubating.ready) {
+      beginPlacement(state.incubating.item.id);
+      return;
+    }
+    if (state.selectedEntity?.type === 'structure' && state.selectedEntity.ref === hitS) return;
+    clearSelection();
+    state.selectedEntity = { type: 'structure', ref: hitS };
+    const sp = structureScreenPos(hitS);
+    showStructureMenu(hitS, sp.x, sp.y);
+    return;
+  }
+
+  // Tap on empty ground → clear selection and start panning
+  clearSelection();
   isDragging = true;
   dragMoved = false;
   lastX = e.clientX; lastY = e.clientY;
 });
 
 canvas.addEventListener('pointermove', (e) => {
-  // Hover position in island-space
-  const isp = screenToIslandSpace(e.clientX, e.clientY);
-  state.hoverIsland = isp;
-
-  if (state.placingItem) {
-    const gx = Math.round(isp.x / 40) * 40;
-    const gy = Math.round(isp.y / 20) * 20;
-    state.placingItem.offsetX = gx;
-    state.placingItem.offsetY = gy;
-  }
-
   if (state.draggingStructure) {
     const dx = (e.clientX - lastX) / state.cam.zoom;
     const dy = (e.clientY - lastY) / state.cam.zoom;
@@ -2492,14 +3140,15 @@ canvas.addEventListener('pointermove', (e) => {
     return;
   }
 
-  if (!isDragging) {
-    if (state.placingItem) canvas.className = 'placing';
-    else canvas.className = '';
-    return;
+  if (state.placingItem) {
+    const isp = screenToIslandSpace(e.clientX, e.clientY);
+    state.placingItem.offsetX = Math.round(isp.x / 40) * 40;
+    state.placingItem.offsetY = Math.round(isp.y / 20) * 20;
+    state.hoverIsland = isp;
   }
 
-  const dx = e.clientX - lastX;
-  const dy = e.clientY - lastY;
+  if (!isDragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
   if (Math.abs(dx) + Math.abs(dy) > 3) dragMoved = true;
   state.cam.x += dx;
   state.cam.y += dy;
@@ -2507,45 +3156,24 @@ canvas.addEventListener('pointermove', (e) => {
   clampCamera();
 });
 
-canvas.addEventListener('pointerup', (e) => {
+canvas.addEventListener('pointerup', () => {
   if (state.draggingStructure) {
     state.draggingStructure = null;
     canvas.classList.remove('dragging-structure');
     document.getElementById('drag-hint').classList.remove('show');
     return;
   }
-
   isDragging = false;
-  if (dragMoved) return;
-
-  const isp = screenToIslandSpace(e.clientX, e.clientY);
-
-  if (state.placingItem) {
-    confirmPlacement();
-    return;
-  }
-
-  // Check monster tap
-  for (const m of state.monsters) {
-    const dx = isp.x - m.offsetX;
-    const dy = isp.y - m.offsetY;
-    if (dx * dx + dy * dy < 60 * 60) {
-      if (m.id === 'stellarius') showToast('♪ Stellarius drums to the beat ♪');
-      break;
-    }
-  }
 });
 
 canvas.addEventListener('pointercancel', () => {
   isDragging = false;
-  dragMoved = false;
   state.draggingStructure = null;
   canvas.classList.remove('dragging-structure');
   document.getElementById('drag-hint').classList.remove('show');
 });
 
 const ZOOM_FACTOR = 1.15;
-
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
   const z  = state.cam.zoom;
@@ -2565,17 +3193,20 @@ canvas.addEventListener('wheel', (e) => {
 function fitCamera() {
   const zoomX = (W * 0.95) / 1550;
   const zoomY = (H * 0.92) / 1350;
-  state.cam.zoom = Math.max(CAM_LIMITS.zoomMin,
-                    Math.min(1.0, Math.min(zoomX, zoomY)));
+  state.cam.zoom = Math.max(CAM_LIMITS.zoomMin, Math.min(1.0, Math.min(zoomX, zoomY)));
   state.cam.x = 0; state.cam.y = 0;
   clampCamera();
 }
 fitCamera();
 
 /* ============================ PLACEMENT ============================ */
-function beginPlacement(item) {
-  state.placingItem = { item, offsetX: 0, offsetY: 40 };
-  document.getElementById('placement-name').textContent = item.name;
+let placingFromMove = false;
+
+function beginPlacement(itemId) {
+  state.placingItem = { itemId, offsetX: 0, offsetY: 40 };
+  placingFromMove = false;
+  const monster = MONSTERS[itemId];
+  document.getElementById('placement-name').textContent = monster.name;
   document.getElementById('placement-panel').classList.add('show');
   canvas.classList.add('placing');
   hatchBtn.classList.remove('show');
@@ -2583,14 +3214,29 @@ function beginPlacement(item) {
 
 function confirmPlacement() {
   if (!state.placingItem) return;
-  const { item, offsetX, offsetY } = state.placingItem;
-  state.monsters.push({ id: item.id, name: item.name, offsetX, offsetY });
-  state.incubating = null;
+  const { itemId, offsetX, offsetY, movingRef } = state.placingItem;
+
+  if (movingRef) {
+    // Just update position
+    movingRef.offsetX = offsetX;
+    movingRef.offsetY = offsetY;
+    showToast(`${MONSTERS[itemId].name} moved!`, 'success');
+  } else {
+    // New monster
+    state.monsters.push({
+      id: itemId,
+      name: MONSTERS[itemId].name,
+      offsetX, offsetY,
+      feedCount: 0,
+    });
+    state.incubating = null;
+    document.getElementById('incubator-status').classList.remove('show', 'ready');
+    showToast(`${MONSTERS[itemId].name} placed on Nyxara!`, 'success');
+  }
+
   state.placingItem = null;
-  document.getElementById('incubator-status').classList.remove('show', 'ready');
   document.getElementById('placement-panel').classList.remove('show');
   canvas.classList.remove('placing');
-  showToast(`${item.name} placed on Nyxara!`, 'success');
 }
 
 function cancelPlacement() {
@@ -2615,7 +3261,9 @@ window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
     if (marketOpen) closeMarket();
+    if (breedOpen) closeBreedModal();
     if (state.placingItem) cancelPlacement();
+    clearSelection();
   }
 });
 document.getElementById('btn-settings').addEventListener('click', () => openModal('settings-modal'));
@@ -2629,7 +3277,6 @@ function wireToggle(id, onChange) {
 }
 wireToggle('toggle-audio', (on) => { state.audioOn = on; applyAudioSettings(); });
 wireToggle('toggle-detail', (on) => { state.lowDetail = on; skyCache = null; });
-
 function wireSlider(sliderId, valueId, onChange) {
   const s = document.getElementById(sliderId);
   const v = document.getElementById(valueId);
@@ -2648,19 +3295,7 @@ const monsterGrid  = document.getElementById('monster-grid');
 const confirmBtn   = document.getElementById('market-confirm');
 const cancelBtn    = document.getElementById('market-cancel');
 
-const CATALOGUE = [
-  {
-    id: 'stellarius',
-    name: 'Stellarius',
-    element: 'star',
-    price: 750,
-    currency: 'shards',
-    available: true,
-    description: 'A cosmic percussionist born from a fallen star.',
-    size: 2,
-  },
-];
-
+const MARKET_CATALOGUE = ['stellarius', 'frostling'];
 const previewCanvases = [];
 let selectedItem = null;
 
@@ -2681,17 +3316,19 @@ document.getElementById('btn-market').addEventListener('click', openMarket);
 document.getElementById('market-close').addEventListener('click', closeMarket);
 cancelBtn.addEventListener('click', closeMarket);
 
-function starElementSVG() {
-  return `<svg viewBox="0 0 24 24">
-    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
-  </svg>`;
+function elementSVG(el) {
+  if (el === 'star') return `<svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>`;
+  if (el === 'ice')  return `<svg viewBox="0 0 24 24"><path d="M12 2v20M4 6l16 12M4 18L20 6M8 4l4 4 4-4M8 20l4-4 4 4M2 12h20" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+  return '';
 }
+function elementBadgeClass(el) { return `m-elem ${el}`; }
 
 function buildMonsterGrid() {
   monsterGrid.innerHTML = '';
   previewCanvases.length = 0;
 
-  CATALOGUE.forEach(item => {
+  MARKET_CATALOGUE.forEach(id => {
+    const item = MONSTERS[id];
     const card = document.createElement('div');
     card.className = 'm-card';
     card.dataset.id = item.id;
@@ -2704,13 +3341,13 @@ function buildMonsterGrid() {
     if (placed) tag = 'Placed';
     else if (incubating) tag = 'Incubating';
 
+    const elemHTML = item.elements.map(el => `<div class="${elementBadgeClass(el)}" title="${el}">${elementSVG(el)}</div>`).join('');
+
     card.innerHTML = `
       <div class="m-card-name">${item.name}</div>
       <div class="m-card-body">
         <canvas data-preview-id="${item.id}"></canvas>
-        <div class="m-elements">
-          <div class="m-elem star" title="Star">${starElementSVG()}</div>
-        </div>
+        <div class="m-elements">${elemHTML}</div>
         <div class="m-cost">
           <div class="m-cost-left"><span class="mini-shard"></span>${item.price.toLocaleString()}</div>
           ${tag ? `<div class="m-owned-tag">${tag}</div>` : ''}
@@ -2737,8 +3374,7 @@ function updateMonsterCardPreviews(t) {
     const rect = cvs.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.floor(rect.width * dpr);
-    const h = Math.floor(rect.height * dpr);
+    const w = Math.floor(rect.width * dpr), h = Math.floor(rect.height * dpr);
     if (cvs.width !== w || cvs.height !== h) { cvs.width = w; cvs.height = h; }
     const g = p.ctx;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2755,7 +3391,7 @@ function updateMonsterCardPreviews(t) {
     const beat = (t * (STELL_BPM / 60)) % 1;
     g.save();
     g.translate(rect.width / 2, rect.height * 0.55);
-    drawStellariusShape(g, 0, 0, scale, t, beat, true);
+    drawMonsterShape(g, p.item, 0, 0, scale, t, beat, true);
     g.restore();
   }
 }
@@ -2773,16 +3409,13 @@ confirmBtn.addEventListener('click', () => {
   const incubating = state.incubating && state.incubating.item.id === selectedItem.id;
   const placed = state.monsters.some(m => m.id === selectedItem.id);
   if (incubating || placed) { showToast('Already owned!', 'error'); return; }
-  if (!selectedItem.available) { showToast('Coming soon!', 'error'); return; }
+  if (!selectedItem.available) { showToast('Breed only!', 'error'); return; }
   if (state.shards < selectedItem.price) { showToast('Not enough shards!', 'error'); return; }
   state.shards -= selectedItem.price;
-  state.ownedIds.add(selectedItem.id);
   startIncubation(selectedItem);
   updateCurrencyUI();
   showToast(`${selectedItem.name} sent to the Incubator!`, 'success');
   buildMonsterGrid();
-  const stillSelected = document.querySelector(`.m-card[data-id="${selectedItem.id}"]`);
-  if (stillSelected) stillSelected.classList.add('selected');
   updateActionButtons();
 });
 
@@ -2793,6 +3426,204 @@ document.querySelectorAll('.tribe-dot').forEach(dot => {
   });
 });
 
+/* =========================================================================
+   BREED MODAL
+   ========================================================================= */
+const breedModal = document.getElementById('breed-modal');
+const slotA = document.getElementById('slot-a');
+const slotB = document.getElementById('slot-b');
+const breedStartBtn = document.getElementById('breed-start');
+const breedResultContent = document.getElementById('breed-result-content');
+const slotPicker = document.getElementById('slot-picker');
+const slotPickerList = document.getElementById('slot-picker-list');
+const slotPickerTitle = document.getElementById('slot-picker-title');
+
+const breedState = { a: null, b: null };
+
+function openBreedModal() {
+  breedOpen = true;
+  breedState.a = null;
+  breedState.b = null;
+  refreshBreedUI();
+  breedModal.classList.add('open');
+  clearSelection();
+}
+function closeBreedModal() {
+  breedOpen = false;
+  breedModal.classList.remove('open');
+  slotPicker.classList.remove('open');
+}
+document.getElementById('breed-close').addEventListener('click', closeBreedModal);
+document.getElementById('breed-cancel').addEventListener('click', closeBreedModal);
+breedModal.addEventListener('click', (e) => {
+  if (e.target === breedModal) closeBreedModal();
+});
+
+slotA.addEventListener('click', () => openSlotPicker('a', slotA));
+slotB.addEventListener('click', () => openSlotPicker('b', slotB));
+
+function openSlotPicker(slot, anchor) {
+  slotPickerTitle.textContent = `Choose monster for slot ${slot.toUpperCase()}`;
+  slotPickerList.innerHTML = '';
+
+  const available = state.monsters.filter(m => {
+    const otherRef = slot === 'a' ? breedState.b : breedState.a;
+    return !otherRef || otherRef !== m;
+  });
+
+  if (available.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'slot-picker-empty';
+    empty.textContent = 'You need at least two different placed monsters to breed.';
+    slotPickerList.appendChild(empty);
+  } else {
+    for (const m of available) {
+      const monster = MONSTERS[m.id];
+      const item = document.createElement('div');
+      item.className = 'slot-picker-item';
+      const elemHTML = monster.elements.map(el => `<div class="${elementBadgeClass(el)}">${elementSVG(el)}</div>`).join('');
+      item.innerHTML = `
+        <canvas></canvas>
+        <div class="item-name">${monster.name}</div>
+        <div class="item-elem">${elemHTML}</div>
+      `;
+      item.addEventListener('click', () => {
+        if (slot === 'a') breedState.a = m;
+        else              breedState.b = m;
+        slotPicker.classList.remove('open');
+        refreshBreedUI();
+      });
+      slotPickerList.appendChild(item);
+
+      // Draw preview canvas
+      const cvs = item.querySelector('canvas');
+      const ctxP = cvs.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cvs.width = 64 * dpr; cvs.height = 64 * dpr;
+      ctxP.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctxP.clearRect(0, 0, 64, 64);
+      ctxP.save();
+      ctxP.translate(32, 36);
+      drawMonsterShape(ctxP, monster, 0, 0, 0.35, performance.now()/1000, 0, true);
+      ctxP.restore();
+    }
+  }
+
+  // Position the picker near the anchor
+  const rect = anchor.getBoundingClientRect();
+  slotPicker.style.left = Math.max(20, Math.min(window.innerWidth - 380, rect.left - 80)) + 'px';
+  slotPicker.style.top  = (rect.bottom + 10) + 'px';
+  slotPicker.classList.add('open');
+}
+
+function refreshBreedUI() {
+  // Slot A
+  refreshSlotVisual(slotA, breedState.a);
+  refreshSlotVisual(slotB, breedState.b);
+
+  const result = getBreedResult(
+    breedState.a ? MONSTERS[breedState.a.id] : null,
+    breedState.b ? MONSTERS[breedState.b.id] : null
+  );
+
+  if (!breedState.a || !breedState.b) {
+    breedResultContent.innerHTML = `<div class="empty-text">Select two monsters to see the result</div>`;
+    breedStartBtn.disabled = true;
+    return;
+  }
+
+  if (!result) {
+    breedResultContent.innerHTML = `<div class="empty-text">These monsters cannot be combined</div>`;
+    breedStartBtn.disabled = true;
+    return;
+  }
+
+  const elemHTML = result.elements.map(el => `<div class="${elementBadgeClass(el)}">${elementSVG(el)}</div>`).join('');
+  breedResultContent.innerHTML = `
+    <div class="breed-result-name">${result.name}</div>
+    <div class="breed-result-el">${elemHTML}</div>
+  `;
+  breedStartBtn.disabled = false;
+}
+
+function refreshSlotVisual(slotEl, monsterRef) {
+  // Clear any canvas
+  const oldCanvas = slotEl.querySelector('canvas');
+  if (oldCanvas) oldCanvas.remove();
+  const oldName = slotEl.querySelector('.slot-name');
+  if (oldName) oldName.remove();
+
+  const hint = slotEl.querySelector('.slot-hint');
+  if (monsterRef) {
+    slotEl.classList.add('filled');
+    if (hint) hint.remove();
+    const monster = MONSTERS[monsterRef.id];
+
+    const cvs = document.createElement('canvas');
+    cvs.width = 130 * DPR; cvs.height = 150 * DPR;
+    cvs.style.width = '100%'; cvs.style.height = '100%';
+    slotEl.appendChild(cvs);
+    const g = cvs.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.clearRect(0, 0, 130, 150);
+    g.save();
+    g.translate(65, 80);
+    drawMonsterShape(g, monster, 0, 0, 0.7, performance.now()/1000, 0, true);
+    g.restore();
+  } else {
+    slotEl.classList.remove('filled');
+    if (!hint) {
+      const newHint = document.createElement('span');
+      newHint.className = 'slot-hint';
+      newHint.textContent = '+ Pick';
+      slotEl.appendChild(newHint);
+    }
+  }
+}
+
+breedStartBtn.addEventListener('click', () => {
+  const itemA = breedState.a ? MONSTERS[breedState.a.id] : null;
+  const itemB = breedState.b ? MONSTERS[breedState.b.id] : null;
+  const result = getBreedResult(itemA, itemB);
+  if (!result) { showToast('Invalid combination', 'error'); return; }
+
+  startIncubation(result);
+  updateCurrencyUI();
+  closeBreedModal();
+  showToast(`Breeding ${result.name}! Sent to Incubator.`, 'success');
+});
+
+/* Update the breed modal canvases each frame too */
+function updateBreedModalCanvases(t) {
+  if (!breedOpen) return;
+  const refresh = (slotEl, monsterRef) => {
+    if (!monsterRef) return;
+    const cvs = slotEl.querySelector('canvas');
+    if (!cvs) return;
+    const g = cvs.getContext('2d');
+    g.setTransform(DPR, 0, 0, DPR, 0, 0);
+    g.clearRect(0, 0, 130, 150);
+    g.save();
+    g.translate(65, 80);
+    drawMonsterShape(g, MONSTERS[monsterRef.id], 0, 0, 0.7, t, (t * (STELL_BPM / 60)) % 1, true);
+    g.restore();
+  };
+  refresh(slotA, breedState.a);
+  refresh(slotB, breedState.b);
+
+  // Slot picker canvases are static; skip animating those for perf.
+}
+
+/* Patch the render loop to also update breed modal */
+const _oldRender = render;
+function renderWithBreed(now) {
+  const t = now / 1000;
+  updateBreedModalCanvases(t);
+  requestAnimationFrame(renderWithBreed);
+}
+requestAnimationFrame(renderWithBreed);
+
+/* ============================ INIT ============================ */
 updateCurrencyUI();
 requestAnimationFrame(render);
 </script>
