@@ -1,326 +1,856 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLM 5.2 (free) · OpenRouter Chat</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background: #0f0f12;
-            color: #e4e4e7;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 860px;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #27272a;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        h1 { font-size: 1.1rem; font-weight: 500; color: #c4b5fd; }
-        .key-area { display: flex; gap: 0.5rem; align-items: center; }
-        .key-area input {
-            background: #18181b;
-            border: 1px solid #3f3f46;
-            color: #e4e4e7;
-            padding: 0.4rem 0.7rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            width: 220px;
-        }
-        .key-area input:focus { outline: 1px solid #8b5cf6; border-color: #8b5cf6; }
-        #chat {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            padding: 0.5rem 0;
-            scroll-behavior: smooth;
-        }
-        .msg {
-            max-width: 85%;
-            padding: 0.7rem 1rem;
-            border-radius: 12px;
-            line-height: 1.55;
-            font-size: 0.92rem;
-            word-break: break-word;
-            white-space: pre-wrap;
-        }
-        .msg.user {
-            align-self: flex-end;
-            background: #4c1d95;
-            color: #f3e8ff;
-            border-bottom-right-radius: 3px;
-        }
-        .msg.assistant {
-            align-self: flex-start;
-            background: #18181b;
-            border: 1px solid #27272a;
-            color: #d4d4d8;
-            border-bottom-left-radius: 3px;
-        }
-        .msg.system {
-            align-self: center;
-            background: transparent;
-            color: #71717a;
-            font-size: 0.8rem;
-            font-style: italic;
-            max-width: 100%;
-        }
-        .msg.error { border-color: #7f1d1d; background: #1c0a0a; color: #fca5a5; }
-        #input-area {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #27272a;
-        }
-        #prompt {
-            flex: 1;
-            background: #18181b;
-            border: 1px solid #3f3f46;
-            color: #e4e4e7;
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            font-size: 0.92rem;
-            font-family: inherit;
-            resize: none;
-            min-height: 52px;
-            max-height: 150px;
-        }
-        #prompt:focus { outline: 1px solid #8b5cf6; border-color: #8b5cf6; }
-        button {
-            background: #7c3aed;
-            border: none;
-            color: white;
-            padding: 0 1.4rem;
-            border-radius: 10px;
-            font-size: 0.92rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s;
-            min-height: 52px;
-        }
-        button:hover:not(:disabled) { background: #6d28d9; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .status {
-            font-size: 0.75rem;
-            color: #71717a;
-            margin-left: 0.5rem;
-        }
-        .reasoning {
-            font-size: 0.8rem;
-            color: #a78bfa;
-            font-style: italic;
-            padding: 0.4rem 0.8rem;
-            margin-top: 0.3rem;
-            border-left: 2px solid #4c1d95;
-            background: #0f0f12;
-            border-radius: 0 6px 6px 0;
-            white-space: pre-wrap;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>My Singing Monsters — Plant Island</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; background:#0b1a2b;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; user-select:none; }
+  canvas { display:block; position:absolute; inset:0; touch-action:none; cursor:grab; }
+  canvas:active { cursor:grabbing; }
+
+  /* ---------- HUD ---------- */
+  #top {
+    position:fixed; top:0; left:0; right:0; padding:14px 18px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    pointer-events:none;
+  }
+  #island-name {
+    font-size:20px; font-weight:800; letter-spacing:.5px; color:#fff;
+    text-shadow:0 2px 0 rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
+    background:rgba(20,40,25,.45); padding:8px 16px; border-radius:999px;
+    backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.18);
+  }
+  #hint {
+    font-size:12px; color:rgba(255,255,255,.75); font-weight:600;
+    background:rgba(0,0,0,.3); padding:8px 14px; border-radius:999px;
+    backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.12);
+    text-align:right; line-height:1.5;
+  }
+
+  #bottom {
+    position:fixed; bottom:0; left:0; right:0; padding:16px;
+    display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+    pointer-events:none;
+  }
+  .mbtn {
+    pointer-events:auto; cursor:pointer;
+    display:flex; align-items:center; gap:9px;
+    padding:10px 16px 10px 12px; border-radius:16px;
+    background:rgba(255,255,255,.92); border:2px solid rgba(255,255,255,.6);
+    box-shadow:0 6px 0 rgba(0,0,0,.22), 0 10px 22px rgba(0,0,0,.28);
+    font-family:inherit; font-size:14px; font-weight:800; color:#243044;
+    transition:transform .1s ease, box-shadow .1s ease, background .15s;
+  }
+  .mbtn:hover { transform:translateY(-2px); box-shadow:0 8px 0 rgba(0,0,0,.22), 0 14px 26px rgba(0,0,0,.3); }
+  .mbtn:active { transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.22); }
+  .mbtn.active { background:#ffe9a8; border-color:#ffc93c; transform:translateY(-5px);
+                 box-shadow:0 9px 0 rgba(0,0,0,.25), 0 16px 30px rgba(255,190,60,.35); }
+  .mbtn .dot { width:22px; height:22px; border-radius:50%; box-shadow:inset 0 -3px 0 rgba(0,0,0,.14); }
+  .mbtn.danger.active { background:#ffc9c9; border-color:#ff6b6b; }
+</style>
 </head>
 <body>
-    <header>
-        <h1>🧠 GLM 5.2 (free) · OpenRouter</h1>
-        <div class="key-area">
-            <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
-            <span class="status" id="status"></span>
-        </div>
-    </header>
+<canvas id="game"></canvas>
 
-    <div id="chat">
-        <div class="msg system">Enter your OpenRouter API key above, then start chatting with GLM 5.2.</div>
-    </div>
+<div id="top">
+  <div id="island-name">🌿 Plant Island</div>
+  <div id="hint">Drag to pan • Scroll to zoom<br>Pick a monster, then tap a tile</div>
+</div>
 
-    <div id="input-area">
-        <textarea id="prompt" rows="1" placeholder="Ask GLM 5.2 anything..."></textarea>
-        <button id="sendBtn">Send</button>
-    </div>
+<div id="bottom">
+  <button class="mbtn" data-m="noggin"><span class="dot" style="background:#c9b48f"></span>Noggin</button>
+  <button class="mbtn" data-m="mammott"><span class="dot" style="background:#eef4fb"></span>Mammott</button>
+  <button class="mbtn" data-m="toejammer"><span class="dot" style="background:#5fa8e8"></span>Toe Jammer</button>
+  <button class="mbtn danger" data-m="remove"><span class="dot" style="background:#ff8080"></span>Remove</button>
+</div>
 
-    <script>
-        const chatEl      = document.getElementById('chat');
-        const promptEl    = document.getElementById('prompt');
-        const sendBtn     = document.getElementById('sendBtn');
-        const apiKeyEl    = document.getElementById('apiKey');
-        const statusEl    = document.getElementById('status');
+<script>
+/* =========================================================================
+   MY SINGING MONSTERS — PLANT ISLAND  (prototype)
+   Everything is drawn procedurally on a single canvas.
+   ========================================================================= */
 
-        // ---- conversation history (sent on every request) ----
-        let messages = [
-            { role: 'system', content: 'You are GLM 5.2, a helpful and harmless AI assistant.' }
-        ];
+/* ------------------------------ CANVAS ------------------------------ */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let DPR = 1, W = 0, H = 0, skyGrad = null;
 
-        let isGenerating = false;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width  = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
 
-        // ---- UI helpers ----
-        function addMessage(role, text) {
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            div.textContent = text;
-            chatEl.appendChild(div);
-            chatEl.scrollTop = chatEl.scrollHeight;
-            return div;
-        }
+  skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0,    '#7fd4ff');
+  skyGrad.addColorStop(0.45, '#a9e4ff');
+  skyGrad.addColorStop(0.78, '#d9f2d0');
+  skyGrad.addColorStop(1,    '#bfe6a8');
+}
+window.addEventListener('resize', resize);
+resize();
 
-        function updateStatus(txt) {
-            statusEl.textContent = txt;
-        }
+/* --------------------------- ISO CONSTANTS --------------------------- */
+const TW = 72;          // tile width  (screen px)
+const TH = 36;          // tile height (screen px)
+const CX = 7, CY = 7;   // island centre in grid coords
+const ISLAND_R = 5.9;   // base radius of the island (grid units)
 
-        // ---- streaming-aware send ----
-        async function sendMessage() {
-            const apiKey = apiKeyEl.value.trim();
-            if (!apiKey) {
-                updateStatus('⚠️ API key required');
-                apiKeyEl.focus();
-                return;
-            }
+/* grid <-> screen */
+function iso(gx, gy) {
+  return [ (gx - gy) * (TW / 2),
+           (gx + gy - CX - CY) * (TH / 2) ];
+}
+function worldToGrid(wx, wy) {
+  const a = wx / (TW / 2);
+  const b = wy / (TH / 2) + CX + CY;
+  return { gx: (a + b) / 2, gy: (b - a) / 2 };
+}
 
-            const userText = promptEl.value.trim();
-            if (!userText || isGenerating) return;
+/* the wobbly island silhouette */
+function islandRadiusAt(angle) {
+  return ISLAND_R * (1
+    + 0.060 * Math.sin(angle * 3 + 0.7)
+    + 0.040 * Math.cos(angle * 5 - 1.2)
+    + 0.025 * Math.sin(angle * 7 + 2.1));
+}
+function insideIsland(gx, gy) {
+  const dx = gx - CX, dy = gy - CY;
+  const d = Math.hypot(dx, dy);
+  if (d > ISLAND_R * 1.3) return false;
+  return d <= islandRadiusAt(Math.atan2(dy, dx));
+}
+function islandPolygon() {
+  const pts = [], N = 110;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const r = islandRadiusAt(a);
+    pts.push(iso(CX + Math.cos(a) * r, CY + Math.sin(a) * r));
+  }
+  return pts;
+}
 
-            promptEl.value = '';
-            promptEl.style.height = 'auto';
+/* --------------------------- SMALL HELPERS --------------------------- */
+function dot(x, y, r) {           // adds a circle to the current path
+  ctx.moveTo(x + r, y);
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+}
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+function tracePoly(pts) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+}
+function tilePath(x, y) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - TH / 2);
+  ctx.lineTo(x + TW / 2, y);
+  ctx.lineTo(x, y + TH / 2);
+  ctx.lineTo(x - TW / 2, y);
+  ctx.closePath();
+}
+function drawShadow(x, y, rx, ry, alpha = 0.18) {
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+/* deterministic random (so the flowers don't jump around every frame) */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
 
-            // push user turn
-            messages.push({ role: 'user', content: userText });
-            addMessage('user', userText);
+/* ------------------------------ STATE ------------------------------ */
+const state = {
+  cam: { x: 0, y: 30, zoom: 1 },
+  monsters: [],
+  selected: null,     // 'noggin' | 'mammott' | 'toejammer' | 'remove' | null
+  hover: null,        // {gx, gy}
+};
 
-            // placeholder for assistant
-            const assistantDiv = addMessage('assistant', '');
-            assistantDiv.textContent = '▍';  // caret
+/* tiles the castle sits on – monsters can't be placed there */
+const blockedTiles = new Set();
+for (let gx = 5; gx <= 9; gx++)
+  for (let gy = 2; gy <= 5; gy++)
+    if (Math.hypot(gx - 7, gy - 3.4) < 1.7) blockedTiles.add(gx + ',' + gy);
 
-            isGenerating = true;
-            sendBtn.disabled = true;
-            updateStatus('⏳ generating...');
+/* --------------------------- DECORATIONS --------------------------- */
+const decos = [
+  { type: 'castle', gx: 7,    gy: 3.4 },
+  { type: 'tree',   gx: 4,    gy: 4.8, s: 1.05 },
+  { type: 'tree',   gx: 10,   gy: 4.5, s: 0.95 },
+  { type: 'tree',   gx: 4,    gy: 10,  s: 1.0  },
+  { type: 'tree',   gx: 10,   gy: 9.8, s: 1.1  },
+  { type: 'tree',   gx: 7,    gy: 11,  s: 0.9  },
+  { type: 'tree',   gx: 2.8,  gy: 7.2, s: 1.0  },
+  { type: 'tree',   gx: 11,   gy: 7,   s: 0.85 },
+  { type: 'rock',   gx: 9,    gy: 5.5, s: 1.0  },
+  { type: 'rock',   gx: 5,    gy: 9.5, s: 0.85 },
+  { type: 'rock',   gx: 9.5,  gy: 9,   s: 1.1  },
+  { type: 'rock',   gx: 4.6,  gy: 6.2, s: 0.7  },
+];
 
-            try {
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`,
-                        // optional attribution headers
-                        'HTTP-Referer': 'https://localhost',
-                        'X-OpenRouter-Title': 'GLM 5.2 Free Chat'
-                    },
-                    body: JSON.stringify({
-                        model: 'z-ai/glm-5.2:free',
-                        messages: messages,
-                        stream: true
-                    })
-                });
+/* scattered flowers / grass tufts (generated once) */
+const flowers = (() => {
+  const rnd = mulberry32(20240607);
+  const out = [];
+  const palette = ['#ffe066', '#ff8fb1', '#fff0f5', '#ffb347', '#d99cff'];
+  for (let i = 0; i < 90; i++) {
+    const a = rnd() * Math.PI * 2;
+    const r = Math.sqrt(rnd()) * (ISLAND_R - 0.6);
+    out.push({
+      gx: CX + Math.cos(a) * r,
+      gy: CY + Math.sin(a) * r,
+      c: palette[(rnd() * palette.length) | 0],
+      s: 0.6 + rnd() * 0.7,
+    });
+  }
+  return out;
+})();
 
-                if (!response.ok) {
-                    const err = await response.text();
-                    throw new Error(`${response.status} — ${err.slice(0, 300)}`);
-                }
+/* clouds in the sky */
+const clouds = Array.from({ length: 7 }, (_, i) => ({
+  x: Math.random() * 2000,
+  y: 0.06 + Math.random() * 0.5,
+  s: 0.5 + Math.random() * 0.9,
+  v: 6 + Math.random() * 14,
+}));
 
-                // ---- parse SSE stream ----
-                const reader  = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let buffer    = '';
-                let fullText  = '';
-                let reasoningText = '';
+/* ============================== DRAWING ============================== */
 
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+/* --------------------------- SKY & CLOUDS --------------------------- */
+function drawSky(t) {
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
 
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
+  // sun glow
+  const g = ctx.createRadialGradient(W * 0.8, H * 0.12, 10, W * 0.8, H * 0.12, 320);
+  g.addColorStop(0, 'rgba(255,255,220,.85)');
+  g.addColorStop(1, 'rgba(255,255,220,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
 
-                    for (const line of lines) {
-                        const trimmed = line.trim();
-                        if (!trimmed || !trimmed.startsWith('data:')) continue;
-                        const data = trimmed.slice(5).trim();
-                        if (data === '[DONE]') continue;
+  for (const c of clouds) {
+    const span = W + 500;
+    const x = ((c.x + t * c.v) % span + span) % span - 250;
+    drawCloud(x, c.y * H, c.s);
+  }
+}
+function drawCloud(x, y, s) {
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  dot(x, y, 42 * s);
+  dot(x + 48 * s, y + 10 * s, 30 * s);
+  dot(x - 48 * s, y + 12 * s, 28 * s);
+  dot(x + 14 * s, y - 20 * s, 32 * s);
+  dot(x - 20 * s, y - 12 * s, 26 * s);
+  ctx.fill();
+  ctx.restore();
+}
 
-                        try {
-                            const parsed = JSON.parse(data);
-                            const delta  = parsed.choices?.[0]?.delta;
-                            if (!delta) continue;
+/* ------------------------------ ISLAND ------------------------------ */
+function drawIsland(t) {
+  const poly = islandPolygon();
 
-                            // reasoning tokens (GLM 5.2 supports reasoning effort)
-                            if (delta.reasoning || delta.reasoning_content) {
-                                reasoningText += delta.reasoning || delta.reasoning_content || '';
-                            }
+  // ---- soft drop shadow ----
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = '#000';
+  ctx.translate(0, 62);
+  ctx.scale(1, 0.5);
+  tracePoly(poly);
+  ctx.fill();
+  ctx.restore();
 
-                            // main content
-                            if (delta.content) {
-                                fullText += delta.content;
-                                assistantDiv.textContent = fullText + '▍';
-                                chatEl.scrollTop = chatEl.scrollHeight;
-                            }
-                        } catch (_) {
-                            // ignore comment / malformed lines
-                        }
-                    }
-                }
+  // ---- cliff (layered for a rock-face gradient) ----
+  const D = 54;
+  const layers = [
+    { off: 1.00, col: '#3a2413' },
+    { off: 0.55, col: '#5c3c1c' },
+    { off: 0.22, col: '#7d5527' },
+  ];
+  for (const L of layers) {
+    ctx.save();
+    ctx.translate(0, D * L.off);
+    tracePoly(poly);
+    ctx.fillStyle = L.col;
+    ctx.fill();
+    ctx.restore();
+  }
 
-                // finalize assistant bubble
-                assistantDiv.textContent = fullText || '(empty response)';
+  // ---- grass top ----
+  const g = ctx.createLinearGradient(0, -180, 0, 200);
+  g.addColorStop(0,    '#9de065');
+  g.addColorStop(0.45, '#72c441');
+  g.addColorStop(1,    '#4b9629');
+  tracePoly(poly);
+  ctx.fillStyle = g;
+  ctx.fill();
 
-                // if reasoning was streamed, show it in a small panel
-                if (reasoningText.trim()) {
-                    const reasonDiv = document.createElement('div');
-                    reasonDiv.className = 'reasoning';
-                    reasonDiv.textContent = '🧠 ' + reasoningText.trim();
-                    assistantDiv.appendChild(reasonDiv);
-                }
+  // ---- checkerboard tiles (clipped to the island) ----
+  ctx.save();
+  tracePoly(poly);
+  ctx.clip();
 
-                // record assistant turn for context
-                messages.push({ role: 'assistant', content: fullText });
-                updateStatus('✅ done');
+  ctx.fillStyle = 'rgba(255,255,255,0.055)';
+  for (let gx = 0; gx <= 14; gx++) {
+    for (let gy = 0; gy <= 14; gy++) {
+      if ((gx + gy) % 2 !== 0) continue;
+      if (!insideIsland(gx, gy)) continue;
+      const [x, y] = iso(gx, gy);
+      tilePath(x, y);
+      ctx.fill();
+    }
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  for (let gx = 0; gx <= 14; gx++) {
+    for (let gy = 0; gy <= 14; gy++) {
+      if (!insideIsland(gx, gy)) continue;
+      const [x, y] = iso(gx, gy);
+      tilePath(x, y);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 
-            } catch (err) {
-                assistantDiv.className = 'msg assistant error';
-                assistantDiv.textContent = '⚠️ ' + err.message;
-                updateStatus('❌ error');
-                // remove failed assistant turn from history
-                messages.pop();
-            } finally {
-                isGenerating = false;
-                sendBtn.disabled = false;
-                promptEl.focus();
-            }
-        }
+  // ---- bright rim ----
+  tracePoly(poly);
+  ctx.strokeStyle = 'rgba(196,247,146,0.6)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
 
-        // ---- event listeners ----
-        sendBtn.addEventListener('click', sendMessage);
+/* ------------------------------ FLOWERS ------------------------------ */
+function drawFlowers(t) {
+  for (const f of flowers) {
+    const [x, y] = iso(f.gx, f.gy);
+    const sway = Math.sin(t * 1.6 + f.gx * 3 + f.gy * 2) * 1.2 * f.s;
+    ctx.save();
+    ctx.translate(x + sway, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    ctx.beginPath(); dot(0, 1.5, 4 * f.s); ctx.fill();
+    ctx.fillStyle = f.c;
+    ctx.beginPath(); dot(0, -2 * f.s, 3.4 * f.s); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.beginPath(); dot(-1 * f.s, -3 * f.s, 1.2 * f.s); ctx.fill();
+    ctx.restore();
+  }
+}
 
-        promptEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+/* ------------------------------- TREES ------------------------------- */
+function drawTree(gx, gy, t, s = 1) {
+  const [x, y] = iso(gx, gy);
+  drawShadow(x, y + 4, 30 * s, 12 * s, 0.16);
 
-        // auto-resize textarea
-        promptEl.addEventListener('input', () => {
-            promptEl.style.height = 'auto';
-            promptEl.style.height = Math.min(promptEl.scrollHeight, 150) + 'px';
-        });
+  const sway = Math.sin(t * 0.9 + gx * 1.7 + gy) * 0.025;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(sway);
+  ctx.scale(s, s);
 
-        // quick sanity check on key input
-        apiKeyEl.addEventListener('input', () => {
-            const val = apiKeyEl.value.trim();
-            updateStatus(val.length > 10 ? '🔑 key ready' : '');
-        });
+  // trunk
+  ctx.fillStyle = '#7b5433';
+  ctx.beginPath();
+  ctx.moveTo(-8, 0);
+  ctx.quadraticCurveTo(-6, -30, -5, -48);
+  ctx.lineTo(5, -48);
+  ctx.quadraticCurveTo(6, -30, 8, 0);
+  ctx.closePath();
+  ctx.fill();
 
-        promptEl.focus();
-    </script>
+  // canopy (dark base)
+  ctx.fillStyle = '#3e8f34';
+  ctx.beginPath();
+  dot(-20, -60, 26); dot(20, -60, 26);
+  dot(0, -80, 30);   dot(-8, -48, 24); dot(12, -50, 22);
+  ctx.fill();
+
+  // dark underside
+  ctx.fillStyle = 'rgba(18,58,14,0.25)';
+  ctx.beginPath();
+  dot(8, -46, 20); dot(26, -56, 14);
+  ctx.fill();
+
+  // lit side
+  ctx.fillStyle = '#59b544';
+  ctx.beginPath();
+  dot(-16, -86, 20); dot(6, -94, 16); dot(-26, -70, 14);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/* ------------------------------- ROCKS ------------------------------- */
+function drawRock(gx, gy, t, s = 1) {
+  const [x, y] = iso(gx, gy);
+  drawShadow(x, y + 4, 26 * s, 10 * s, 0.16);
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+
+  ctx.fillStyle = '#8d8f95';
+  ctx.beginPath();
+  ctx.moveTo(-28, 0);
+  ctx.lineTo(-22, -26);
+  ctx.lineTo(-4, -36);
+  ctx.lineTo(18, -30);
+  ctx.lineTo(28, -8);
+  ctx.lineTo(22, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#adb0b7';
+  ctx.beginPath();
+  ctx.moveTo(-22, -26); ctx.lineTo(-4, -36);
+  ctx.lineTo(2, -22);   ctx.lineTo(-16, -14);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
+  ctx.beginPath();
+  ctx.moveTo(18, -30); ctx.lineTo(28, -8);
+  ctx.lineTo(22, 2);   ctx.lineTo(8, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/* ------------------------------ CASTLE ------------------------------ */
+function drawCastle(gx, gy, t) {
+  const [x, y] = iso(gx, gy);
+  drawShadow(x, y + 4, 78, 26, 0.20);
+
+  ctx.save();
+  ctx.translate(x, y + Math.sin(t * 1.2) * 1.6);
+
+  // ---- side towers ----
+  for (const side of [-1, 1]) {
+    const tx = side * 54;
+    ctx.fillStyle = '#9aa3b0';
+    roundRect(tx - 18, -112, 36, 112, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    roundRect(tx + 2, -112, 16, 112, 7); ctx.fill();
+
+    ctx.fillStyle = '#7b4fd6';
+    ctx.beginPath();
+    ctx.moveTo(tx - 27, -112);
+    ctx.lineTo(tx, -164);
+    ctx.lineTo(tx + 27, -112);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.beginPath();
+    ctx.moveTo(tx - 27, -112); ctx.lineTo(tx, -164); ctx.lineTo(tx, -112);
+    ctx.closePath(); ctx.fill();
+
+    // flag
+    ctx.strokeStyle = '#5a3a9e'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(tx, -164); ctx.lineTo(tx, -186); ctx.stroke();
+    ctx.fillStyle = '#ffd54a';
+    const wave = Math.sin(t * 3 + side) * 3;
+    ctx.beginPath();
+    ctx.moveTo(tx, -186);
+    ctx.quadraticCurveTo(tx + 10, -182 + wave, tx + 18, -178 + wave);
+    ctx.lineTo(tx, -170);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ---- main keep ----
+  ctx.fillStyle = '#bcc5d2';
+  roundRect(-40, -132, 80, 132, 9); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.09)';
+  roundRect(6, -132, 34, 132, 9); ctx.fill();
+
+  // roof
+  ctx.fillStyle = '#8b5cf6';
+  ctx.beginPath();
+  ctx.moveTo(-54, -132);
+  ctx.lineTo(0, -202);
+  ctx.lineTo(54, -132);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.beginPath();
+  ctx.moveTo(-54, -132); ctx.lineTo(0, -202); ctx.lineTo(0, -132);
+  ctx.closePath(); ctx.fill();
+
+  // door
+  ctx.fillStyle = '#5a3a1e';
+  roundRect(-15, -54, 30, 54, 13); ctx.fill();
+  ctx.fillStyle = '#ffd54a';
+  ctx.beginPath(); dot(7, -28, 3); ctx.fill();
+
+  // windows
+  ctx.fillStyle = '#4a5568';
+  roundRect(-29, -106, 14, 20, 5); ctx.fill();
+  roundRect(15, -106, 14, 20, 5); ctx.fill();
+  ctx.fillStyle = 'rgba(255,220,120,0.9)';
+  roundRect(-27, -103, 10, 12, 4); ctx.fill();
+  roundRect(17, -103, 10, 12, 4); ctx.fill();
+
+  ctx.restore();
+}
+
+/* ============================== MONSTERS ============================== */
+function drawMonster(m, t) {
+  const [x, y] = iso(m.gx, m.gy);
+  const bob = Math.sin(t * 2.2 + m.seed) * 3.5;
+  drawShadow(x, y + 3, 27, 10.5, 0.2);
+
+  ctx.save();
+  ctx.translate(x, y + bob);
+  if (m.type === 'noggin')        drawNoggin(t, m.seed);
+  else if (m.type === 'mammott')  drawMammott(t, m.seed);
+  else                            drawToeJammer(t, m.seed);
+  ctx.restore();
+}
+
+function drawNoggin(t, seed) {
+  // arms (behind body)
+  ctx.fillStyle = '#b09a73';
+  roundRect(-40, -62, 15, 36, 7); ctx.fill();
+  roundRect(25,  -62, 15, 36, 7); ctx.fill();
+
+  // legs
+  ctx.fillStyle = '#9d8560';
+  roundRect(-17, -16, 13, 18, 6); ctx.fill();
+  roundRect(4,   -16, 13, 18, 6); ctx.fill();
+
+  // body
+  ctx.fillStyle = '#c9b48f';
+  ctx.beginPath();
+  ctx.moveTo(-31, -18);
+  ctx.bezierCurveTo(-39, -60, -22, -82, 0, -82);
+  ctx.bezierCurveTo(22, -82, 39, -60, 31, -18);
+  ctx.bezierCurveTo(16, -7, -16, -7, -31, -18);
+  ctx.closePath();
+  ctx.fill();
+
+  // rock texture
+  ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-19, -68); ctx.lineTo(-7, -62); ctx.lineTo(-13, -50);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(120,98,66,0.45)';
+  ctx.beginPath();
+  ctx.moveTo(20, -70); ctx.lineTo(13, -60); ctx.lineTo(21, -52);
+  ctx.stroke();
+
+  // eyes
+  const look = Math.sin(t * 0.9 + seed) * 2.5;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); dot(-13, -52, 11); dot(13, -52, 11); ctx.fill();
+  ctx.fillStyle = '#232b38';
+  ctx.beginPath(); dot(-13 + look, -52, 5.5); dot(13 + look, -52, 5.5); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath(); dot(-15 + look, -55, 2); dot(11 + look, -55, 2); ctx.fill();
+
+  // smile
+  ctx.strokeStyle = '#7a6647'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(0, -34, 12, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.stroke();
+}
+
+function drawMammott(t, seed) {
+  const breathe = Math.sin(t * 2.2 + seed) * 1.6;
+
+  ctx.save();
+  ctx.translate(0, breathe);
+
+  // feet
+  ctx.fillStyle = '#cfd9e6';
+  ctx.beginPath(); dot(-16, -8, 13); dot(16, -8, 13); ctx.fill();
+
+  // fluffy body
+  ctx.fillStyle = '#f0f5fb';
+  ctx.beginPath();
+  dot(0, -52, 40);
+  dot(-34, -40, 16); dot(34, -40, 16);
+  dot(-30, -68, 15); dot(30, -68, 15);
+  dot(0, -90, 20);
+  dot(-18, -20, 15); dot(18, -20, 15);
+  ctx.fill();
+
+  // soft shading
+  ctx.fillStyle = 'rgba(160,190,220,0.32)';
+  ctx.beginPath(); dot(18, -34, 22); ctx.fill();
+
+  // eyes
+  const look = Math.sin(t * 0.7 + seed) * 2;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); dot(-14, -60, 11); dot(14, -60, 11); ctx.fill();
+  ctx.fillStyle = '#2b3648';
+  ctx.beginPath(); dot(-14 + look, -60, 5.5); dot(14 + look, -60, 5.5); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath(); dot(-16 + look, -63, 2); dot(12 + look, -63, 2); ctx.fill();
+
+  // grin
+  ctx.fillStyle = '#3a2a35';
+  ctx.beginPath();
+  ctx.ellipse(0, -34, 17, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  roundRect(-14, -44, 9, 9, 3); ctx.fill();
+  roundRect(-4,  -45, 9, 10, 3); ctx.fill();
+  roundRect(6,   -44, 9, 9, 3); ctx.fill();
+
+  ctx.restore();
+}
+
+function drawToeJammer(t, seed) {
+  // feet
+  ctx.fillStyle = '#3f86c9';
+  ctx.beginPath(); dot(-15, -8, 12); dot(15, -8, 12); ctx.fill();
+
+  // blob body
+  ctx.fillStyle = '#5fa8e8';
+  ctx.beginPath();
+  ctx.moveTo(-36, -12);
+  ctx.bezierCurveTo(-46, -70, -20, -86, 0, -86);
+  ctx.bezierCurveTo(20, -86, 46, -70, 36, -12);
+  ctx.bezierCurveTo(18, -2, -18, -2, -36, -12);
+  ctx.closePath();
+  ctx.fill();
+
+  // shine
+  ctx.fillStyle = 'rgba(255,255,255,0.30)';
+  ctx.beginPath(); dot(-14, -64, 12); ctx.fill();
+
+  // single big eye
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); dot(0, -52, 20); ctx.fill();
+  const look = Math.sin(t * 0.6 + seed) * 3;
+  ctx.fillStyle = '#1d2b3a';
+  ctx.beginPath(); dot(look, -52, 9); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); dot(look + 4, -57, 3.5); ctx.fill();
+
+  // mouth
+  ctx.strokeStyle = '#2c6ea8'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(0, -18, 14, 0.1 * Math.PI, 0.9 * Math.PI);
+  ctx.stroke();
+}
+
+/* --------------------------- ENTITY PASS --------------------------- */
+function drawEntities(t) {
+  const list = [];
+  for (const d of decos) list.push({ depth: d.gx + d.gy, kind: d.type, o: d });
+  for (const m of state.monsters) list.push({ depth: m.gx + m.gy + 0.02, kind: 'monster', o: m });
+  list.sort((a, b) => a.depth - b.depth);
+
+  for (const e of list) {
+    if (e.kind === 'tree')        drawTree(e.o.gx, e.o.gy, t, e.o.s || 1);
+    else if (e.kind === 'rock')   drawRock(e.o.gx, e.o.gy, t, e.o.s || 1);
+    else if (e.kind === 'castle') drawCastle(e.o.gx, e.o.gy, t);
+    else                          drawMonster(e.o, t);
+  }
+}
+
+/* ---------------------------- HOVER TILE ---------------------------- */
+function canPlace(gx, gy) {
+  return insideIsland(gx, gy)
+      && !blockedTiles.has(gx + ',' + gy)
+      && !state.monsters.some(m => m.gx === gx && m.gy === gy);
+}
+
+function drawHover(t) {
+  if (!state.hover || !state.selected) return;
+  const { gx, gy } = state.hover;
+  const [x, y] = iso(gx, gy);
+
+  const removing = state.selected === 'remove';
+  const existing = state.monsters.find(m => m.gx === gx && m.gy === gy);
+  const ok = removing ? !!existing : canPlace(gx, gy);
+
+  ctx.save();
+  tilePath(x, y);
+  ctx.fillStyle = ok ? 'rgba(255,255,255,0.28)' : 'rgba(255,80,80,0.28)';
+  ctx.fill();
+  ctx.strokeStyle = ok ? 'rgba(255,255,255,0.85)' : 'rgba(255,120,120,0.9)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // ghost preview of the monster you're about to drop
+  if (!removing && ok) {
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    drawMonster({ gx, gy, type: state.selected, seed: 0 }, t);
+    ctx.restore();
+  }
+}
+
+/* ------------------------------ VIGNETTE ------------------------------ */
+function drawVignette() {
+  const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35,
+                                     W / 2, H / 2, Math.max(W, H) * 0.78);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(0,20,40,0.28)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+/* ============================== LOOP ============================== */
+function render(now) {
+  const t = now / 1000;
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawSky(t);
+
+  ctx.save();
+  ctx.translate(W / 2 + state.cam.x, H / 2 + state.cam.y);
+  ctx.scale(state.cam.zoom, state.cam.zoom);
+
+  drawIsland(t);
+  drawFlowers(t);
+  drawEntities(t);
+  drawHover(t);
+
+  ctx.restore();
+  drawVignette();
+
+  requestAnimationFrame(render);
+}
+
+/* ============================ INTERACTION ============================ */
+const pointer = { down: false, moved: false, lastX: 0, lastY: 0, x: 0, y: 0 };
+
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - W / 2 - state.cam.x) / state.cam.zoom,
+    y: (sy - H / 2 - state.cam.y) / state.cam.zoom,
+  };
+}
+
+function updateHover() {
+  if (!state.selected) { state.hover = null; return; }
+  const w = screenToWorld(pointer.x, pointer.y);
+  const g = worldToGrid(w.x, w.y);
+  const gx = Math.round(g.gx), gy = Math.round(g.gy);
+  if (gx < -2 || gx > 16 || gy < -2 || gy > 16) { state.hover = null; return; }
+  state.hover = { gx, gy };
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  pointer.down = true;
+  pointer.moved = false;
+  pointer.lastX = pointer.x = e.clientX;
+  pointer.lastY = pointer.y = e.clientY;
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  pointer.x = e.clientX;
+  pointer.y = e.clientY;
+
+  if (pointer.down) {
+    const dx = e.clientX - pointer.lastX;
+    const dy = e.clientY - pointer.lastY;
+    if (Math.abs(dx) + Math.abs(dy) > 3) pointer.moved = true;
+    state.cam.x += dx;
+    state.cam.y += dy;
+    pointer.lastX = e.clientX;
+    pointer.lastY = e.clientY;
+  }
+  updateHover();
+});
+
+canvas.addEventListener('pointerup', (e) => {
+  pointer.down = false;
+  if (!pointer.moved) handleClick(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('pointercancel', () => { pointer.down = false; });
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const z = state.cam.zoom;
+  const nz = Math.min(2.2, Math.max(0.45, z * (e.deltaY > 0 ? 0.9 : 1.1)));
+
+  // keep the point under the cursor fixed while zooming
+  const wx = (e.clientX - W / 2 - state.cam.x) / z;
+  const wy = (e.clientY - H / 2 - state.cam.y) / z;
+  state.cam.x = e.clientX - W / 2 - wx * nz;
+  state.cam.y = e.clientY - H / 2 - wy * nz;
+  state.cam.zoom = nz;
+
+  updateHover();
+}, { passive: false });
+
+function handleClick(sx, sy) {
+  if (!state.selected) return;
+
+  const w = screenToWorld(sx, sy);
+  const g = worldToGrid(w.x, w.y);
+  const gx = Math.round(g.gx), gy = Math.round(g.gy);
+
+  // REMOVE MODE
+  if (state.selected === 'remove') {
+    const i = state.monsters.findIndex(m => m.gx === gx && m.gy === gy);
+    if (i >= 0) state.monsters.splice(i, 1);
+    return;
+  }
+
+  // PLACE MODE
+  if (!canPlace(gx, gy)) return;
+  state.monsters.push({
+    type: state.selected,
+    gx, gy,
+    seed: Math.random() * 10,
+  });
+}
+
+/* ----------------------------- TOOLBAR ----------------------------- */
+const buttons = document.querySelectorAll('.mbtn');
+buttons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const m = btn.dataset.m;
+    state.selected = (state.selected === m) ? null : m;
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.m === state.selected));
+    updateHover();
+  });
+});
+
+/* ------------------------- INITIAL CAMERA FIT ------------------------- */
+function fitCamera() {
+  state.cam.zoom = Math.max(0.45, Math.min(1.15, Math.min(W / 1250, H / 820)));
+  state.cam.x = 0;
+  state.cam.y = 30;
+}
+fitCamera();
+
+/* ------------------------------ GO! ------------------------------ */
+requestAnimationFrame(render);
+</script>
 </body>
 </html>
