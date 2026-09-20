@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>My Singing Monsters — Plant Island</title>
+<title>Verdant Hollow — Island</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; overflow:hidden; background:#0b1a2b;
@@ -11,23 +11,26 @@
   canvas { display:block; position:absolute; inset:0; touch-action:none; cursor:grab; }
   canvas:active { cursor:grabbing; }
 
-  /* ---------- HUD ---------- */
   #top {
     position:fixed; top:0; left:0; right:0; padding:14px 18px;
     display:flex; justify-content:space-between; align-items:flex-start;
-    pointer-events:none;
+    pointer-events:none; z-index:10;
   }
   #island-name {
-    font-size:20px; font-weight:800; letter-spacing:.5px; color:#fff;
+    font-size:22px; font-weight:800; letter-spacing:.5px; color:#fff;
     text-shadow:0 2px 0 rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.35);
-    background:rgba(20,40,25,.45); padding:8px 16px; border-radius:999px;
-    backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.18);
+    background:rgba(20,50,25,.5); padding:9px 18px; border-radius:999px;
+    backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.2);
+  }
+  #island-name small {
+    display:block; font-size:11px; font-weight:700; letter-spacing:2px;
+    opacity:.7; text-transform:uppercase; margin-top:2px;
   }
   #hint {
-    font-size:12px; color:rgba(255,255,255,.75); font-weight:600;
-    background:rgba(0,0,0,.3); padding:8px 14px; border-radius:999px;
-    backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.12);
-    text-align:right; line-height:1.5;
+    font-size:12px; color:rgba(255,255,255,.78); font-weight:600;
+    background:rgba(0,0,0,.32); padding:8px 14px; border-radius:999px;
+    backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.14);
+    text-align:right; line-height:1.6;
   }
 </style>
 </head>
@@ -35,14 +38,14 @@
 <canvas id="game"></canvas>
 
 <div id="top">
-  <div id="island-name">🌿 Plant Island</div>
+  <div id="island-name">🌿 Verdant Hollow<small>The First Isle</small></div>
   <div id="hint">Drag to pan • Scroll to zoom</div>
 </div>
 
 <script>
 /* =========================================================================
-   MY SINGING MONSTERS — PLANT ISLAND  (island only)
-   Everything is drawn procedurally on a single canvas.
+   VERDANT HOLLOW — floating island prototype
+   All geometry is drawn procedurally on a single canvas.
    ========================================================================= */
 
 /* ------------------------------ CANVAS ------------------------------ */
@@ -60,18 +63,16 @@ function resize() {
   canvas.style.height = H + 'px';
 
   skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-  skyGrad.addColorStop(0,    '#7fd4ff');
-  skyGrad.addColorStop(0.45, '#a9e4ff');
-  skyGrad.addColorStop(0.78, '#d9f2d0');
-  skyGrad.addColorStop(1,    '#bfe6a8');
+  skyGrad.addColorStop(0.00, '#63c8f5');
+  skyGrad.addColorStop(0.35, '#9adcf8');
+  skyGrad.addColorStop(0.70, '#cdeed6');
+  skyGrad.addColorStop(1.00, '#b6e0a0');
 }
 window.addEventListener('resize', resize);
 resize();
 
 /* ------------------------------ STATE ------------------------------ */
-const state = {
-  cam: { x: 0, y: 0, zoom: 1 },
-};
+const state = { cam: { x: 0, y: 0, zoom: 1 } };
 
 /* --------------------------- HELPERS --------------------------- */
 function dot(x, y, r) {
@@ -88,294 +89,672 @@ function roundRect(x, y, w, h, r) {
   ctx.arcTo(x,     y,     x + w, y,     r);
   ctx.closePath();
 }
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
 
 /* ============================== DRAWING ============================== */
 
 /* --------------------------- SKY & CLOUDS --------------------------- */
-const clouds = Array.from({ length: 7 }, (_, i) => ({
-  x: Math.random() * 2000,
-  y: 0.06 + Math.random() * 0.5,
-  s: 0.5 + Math.random() * 0.9,
-  v: 6 + Math.random() * 14,
+const clouds = Array.from({ length: 8 }, () => ({
+  x: Math.random() * 2400,
+  y: 0.04 + Math.random() * 0.5,
+  s: 0.5 + Math.random() * 1.1,
+  v: 5 + Math.random() * 16,
 }));
 
 function drawSky(t) {
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // sun glow
-  const g = ctx.createRadialGradient(W * 0.8, H * 0.12, 10, W * 0.8, H * 0.12, 320);
-  g.addColorStop(0, 'rgba(255,255,220,.85)');
-  g.addColorStop(1, 'rgba(255,255,220,0)');
+  // sun glow (upper right)
+  const g = ctx.createRadialGradient(W * 0.82, H * 0.10, 8, W * 0.82, H * 0.10, 340);
+  g.addColorStop(0, 'rgba(255,255,225,.9)');
+  g.addColorStop(0.5, 'rgba(255,255,210,.18)');
+  g.addColorStop(1, 'rgba(255,255,210,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
   for (const c of clouds) {
-    const span = W + 500;
-    const x = ((c.x + t * c.v) % span + span) % span - 250;
+    const span = W + 600;
+    const x = ((c.x + t * c.v) % span + span) % span - 300;
     drawCloud(x, c.y * H, c.s);
   }
 }
 function drawCloud(x, y, s) {
   ctx.save();
-  ctx.globalAlpha = 0.8;
+  ctx.globalAlpha = 0.82;
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  dot(x, y, 42 * s);
-  dot(x + 48 * s, y + 10 * s, 30 * s);
-  dot(x - 48 * s, y + 12 * s, 28 * s);
-  dot(x + 14 * s, y - 20 * s, 32 * s);
-  dot(x - 20 * s, y - 12 * s, 26 * s);
+  dot(x, y, 44 * s);
+  dot(x + 50 * s, y + 10 * s, 32 * s);
+  dot(x - 50 * s, y + 12 * s, 30 * s);
+  dot(x + 15 * s, y - 22 * s, 34 * s);
+  dot(x - 22 * s, y - 14 * s, 28 * s);
+  dot(x + 82 * s, y + 16 * s, 20 * s);
+  dot(x - 82 * s, y + 18 * s, 18 * s);
   ctx.fill();
   ctx.restore();
 }
+
+/* ======================= ISLAND GEOMETRY ======================= */
+const RX  = 430;    // hedge / top rim horizontal radius
+const RY  = 205;    // hedge / top rim vertical radius
+const GRX = 372;    // grass surface horizontal radius
+const GRY = 168;    // grass surface vertical radius
+const BOT = 355;    // bottom of the cliff
+
+function cliffPath() {
+  ctx.beginPath();
+  ctx.moveTo(-RX, 0);
+  ctx.bezierCurveTo(-RX - 15, 140, -370, 300, -130, BOT - 15);
+  ctx.bezierCurveTo(-55, BOT + 8, 55, BOT + 8, 130, BOT - 15);
+  ctx.bezierCurveTo(370, 300, RX + 15, 140, RX, 0);
+  ctx.ellipse(0, 0, RX, RY, 0, 0, Math.PI, false);   // near rim
+  ctx.closePath();
+}
+
+/* ---- pre-generated island surface details ---- */
+const grassDetails = (() => {
+  const rnd = mulberry32(1337);
+  const patches = [], tufts = [], flowers = [];
+  for (let i = 0; i < 22; i++) {
+    const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 0.92;
+    patches.push({
+      x: Math.cos(a) * r * GRX, y: Math.sin(a) * r * GRY - 6,
+      rx: 34 + rnd() * 62, ry: 15 + rnd() * 24, rot: rnd() * Math.PI,
+    });
+  }
+  for (let i = 0; i < 130; i++) {
+    const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 0.94;
+    tufts.push({
+      x: Math.cos(a) * r * GRX, y: Math.sin(a) * r * GRY - 6,
+      s: 0.6 + rnd() * 0.9, tone: rnd(),
+    });
+  }
+  const palette = ['#ffe066', '#ff8fb1', '#fff3f8', '#ffb347', '#d99cff', '#ff7b7b', '#fff8b0'];
+  for (let i = 0; i < 34; i++) {
+    const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 0.9;
+    flowers.push({
+      x: Math.cos(a) * r * GRX, y: Math.sin(a) * r * GRY - 6,
+      c: palette[(rnd() * palette.length) | 0],
+      s: 0.7 + rnd() * 0.8,
+      ph: rnd() * 6.28,
+    });
+  }
+  return { patches, tufts, flowers };
+})();
+
+const cliffSpeckles = (() => {
+  const rnd = mulberry32(90210);
+  const out = [];
+  for (let i = 0; i < 110; i++) {
+    const x = (rnd() * 2 - 1) * 395;
+    const y = 25 + rnd() * 320;
+    out.push({
+      x, y,
+      r: 1.6 + rnd() * 6,
+      dark: rnd() > 0.5,
+      rot: rnd() * 3,
+      sq: 0.55 + rnd() * 0.3,
+    });
+  }
+  return out;
+})();
+
+const mossBlobs = (() => {
+  const rnd = mulberry32(555);
+  const out = [];
+  for (let i = 0; i < 42; i++) {
+    const a = rnd() * Math.PI;   // front half only
+    out.push({
+      x: Math.cos(a) * (RX - 25),
+      y: Math.sin(a) * (RY - 12) + 14,
+      r: 8 + rnd() * 15,
+      tone: rnd(),
+    });
+  }
+  return out;
+})();
 
 /* ------------------------------ ISLAND ------------------------------ */
 function drawIsland(t) {
   ctx.save();
-  // Center the island in the view
-  ctx.translate(W / 2 + state.cam.x, H / 2 + 30 + state.cam.y);
+  ctx.translate(W / 2 + state.cam.x, H * 0.45 + state.cam.y);
 
-  /* ---- 1. DROP SHADOW ---- */
+  /* ============ 1. GROUND SHADOW ============ */
   ctx.save();
-  ctx.globalAlpha = 0.18;
+  ctx.globalAlpha = 0.20;
   ctx.fillStyle = '#000';
-  ctx.translate(0, 140);
-  ctx.scale(1, 0.35);
   ctx.beginPath();
-  ctx.arc(0, 0, 320, 0, Math.PI * 2);
+  ctx.ellipse(0, BOT + 40, 330, 58, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  /* ---- 2. DIRT CLIFF BASE (bottom layers) ---- */
-  // Deep dark base
-  ctx.fillStyle = '#5c3c1c';
-  ctx.beginPath();
-  ctx.moveTo(-300, -20);
-  ctx.bezierCurveTo(-340, 80, -260, 200, 0, 240);
-  ctx.bezierCurveTo(260, 200, 340, 80, 300, -20);
-  ctx.closePath();
+  /* ============ 2. CLIFF BODY ============ */
+  cliffPath();
+  const cg = ctx.createLinearGradient(0, -120, 0, BOT + 30);
+  cg.addColorStop(0.00, '#c08a52');
+  cg.addColorStop(0.18, '#a9723d');
+  cg.addColorStop(0.48, '#85542a');
+  cg.addColorStop(0.76, '#60391b');
+  cg.addColorStop(1.00, '#38200e');
+  ctx.fillStyle = cg;
   ctx.fill();
 
-  // Mid dirt layer
-  ctx.fillStyle = '#8b5a2b';
-  ctx.beginPath();
-  ctx.moveTo(-280, -40);
-  ctx.bezierCurveTo(-310, 70, -230, 180, 0, 215);
-  ctx.bezierCurveTo(230, 180, 310, 70, 280, -40);
-  ctx.closePath();
-  ctx.fill();
-
-  // Light dirt / tan layer just under the hedge
-  ctx.fillStyle = '#d2b48c';
-  ctx.beginPath();
-  ctx.moveTo(-260, -60);
-  ctx.bezierCurveTo(-280, 40, -200, 130, 0, 160);
-  ctx.bezierCurveTo(200, 130, 280, 40, 260, -60);
-  ctx.closePath();
-  ctx.fill();
-
-  // Adding some vertical dirt streaks for texture
-  ctx.strokeStyle = 'rgba(90, 60, 30, 0.15)';
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  for (let i = -200; i <= 200; i += 50) {
-    if (Math.abs(i) < 60) continue;
-    ctx.beginPath();
-    ctx.moveTo(i, 60);
-    ctx.lineTo(i * 0.9, 140);
-    ctx.stroke();
-  }
-
-  /* ---- 3. WOODEN SIDE LOGS (the "ears") ---- */
-  // Left log
+  /* ============ 3. CLIFF TEXTURE (clipped) ============ */
   ctx.save();
-  ctx.translate(-280, -40);
-  ctx.rotate(-0.1);
-  // Log body
-  ctx.fillStyle = '#7b5433';
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 50, 90, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // Log end (cut surface)
-  ctx.fillStyle = '#c49a6c';
-  ctx.beginPath();
-  ctx.ellipse(-10, 0, 35, 70, 0, 0, Math.PI * 2);
-  ctx.fill();
-  // Rings
-  ctx.strokeStyle = '#a0744d';
-  ctx.lineWidth = 3;
-  for (let r = 15; r <= 30; r += 10) {
-    ctx.beginPath();
-    ctx.ellipse(-10, 0, r, r * 2, 0, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  ctx.restore();
+  cliffPath();
+  ctx.clip();
 
-  // Right log
-  ctx.save();
-  ctx.translate(280, -40);
-  ctx.rotate(0.1);
-  ctx.fillStyle = '#7b5433';
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 50, 90, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#c49a6c';
-  ctx.beginPath();
-  ctx.ellipse(10, 0, 35, 70, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#a0744d';
-  ctx.lineWidth = 3;
-  for (let r = 15; r <= 30; r += 10) {
+  // horizontal strata
+  ctx.globalAlpha = 0.09;
+  const strata = [
+    { y: 78,  h: 20, c: '#3a2210' },
+    { y: 138, h: 14, c: '#2b1808' },
+    { y: 190, h: 24, c: '#2b1808' },
+    { y: 248, h: 16, c: '#1f1006' },
+    { y: 296, h: 26, c: '#1f1006' },
+  ];
+  for (const s of strata) {
+    ctx.fillStyle = s.c;
     ctx.beginPath();
-    ctx.ellipse(10, 0, r, r * 2, 0, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  /* ---- 4. HEDGE / BUSHY BORDER ---- */
-  // The hedge is a thick ring of leaves around the top grass
-  // We draw a dark green base first
-  ctx.fillStyle = '#2d6a1f';
-  ctx.beginPath();
-  ctx.ellipse(0, -100, 300, 150, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // A slightly lighter green layer
-  ctx.fillStyle = '#3e8f34';
-  ctx.beginPath();
-  ctx.ellipse(0, -105, 290, 142, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Individual leafy bumps using arcs along the perimeter
-  const hedgeBumps = 40;
-  for (let i = 0; i < hedgeBumps; i++) {
-    const a = (i / hedgeBumps) * Math.PI * 2;
-    const rx = 295, ry = 148;
-    const bx = Math.cos(a) * rx;
-    const by = Math.sin(a) * ry - 100;
-    const size = 22 + Math.sin(a * 5) * 8;
-    
-    ctx.fillStyle = i % 2 === 0 ? '#4e9c2e' : '#3e8f34';
-    ctx.beginPath();
-    ctx.arc(bx, by, size, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Highlight
-    ctx.fillStyle = 'rgba(150, 220, 100, 0.4)';
-    ctx.beginPath();
-    ctx.arc(bx - 4, by - 6, size * 0.6, 0, Math.PI * 2);
+    ctx.moveTo(-RX - 30, s.y);
+    for (let x = -RX - 30; x <= RX + 30; x += 55) {
+      ctx.lineTo(x, s.y + Math.sin(x * 0.014 + s.y * 0.7) * 7);
+    }
+    ctx.lineTo(RX + 30, s.y + s.h);
+    for (let x = RX + 30; x >= -RX - 30; x -= 55) {
+      ctx.lineTo(x, s.y + s.h + Math.sin(x * 0.014 + s.y * 0.7) * 7);
+    }
+    ctx.closePath();
     ctx.fill();
   }
 
-  /* ---- 5. TOP GRASS PLATEAU ---- */
-  // Base green
-  ctx.fillStyle = '#6abf40';
-  ctx.beginPath();
-  ctx.ellipse(0, -110, 270, 130, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // fine speckles
+  ctx.globalAlpha = 0.20;
+  for (const s of cliffSpeckles) {
+    ctx.fillStyle = s.dark ? '#241305' : '#d8ad76';
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y, s.r, s.r * s.sq, s.rot, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  // Gradient to give it a slight dome look
-  const grassGrad = ctx.createRadialGradient(-50, -150, 20, 0, -110, 280);
-  grassGrad.addColorStop(0, '#82d654');
-  grassGrad.addColorStop(0.6, '#6abf40');
-  grassGrad.addColorStop(1, '#4b9629');
-  ctx.fillStyle = grassGrad;
-  ctx.beginPath();
-  ctx.ellipse(0, -110, 270, 130, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // embedded rocks
+  ctx.globalAlpha = 0.34;
+  const rocks = [
+    { x: -235, y: 170, r: 28 }, { x: 215, y: 148, r: 24 },
+    { x: -145, y: 272, r: 21 }, { x: 168, y: 262, r: 25 },
+    { x: 32,   y: 302, r: 19 }, { x: -305, y: 98,  r: 17 },
+    { x: 308,  y: 102, r: 19 }, { x: -60,  y: 205, r: 15 },
+    { x: 92,   y: 220, r: 14 },
+  ];
+  for (const rk of rocks) {
+    ctx.fillStyle = '#6d675f';
+    ctx.beginPath();
+    ctx.ellipse(rk.x, rk.y, rk.r, rk.r * 0.68, 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#948d84';
+    ctx.beginPath();
+    ctx.ellipse(rk.x - rk.r * 0.28, rk.y - rk.r * 0.32,
+                rk.r * 0.55, rk.r * 0.38, 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(30,18,8,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(rk.x + rk.r * 0.3, rk.y + rk.r * 0.32,
+                rk.r * 0.5, rk.r * 0.3, 0.22, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
-  // Subtle inner shadow for depth
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-  ctx.lineWidth = 15;
+  // moss band under the hedge
+  ctx.globalAlpha = 0.60;
+  ctx.strokeStyle = '#3a8a2c';
+  ctx.lineWidth = 24;
   ctx.beginPath();
-  ctx.ellipse(0, -110, 260, 120, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 8, RX - 10, RY - 6, 0, 0, Math.PI, false);
   ctx.stroke();
 
-  /* ---- 6. WOODEN DOOR / HATCH AT THE BOTTOM ---- */
-  // Positioned at the bottom center of the dirt cliff
-  ctx.save();
-  ctx.translate(0, 150);
-
-  // Door arch (dark outline)
-  ctx.fillStyle = '#4a2e1b';
+  ctx.globalAlpha = 0.42;
+  ctx.strokeStyle = '#59b83e';
+  ctx.lineWidth = 12;
   ctx.beginPath();
-  ctx.moveTo(-45, 40);
-  ctx.lineTo(-45, 0);
-  ctx.arc(0, 0, 45, Math.PI, 0);
-  ctx.lineTo(45, 40);
-  ctx.closePath();
-  ctx.fill();
+  ctx.ellipse(0, 2, RX - 10, RY - 6, 0, 0, Math.PI, false);
+  ctx.stroke();
 
-  // Door fill (wooden planks)
-  ctx.fillStyle = '#8b5a2b';
-  ctx.beginPath();
-  ctx.moveTo(-38, 40);
-  ctx.lineTo(-38, 0);
-  ctx.arc(0, 0, 38, Math.PI, 0);
-  ctx.lineTo(38, 40);
-  ctx.closePath();
-  ctx.fill();
-
-  // Vertical plank lines
-  ctx.strokeStyle = '#5c3c1c';
-  ctx.lineWidth = 3;
-  for (let x = -30; x <= 30; x += 15) {
+  // moss blobs
+  for (const m of mossBlobs) {
+    ctx.globalAlpha = 0.35 + m.tone * 0.25;
+    ctx.fillStyle = m.tone > 0.5 ? '#4ea832' : '#317a24';
     ctx.beginPath();
-    ctx.moveTo(x, 40);
-    ctx.lineTo(x, -30);
-    ctx.stroke();
-  }
-
-  // Horizontal crossbeam
-  ctx.fillStyle = '#5c3c1c';
-  roundRect(-40, 10, 80, 8, 2);
-  ctx.fill();
-
-  // Little doorknob
-  ctx.fillStyle = '#c49a6c';
-  ctx.beginPath();
-  ctx.arc(25, 25, 5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-
-  /* ---- 7. VINES HANGING FROM THE HEDGE ---- */
-  ctx.strokeStyle = '#3e8f34';
-  ctx.lineWidth = 6;
-  ctx.lineCap = 'round';
-  const vines = [
-    { x: -180, y: -40, len: 60, sway: 0.2 },
-    { x: -100, y: -10, len: 80, sway: -0.1 },
-    { x: 100,  y: -10, len: 80, sway: 0.1 },
-    { x: 180,  y: -40, len: 60, sway: -0.2 },
-    { x: -220, y: -60, len: 45, sway: 0.15 },
-    { x: 220,  y: -60, len: 45, sway: -0.15 },
-  ];
-
-  for (const v of vines) {
-    const sway = Math.sin(t * 1.5 + v.x) * 5 * v.sway;
+    ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#8ede66';
     ctx.beginPath();
-    ctx.moveTo(v.x, v.y);
-    ctx.quadraticCurveTo(v.x + sway, v.y + v.len * 0.6, v.x + sway * 1.5, v.y + v.len);
-    ctx.stroke();
-
-    // A few leaves on the vine
-    ctx.fillStyle = '#4e9c2e';
-    ctx.beginPath();
-    ctx.ellipse(v.x + sway, v.y + v.len * 0.5, 8, 5, 0.5, 0, Math.PI * 2);
+    ctx.arc(m.x - m.r * 0.3, m.y - m.r * 0.3, m.r * 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  ctx.restore();   // end cliff clip
+
+  /* ============ 4. RIM LIGHT ON CLIFF EDGE ============ */
+  cliffPath();
+  ctx.strokeStyle = 'rgba(232,196,148,0.30)';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+
+  /* ============ 5. SIDE ROOT-LOGS (the "ears") ============ */
+  drawRootLog(-402, -72, -0.22, 1.05, 1);
+  drawRootLog( 402, -72,  0.22, 1.05, -1);
+
+  /* ============ 6. HEDGE RING ============ */
+  ctx.save();
+
+  // dark base ring
+  ctx.strokeStyle = '#1f5413';
+  ctx.lineWidth = 62;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 400, 189, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // mid green ring
+  ctx.strokeStyle = '#2e7a1d';
+  ctx.lineWidth = 50;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 399, 188, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // lighter top ring
+  ctx.strokeStyle = '#429b2a';
+  ctx.lineWidth = 32;
+  ctx.beginPath();
+  ctx.ellipse(0, -2, 397, 186, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // leafy bumps around the rim
+  const BUMPS = 64;
+  for (let i = 0; i < BUMPS; i++) {
+    const a = (i / BUMPS) * Math.PI * 2;
+    const bx = Math.cos(a) * 404;
+    const by = Math.sin(a) * 191;
+    const r = 24 + Math.sin(i * 2.37) * 7 + Math.cos(i * 1.13) * 4;
+
+    // light direction: sun is upper-right → normal (0.7, -0.7)
+    const nx = Math.cos(a), ny = Math.sin(a);
+    const light = Math.max(0, nx * 0.72 + ny * -0.70);
+
+    const base = mixColor('#2c7119', '#63c043', light * 0.85 + 0.12);
+    ctx.fillStyle = base;
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // highlight cap
+    ctx.fillStyle = `rgba(180,240,130,${0.14 + light * 0.34})`;
+    ctx.beginPath();
+    ctx.arc(bx - r * 0.28, by - r * 0.34, r * 0.58, 0, Math.PI * 2);
+    ctx.fill();
+
+    // shadow under
+    ctx.fillStyle = 'rgba(15,50,8,0.22)';
+    ctx.beginPath();
+    ctx.arc(bx + r * 0.22, by + r * 0.42, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  /* ============ 7. GRASS SURFACE ============ */
+  // base
+  ctx.fillStyle = '#5cb63a';
+  ctx.beginPath();
+  ctx.ellipse(0, -6, GRX, GRY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // radial dome shading
+  const gg = ctx.createRadialGradient(-90, -100, 25, 0, -6, GRX * 1.08);
+  gg.addColorStop(0.00, 'rgba(158,232,104,0.60)');
+  gg.addColorStop(0.42, 'rgba(110,196,68,0.18)');
+  gg.addColorStop(0.80, 'rgba(58,140,38,0.16)');
+  gg.addColorStop(1.00, 'rgba(28,80,20,0.42)');
+  ctx.fillStyle = gg;
+  ctx.beginPath();
+  ctx.ellipse(0, -6, GRX, GRY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* ---- grass texture (clipped to the surface) ---- */
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(0, -6, GRX - 2, GRY - 2, 0, 0, Math.PI * 2);
+  ctx.clip();
+
+  // soft darker patches
+  ctx.globalAlpha = 0.13;
+  for (const p of grassDetails.patches) {
+    ctx.fillStyle = '#2f7a1e';
+    ctx.beginPath();
+    ctx.ellipse(p.x, p.y, p.rx, p.ry, p.rot, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // grass tufts (little "v" blades)
+  ctx.globalAlpha = 0.55;
+  ctx.lineCap = 'round';
+  for (const tf of grassDetails.tufts) {
+    const dark = tf.tone > 0.5;
+    ctx.strokeStyle = dark ? '#3f8f27' : '#7ed04a';
+    ctx.lineWidth = 1.8 * tf.s;
+    const h = 6 * tf.s;
+    ctx.beginPath();
+    ctx.moveTo(tf.x, tf.y);
+    ctx.lineTo(tf.x - 2.4 * tf.s, tf.y - h);
+    ctx.moveTo(tf.x, tf.y);
+    ctx.lineTo(tf.x + 2.4 * tf.s, tf.y - h * 0.85);
+    ctx.stroke();
+  }
+
+  // tiny flowers
+  for (const f of grassDetails.flowers) {
+    const sway = Math.sin(t * 1.7 + f.ph) * 0.9 * f.s;
+    ctx.save();
+    ctx.translate(f.x + sway, f.y);
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = f.c;
+    ctx.beginPath();
+    ctx.arc(0, -2 * f.s, 2.9 * f.s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.beginPath();
+    ctx.arc(-0.9 * f.s, -3 * f.s, 1.05 * f.s, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.restore();   // end grass clip
+
+  // inner rim shadow (ground meets hedge)
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = '#1e5410';
+  ctx.lineWidth = 26;
+  ctx.beginPath();
+  ctx.ellipse(0, -6, GRX - 6, GRY - 3, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  /* ============ 8. HANGING VINES ============ */
+  const vines = [
+    { x: -300, y: 62,  len: 62, sw:  0.9, ph: 0.4 },
+    { x: -205, y: 140, len: 84, sw: -0.7, ph: 1.9 },
+    { x:  -80, y: 180, len: 70, sw:  0.6, ph: 3.1 },
+    { x:   88, y: 178, len: 76, sw: -0.8, ph: 0.9 },
+    { x:  212, y: 136, len: 88, sw:  0.7, ph: 2.4 },
+    { x:  300, y: 58,  len: 58, sw: -0.9, ph: 1.2 },
+    { x: -352, y: -20, len: 46, sw:  0.5, ph: 4.0 },
+    { x:  352, y: -20, len: 46, sw: -0.5, ph: 5.2 },
+  ];
+  for (const v of vines) {
+    const sway = Math.sin(t * 1.4 + v.ph) * 7 * v.sw;
+    ctx.strokeStyle = '#2f7a1d';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(v.x, v.y);
+    ctx.quadraticCurveTo(
+      v.x + sway * 0.6, v.y + v.len * 0.55,
+      v.x + sway,       v.y + v.len
+    );
+    ctx.stroke();
+
+    // little leaves along the vine
+    for (let k = 1; k <= 3; k++) {
+      const p = k / 4;
+      const lx = v.x + sway * p * p;
+      const ly = v.y + v.len * p;
+      const side = k % 2 === 0 ? 1 : -1;
+      ctx.fillStyle = k % 2 ? '#3e9a29' : '#54b23a';
+      ctx.beginPath();
+      ctx.ellipse(lx + side * 6, ly, 7, 4.2, side * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  /* ============ 9. WOODEN GATE (bottom of the cliff) ============ */
+  drawGate(t);
+
+  /* ============ 10. FOREGROUND GRASS TUFTS over the hedge ============ */
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  const fg = [
+    { x: -330, y: 92,  h: 16 }, { x: -260, y: 150, h: 20 },
+    { x:  265, y: 148, h: 19 }, { x:  336, y: 88,  h: 15 },
+    { x:  -30, y: 190, h: 22 }, { x:   34, y: 192, h: 21 },
+    { x: -180, y: 178, h: 18 }, { x:  186, y: 174, h: 18 },
+  ];
+  for (const g of fg) {
+    const sway = Math.sin(t * 1.6 + g.x * 0.02) * 1.4;
+    ctx.strokeStyle = '#2f7a1d';
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y);
+    ctx.lineTo(g.x - 5 + sway, g.y - g.h);
+    ctx.moveTo(g.x, g.y);
+    ctx.lineTo(g.x + 1 + sway, g.y - g.h * 1.15);
+    ctx.moveTo(g.x, g.y);
+    ctx.lineTo(g.x + 6 + sway, g.y - g.h * 0.85);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.restore();   // end island transform
+}
+
+/* -------------------------- ROOT LOG (side ear) -------------------------- */
+function drawRootLog(cx, cy, angle, scale, flip) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.scale(flip * scale, scale);
+
+  // bark body
+  ctx.fillStyle = '#5c3a1c';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 62, 100, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // bark ridges
+  ctx.strokeStyle = 'rgba(30,16,6,0.5)';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  for (let i = -70; i <= 70; i += 18) {
+    ctx.beginPath();
+    ctx.moveTo(-42, i);
+    ctx.quadraticCurveTo(0, i + 6, 42, i);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(150,110,70,0.35)';
+  ctx.lineWidth = 2.5;
+  for (let i = -62; i <= 70; i += 18) {
+    ctx.beginPath();
+    ctx.moveTo(-40, i - 4);
+    ctx.quadraticCurveTo(0, i + 2, 40, i - 4);
+    ctx.stroke();
+  }
+
+  // end grain (cut face)
+  ctx.fillStyle = '#c9a06b';
+  ctx.beginPath();
+  ctx.ellipse(-24, 0, 32, 78, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // growth rings
+  ctx.strokeStyle = '#a37445';
+  ctx.lineWidth = 2.5;
+  for (let r = 9; r <= 30; r += 7) {
+    ctx.beginPath();
+    ctx.ellipse(-24, 0, r, r * 2.35, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // centre
+  ctx.fillStyle = '#8a5f34';
+  ctx.beginPath();
+  ctx.ellipse(-24, 0, 5, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // rim highlight
+  ctx.strokeStyle = 'rgba(255,225,180,0.45)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.ellipse(-24, 0, 32, 78, 0, 0, Math.PI * 2);
+  ctx.stroke();
 
   ctx.restore();
 }
 
+/* ------------------------------ WOODEN GATE ------------------------------ */
+function drawGate(t) {
+  ctx.save();
+  ctx.translate(0, 250);
+
+  /* --- outer wooden frame --- */
+  ctx.fillStyle = '#b8894f';
+  roundRect(-118, -78, 236, 156, 46);
+  ctx.fill();
+
+  // frame shading (bottom)
+  ctx.fillStyle = 'rgba(90,52,20,0.28)';
+  roundRect(-118, 40, 236, 38, 30);
+  ctx.fill();
+
+  // frame highlight (top)
+  ctx.fillStyle = 'rgba(255,224,176,0.35)';
+  roundRect(-114, -74, 228, 20, 40);
+  ctx.fill();
+
+  // frame outline
+  ctx.strokeStyle = 'rgba(70,40,14,0.55)';
+  ctx.lineWidth = 4;
+  roundRect(-118, -78, 236, 156, 46);
+  ctx.stroke();
+
+  /* --- inner recess --- */
+  ctx.fillStyle = '#2a1408';
+  roundRect(-96, -58, 192, 132, 34);
+  ctx.fill();
+
+  /* --- two door panels --- */
+  const panels = [
+    { x: -90, w: 84, light: 1.0 },
+    { x:   6, w: 84, light: 0.86 },
+  ];
+  for (const p of panels) {
+    // panel base
+    ctx.fillStyle = '#7b4520';
+    roundRect(p.x, -52, p.w, 122, 26);
+    ctx.fill();
+
+    // vertical plank shading
+    const pg = ctx.createLinearGradient(p.x, 0, p.x + p.w, 0);
+    pg.addColorStop(0.00, `rgba(30,14,4,${0.32 * p.light})`);
+    pg.addColorStop(0.35, `rgba(255,200,140,${0.10 * p.light})`);
+    pg.addColorStop(1.00, `rgba(30,14,4,${0.42 * p.light})`);
+    ctx.fillStyle = pg;
+    roundRect(p.x, -52, p.w, 122, 26);
+    ctx.fill();
+
+    // plank separations
+    ctx.strokeStyle = 'rgba(40,20,6,0.55)';
+    ctx.lineWidth = 2.5;
+    for (let k = 1; k <= 3; k++) {
+      const px = p.x + (p.w / 4) * k;
+      ctx.beginPath();
+      ctx.moveTo(px, -48);
+      ctx.lineTo(px, 66);
+      ctx.stroke();
+    }
+
+    // panel outline
+    ctx.strokeStyle = 'rgba(45,22,6,0.7)';
+    ctx.lineWidth = 3;
+    roundRect(p.x, -52, p.w, 122, 26);
+    ctx.stroke();
+
+    // horizontal brace
+    ctx.fillStyle = 'rgba(45,22,6,0.6)';
+    roundRect(p.x + 3, 6, p.w - 6, 9, 4);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(200,150,90,0.22)';
+    roundRect(p.x + 3, 4, p.w - 6, 4, 2);
+    ctx.fill();
+  }
+
+  /* --- middle divider between panels --- */
+  ctx.fillStyle = '#b8894f';
+  roundRect(-9, -58, 18, 132, 8);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(70,40,14,0.4)';
+  roundRect(-9, -58, 18, 132, 8);
+  ctx.stroke();
+
+  /* --- iron studs on the frame --- */
+  ctx.fillStyle = '#5a3a1a';
+  const studs = [
+    [-104, -60], [104, -60], [-104, 60], [104, 60],
+    [-104, 0],   [104, 0],
+  ];
+  for (const [sx, sy] of studs) {
+    ctx.beginPath();
+    ctx.arc(sx, sy, 5.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,220,170,0.35)';
+    ctx.beginPath();
+    ctx.arc(sx - 1.5, sy - 1.5, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#5a3a1a';
+  }
+
+  /* --- small round window above the doors --- */
+  ctx.fillStyle = '#b8894f';
+  ctx.beginPath();
+  ctx.arc(0, -80, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3a1e0c';
+  ctx.beginPath();
+  ctx.arc(0, -80, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,220,170,0.4)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-14, -80); ctx.lineTo(14, -80);
+  ctx.moveTo(0, -94);  ctx.lineTo(0, -66);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/* ------------------------------ COLOR MIX ------------------------------ */
+function mixColor(a, b, t) {
+  t = Math.max(0, Math.min(1, t));
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ar = (pa >> 16) & 255, ag = (pa >> 8) & 255, ab = pa & 255;
+  const br = (pb >> 16) & 255, bg = (pb >> 8) & 255, bb = pb & 255;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  return `rgb(${r},${g},${bl})`;
+}
+
 /* ------------------------------ VIGNETTE ------------------------------ */
 function drawVignette() {
-  const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35,
-                                     W / 2, H / 2, Math.max(W, H) * 0.78);
+  const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.34,
+                                     W / 2, H / 2, Math.max(W, H) * 0.80);
   g.addColorStop(0, 'rgba(0,0,0,0)');
-  g.addColorStop(1, 'rgba(0,20,40,0.28)');
+  g.addColorStop(1, 'rgba(0,22,45,0.30)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 }
@@ -383,8 +762,8 @@ function drawVignette() {
 /* ============================== LOOP ============================== */
 function render(now) {
   const t = now / 1000;
-
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
   drawSky(t);
   drawIsland(t);
   drawVignette();
@@ -393,45 +772,41 @@ function render(now) {
 }
 
 /* ============================ INTERACTION ============================ */
-let isDragging = false;
-let lastX = 0, lastY = 0;
+let isDragging = false, lastX = 0, lastY = 0;
 
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
   isDragging = true;
-  lastX = e.clientX;
-  lastY = e.clientY;
+  lastX = e.clientX; lastY = e.clientY;
 });
-
 canvas.addEventListener('pointermove', (e) => {
   if (!isDragging) return;
-  const dx = e.clientX - lastX;
-  const dy = e.clientY - lastY;
-  state.cam.x += dx;
-  state.cam.y += dy;
-  lastX = e.clientX;
-  lastY = e.clientY;
+  state.cam.x += e.clientX - lastX;
+  state.cam.y += e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
 });
-
-canvas.addEventListener('pointerup', () => { isDragging = false; });
-canvas.addEventListener('pointercancel', () => { isDragging = false; });
+canvas.addEventListener('pointerup',    () => { isDragging = false; });
+canvas.addEventListener('pointercancel',() => { isDragging = false; });
 
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
-  const z = state.cam.zoom;
-  const nz = Math.min(2.2, Math.max(0.45, z * (e.deltaY > 0 ? 0.9 : 1.1)));
+  const z  = state.cam.zoom;
+  const nz = Math.min(3.0, Math.max(0.35, z * (e.deltaY > 0 ? 0.9 : 1.1)));
 
-  // Zoom towards cursor
+  // zoom toward the cursor
   const wx = (e.clientX - W / 2 - state.cam.x) / z;
-  const wy = (e.clientY - H / 2 - state.cam.y) / z;
+  const wy = (e.clientY - H * 0.45 - state.cam.y) / z;
   state.cam.x = e.clientX - W / 2 - wx * nz;
-  state.cam.y = e.clientY - H / 2 - wy * nz;
+  state.cam.y = e.clientY - H * 0.45 - wy * nz;
   state.cam.zoom = nz;
 }, { passive: false });
 
 /* ------------------------- INITIAL CAMERA FIT ------------------------- */
 function fitCamera() {
-  state.cam.zoom = Math.max(0.45, Math.min(1.0, Math.min(W / 1300, H / 900)));
+  // island bounding box ≈ 900 × 640
+  const zoomX = (W * 0.94) / 900;
+  const zoomY = (H * 0.86) / 640;
+  state.cam.zoom = Math.max(0.42, Math.min(1.45, Math.min(zoomX, zoomY)));
   state.cam.x = 0;
   state.cam.y = 0;
 }
