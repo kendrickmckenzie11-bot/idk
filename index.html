@@ -1,1489 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baseplate — AAA</title>
-<style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #050810;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  canvas { display: block; }
-
-  #crosshair {
-    position: fixed; left: 50%; top: 50%;
-    width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%;
-    background: rgba(255,255,255,.8);
-    box-shadow: 0 0 4px rgba(0,0,0,.7);
-    pointer-events: none; opacity: 0; transition: opacity .25s ease;
-  }
-  #crosshair.show { opacity: 1; }
-
-  #overlay {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 14px;
-    background: radial-gradient(ellipse at center, rgba(10,18,30,.5) 0%, rgba(4,8,16,.82) 100%);
-    backdrop-filter: blur(6px);
-    color: #fff; text-align: center; cursor: pointer;
-    user-select: none; transition: opacity .35s ease;
-    text-shadow: 0 2px 24px rgba(0,0,0,.75);
-  }
-  #overlay.hidden { opacity: 0; pointer-events: none; }
-  #overlay h1 {
-    margin: 0; font-size: 42px; font-weight: 200; letter-spacing: 12px;
-    text-transform: uppercase; opacity: .9;
-  }
-  #overlay .play { font-size: 15px; font-weight: 500; opacity: .85; letter-spacing: 2px; text-transform: uppercase; }
-  #overlay .keys { font-size: 12px; opacity: .5; line-height: 2.4; letter-spacing: 1px; }
-  kbd {
-    background: rgba(255,255,255,.1);
-    border: 1px solid rgba(255,255,255,.18);
-    border-radius: 4px; padding: 2px 7px;
-    font-family: inherit; font-size: 11px;
-  }
-  #loading {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 16px;
-    background: #050810; color: #7a8fa8;
-    font-size: 11px; letter-spacing: .35em; text-transform: uppercase;
-    transition: opacity .6s ease; z-index: 100;
-  }
-  #loading.hidden { opacity: 0; pointer-events: none; }
-  #loading .bar { width: 180px; height: 1px; background: rgba(255,255,255,.08); position: relative; overflow: hidden; }
-  #loading .bar::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, #7ab0ff, transparent);
-    animation: sweep 1.6s ease-in-out infinite;
-  }
-  @keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-  #loading .err { color: #ff8888; text-transform: none; letter-spacing: 0;
-    font-size: 12px; max-width: 70vw; text-align: center; margin-top: 10px; }
-  #hud {
-    position: fixed; top: 12px; right: 14px;
-    color: rgba(255,255,255,.45); font-size: 10px;
-    font-variant-numeric: tabular-nums;
-    text-shadow: 0 1px 3px rgba(0,0,0,.8);
-    pointer-events: none; user-select: none;
-    letter-spacing: .15em;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen3.8-27B · OpenRouter Chat</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f12;
+            color: #e4e4e7;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #27272a;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        h1 { font-size: 1.1rem; font-weight: 500; color: #c4b5fd; }
+        .key-area { display: flex; gap: 0.5rem; align-items: center; }
+        .key-area input {
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            color: #e4e4e7;
+            padding: 0.4rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            width: 220px;
+        }
+        .key-area input:focus { outline: 1px solid #8b5cf6; border-color: #8b5cf6; }
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            scroll-behavior: smooth;
+        }
+        .msg {
+            max-width: 85%;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            line-height: 1.55;
+            font-size: 0.92rem;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: #4c1d95;
+            color: #f3e8ff;
+            border-bottom-right-radius: 3px;
+        }
+        .msg.assistant {
+            align-self: flex-start;
+            background: #18181b;
+            border: 1px solid #27272a;
+            color: #d4d4d8;
+            border-bottom-left-radius: 3px;
+        }
+        .msg.system {
+            align-self: center;
+            background: transparent;
+            color: #71717a;
+            font-size: 0.8rem;
+            font-style: italic;
+            max-width: 100%;
+        }
+        .msg.error { border-color: #7f1d1d; background: #1c0a0a; color: #fca5a5; }
+        #input-area {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #27272a;
+        }
+        #prompt {
+            flex: 1;
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            color: #e4e4e7;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-family: inherit;
+            resize: none;
+            min-height: 52px;
+            max-height: 150px;
+        }
+        #prompt:focus { outline: 1px solid #8b5cf6; border-color: #8b5cf6; }
+        button {
+            background: #7c3aed;
+            border: none;
+            color: white;
+            padding: 0 1.4rem;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+            min-height: 52px;
+        }
+        button:hover:not(:disabled) { background: #6d28d9; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .status {
+            font-size: 0.75rem;
+            color: #71717a;
+            margin-left: 0.5rem;
+        }
+        .reasoning {
+            font-size: 0.8rem;
+            color: #a78bfa;
+            font-style: italic;
+            padding: 0.4rem 0.8rem;
+            margin-top: 0.3rem;
+            border-left: 2px solid #4c1d95;
+            background: #0f0f12;
+            border-radius: 0 6px 6px 0;
+        }
+    </style>
 </head>
 <body>
+    <header>
+        <h1>⚡ Qwen3.8-27B · OpenRouter</h1>
+        <div class="key-area">
+            <input type="password" id="apiKey" placeholder="sk-or-v1-..." autocomplete="off">
+            <span class="status" id="status"></span>
+        </div>
+    </header>
 
-<div id="loading">
-  <div>Generating world</div>
-  <div class="bar"></div>
-</div>
-<div id="hud"></div>
-<div id="crosshair"></div>
+    <div id="chat">
+        <div class="msg system">Enter your OpenRouter API key above, then start chatting.</div>
+    </div>
 
-<div id="overlay">
-  <h1>Baseplate</h1>
-  <div class="play">Click to play</div>
-  <div class="keys">
-    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &nbsp;move &nbsp;·&nbsp;
-    <kbd>Mouse</kbd> &nbsp;look &nbsp;·&nbsp;
-    <kbd>Space</kbd> &nbsp;jump &nbsp;·&nbsp;
-    <kbd>Shift</kbd> &nbsp;sprint &nbsp;·&nbsp;
-    <kbd>Esc</kbd> &nbsp;release
-  </div>
-</div>
+    <div id="input-area">
+        <textarea id="prompt" rows="1" placeholder="Ask Qwen3.8 anything..."></textarea>
+        <button id="sendBtn">Send</button>
+    </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
+    <script>
+        const chatEl      = document.getElementById('chat');
+        const promptEl    = document.getElementById('prompt');
+        const sendBtn     = document.getElementById('sendBtn');
+        const apiKeyEl    = document.getElementById('apiKey');
+        const statusEl    = document.getElementById('status');
 
-<script type="module">
-import * as THREE from 'three';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
-import { EffectComposer }     from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass }         from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass }    from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass }         from 'three/addons/postprocessing/OutputPass.js';
-import { ShaderPass }         from 'three/addons/postprocessing/ShaderPass.js';
-import { SMAAPass }           from 'three/addons/postprocessing/SMAAPass.js';
+        // ---- conversation history (sent on every request) ----
+        let messages = [
+            { role: 'system', content: 'You are Qwen3.8, a helpful and harmless AI assistant.' }
+        ];
 
-/* ===================================================================== */
-/*  Tunables                                                             */
-/* ===================================================================== */
-const EYE_HEIGHT = 1.68;
-const WALK_SPEED = 3.2;
-const RUN_SPEED  = 6.6;
-const GRAVITY    = 24.0;
-const JUMP_SPEED = 6.8;
+        let isGenerating = false;
 
-const MB_STRENGTH = 1.35;
-const MB_MAX      = 0.045;
-
-const LAKE_X = 0, LAKE_Z = -55, LAKE_RADIUS = 42, LAKE_Y = 0.08;
-
-const SUN_ELEV = 26 * Math.PI / 180;
-const SUN_AZIM = 135 * Math.PI / 180;
-const SUN_DIR = new THREE.Vector3(
-  Math.cos(SUN_ELEV) * Math.sin(SUN_AZIM),
-  Math.sin(SUN_ELEV),
-  Math.cos(SUN_ELEV) * Math.cos(SUN_AZIM)
-).normalize();
-
-const HORIZON_LIN = new THREE.Color().setRGB(0.72, 0.82, 0.92, THREE.LinearSRGBColorSpace);
-
-const UP = new THREE.Vector3(0, 1, 0);
-
-/* ===================================================================== */
-/*  State                                                                */
-/* ===================================================================== */
-let scene, camera, renderer, composer, controls, sky, water;
-let pmremRT = null;
-let gradePass, motionBlurPass;
-let ready = false;
-
-const clock  = new THREE.Clock();
-const keys   = Object.create(null);
-const clouds = [];
-const cloudGroup = new THREE.Group();
-
-const _prevQuat = new THREE.Quaternion();
-const _deltaQ   = new THREE.Quaternion();
-const _deltaE   = new THREE.Euler();
-
-const player = {
-  pos: new THREE.Vector3(0, EYE_HEIGHT, 0),
-  vel: new THREE.Vector3(),
-  grounded: true,
-  bobPhase: 0,
-  bobBlend: 0,
-  idlePhase: 0,
-  roll: 0
-};
-
-const forward = new THREE.Vector3();
-const right   = new THREE.Vector3();
-const wish    = new THREE.Vector3();
-
-const hud = document.getElementById('hud');
-let fpsAccum = 0, fpsFrames = 0;
-
-/* ===================================================================== */
-/*  Boot                                                                 */
-/* ===================================================================== */
-try {
-  init();
-  ready = true;
-  hideLoading();
-} catch (err) {
-  console.error('Init failed:', err);
-  showError(err);
-}
-if (ready) animate();
-
-function hideLoading() {
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.getElementById('loading').classList.add('hidden');
-  }));
-}
-function showError(err) {
-  const el = document.getElementById('loading');
-  el.innerHTML = '';
-  const m = document.createElement('div'); m.textContent = 'Failed to start';
-  const d = document.createElement('div'); d.className = 'err';
-  d.textContent = String(err && err.message ? err.message : err);
-  el.appendChild(m); el.appendChild(d);
-}
-
-/* ===================================================================== */
-/*  Init                                                                 */
-/* ===================================================================== */
-function init() {
-  renderer = new THREE.WebGLRenderer({
-    antialias: false,
-    powerPreference: 'high-performance',
-    stencil: false,
-    alpha: false
-  });
-  const pixelRatio = Math.min(window.devicePixelRatio, 1.5);
-  renderer.setPixelRatio(pixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.95;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  document.body.appendChild(renderer.domElement);
-
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
-
-  scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(HORIZON_LIN, 0.00042);
-
-  camera = new THREE.PerspectiveCamera(
-    70, window.innerWidth / window.innerHeight, 0.1, 30000
-  );
-  camera.rotation.order = 'YXZ';
-  camera.position.copy(player.pos);
-  _prevQuat.copy(camera.quaternion);
-
-  /* ---------- sun ---------- */
-  const sun = new THREE.DirectionalLight(0xfff1d6, 2.7);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left   = -95;
-  sun.shadow.camera.right  =  95;
-  sun.shadow.camera.top    =  95;
-  sun.shadow.camera.bottom = -95;
-  sun.shadow.camera.near   = 1;
-  sun.shadow.camera.far    = 500;
-  sun.shadow.bias = -0.00015;
-  sun.shadow.normalBias = 0.022;
-  scene.add(sun);
-  scene.add(sun.target);
-  scene.userData.sun = sun;
-
-  /* ---------- ground ---------- */
-  const groundMaps = generateConcreteTextures(512, maxAniso);
-  const detailTex  = generateDetailTexture(256, maxAniso);
-
-  const GROUND_SIZE = 6000;
-  const TILE = 6;
-  groundMaps.albedo.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
-  groundMaps.normal.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
-  groundMaps.rough.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
-  groundMaps.ao.repeat.set(GROUND_SIZE / TILE, GROUND_SIZE / TILE);
-
-  const groundMat = new THREE.MeshStandardMaterial({
-    map: groundMaps.albedo,
-    normalMap: groundMaps.normal,
-    normalScale: new THREE.Vector2(0.85, 0.85),
-    roughnessMap: groundMaps.rough,
-    aoMap: groundMaps.ao,
-    aoMapIntensity: 0.8,
-    roughness: 1.0,
-    metalness: 0.0,
-    envMapIntensity: 1.0,
-    dithering: true
-  });
-
-  groundMat.onBeforeCompile = (shader) => {
-    shader.uniforms.detailMap = { value: detailTex };
-    shader.fragmentShader = `uniform sampler2D detailMap;\n` + shader.fragmentShader;
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <map_fragment>',
-      /* glsl */`
-        #include <map_fragment>
-        vec2 detailUv = vMapUv * 24.0;
-        float detail = texture2D(detailMap, detailUv).r;
-        diffuseColor.rgb *= 0.78 + 0.44 * detail;
-      `
-    );
-  };
-
-  const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, 1, 1);
-  groundGeo.rotateX(-Math.PI / 2);
-  groundGeo.setAttribute('uv2', groundGeo.attributes.uv);
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  /* ---------- distant terrain ---------- */
-  scene.add(makeDistantTerrain());
-
-  /* ---------- forest ---------- */
-  const forest = makeForest(90);
-  scene.add(forest.trunks);
-  scene.add(forest.foliage);
-
-  /* ---------- undergrowth ---------- */
-  scene.add(makeBushes(55));
-
-  /* ---------- scattered rocks ---------- */
-  scene.add(makeRocks(460));
-
-  /* ---------- lake ---------- */
-  water = makeLake();
-  scene.add(water);
-
-  /* ---------- sky dome ---------- */
-  sky = makeSky();
-  scene.add(sky);
-
-  /* ---------- bake IBL ---------- */
-  bakeEnvironment();
-
-  /* ---------- clouds ---------- */
-  scene.add(cloudGroup);
-  buildClouds(maxAniso);
-
-  /* ---------- controls ---------- */
-  controls = new PointerLockControls(camera, renderer.domElement);
-
-  const overlay   = document.getElementById('overlay');
-  const crosshair = document.getElementById('crosshair');
-
-  overlay.addEventListener('click', () => controls.lock());
-  controls.addEventListener('lock', () => {
-    overlay.classList.add('hidden');
-    crosshair.classList.add('show');
-  });
-  controls.addEventListener('unlock', () => {
-    overlay.classList.remove('hidden');
-    crosshair.classList.remove('show');
-    player.vel.x = 0;
-    player.vel.z = 0;
-  });
-
-  window.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if (e.code === 'Space') e.preventDefault();
-  });
-  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
-
-  /* ---------- post pipeline ---------- */
-  composer = new EffectComposer(renderer);
-  composer.setPixelRatio(pixelRatio);
-  composer.setSize(window.innerWidth, window.innerHeight);
-
-  composer.addPass(new RenderPass(scene, camera));
-
-  // Reduced bloom — subtle, only catches the sun disc and specular glints
-  const bloom = new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.22,   // strength (down from 0.42)
-    0.60,   // radius
-    1.00    // threshold (up from 0.86)
-  );
-  composer.addPass(bloom);
-
-  composer.addPass(new OutputPass());
-
-  motionBlurPass = new ShaderPass(makeMotionBlurShader());
-  motionBlurPass.uniforms.uAngular.value.set(0, 0);
-  motionBlurPass.uniforms.uStrength.value = MB_STRENGTH;
-  motionBlurPass.uniforms.uMax.value = MB_MAX;
-  composer.addPass(motionBlurPass);
-
-  gradePass = new ShaderPass(makeGradeShader());
-  gradePass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
-  composer.addPass(gradePass);
-
-  composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
-
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
-    if (gradePass) {
-      gradePass.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
-    }
-  });
-}
-
-/* ===================================================================== */
-/*  Sky dome — dimmer sun, warmer gradient                               */
-/* ===================================================================== */
-function makeSky() {
-  const geo = new THREE.SphereGeometry(14000, 32, 20);
-
-  const mat = new THREE.ShaderMaterial({
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false,
-    uniforms: { uSunDir: { value: SUN_DIR.clone() } },
-    vertexShader: /* glsl */`
-      varying vec3 vWorldPos;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorldPos = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: /* glsl */`
-      precision highp float;
-      uniform vec3 uSunDir;
-      varying vec3 vWorldPos;
-
-      void main() {
-        vec3 rayDir = normalize(vWorldPos - cameraPosition);
-        vec3 sunDir = normalize(uSunDir);
-        float sunDot = dot(rayDir, sunDir);
-        float h = max(rayDir.y, 0.0);
-
-        vec3 zenith  = vec3(0.075, 0.235, 0.780);
-        vec3 mid     = vec3(0.320, 0.590, 1.010);
-        vec3 horizon = vec3(0.940, 0.955, 0.990);
-
-        vec3 col;
-        if (h < 0.24) {
-          col = mix(horizon, mid, smoothstep(0.0, 0.24, h));
-        } else {
-          col = mix(mid, zenith, pow(smoothstep(0.24, 1.0, h), 0.82));
+        // ---- UI helpers ----
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            div.textContent = text;
+            chatEl.appendChild(div);
+            chatEl.scrollTop = chatEl.scrollHeight;
+            return div;
         }
 
-        // Sun halo — dimmed significantly so it doesn't blind the scene
-        float mu = max(sunDot, 0.0);
-        col += vec3(1.00, 0.85, 0.62) * pow(mu, 3.0)   * 0.16;
-        col += vec3(1.00, 0.90, 0.72) * pow(mu, 14.0)  * 0.34;
-        col += vec3(1.00, 0.95, 0.85) * pow(mu, 64.0)  * 0.62;
-        col += vec3(1.00, 0.98, 0.94) * pow(mu, 500.0) * 1.10;
-
-        // Sun disc — much softer (was 40, now 4)
-        float disc = smoothstep(0.99970, 0.99994, sunDot);
-        col += vec3(1.0, 0.97, 0.90) * disc * 4.0;
-
-        if (rayDir.y < 0.0) {
-          float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
-          col = mix(horizon, vec3(0.68, 0.74, 0.82), gt);
+        function updateStatus(txt) {
+            statusEl.textContent = txt;
         }
 
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  });
+        // ---- streaming-aware send ----
+        async function sendMessage() {
+            const apiKey = apiKeyEl.value.trim();
+            if (!apiKey) {
+                updateStatus('⚠️ API key required');
+                apiKeyEl.focus();
+                return;
+            }
 
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.frustumCulled = false;
-  mesh.renderOrder = -1000;
-  return mesh;
-}
+            const userText = promptEl.value.trim();
+            if (!userText || isGenerating) return;
 
-/* ===================================================================== */
-/*  Lake — physically-inspired water                                     */
-/* ===================================================================== */
-function makeLake() {
-  const geo = new THREE.CircleGeometry(LAKE_RADIUS, 160);
-  geo.rotateX(-Math.PI / 2);
+            promptEl.value = '';
+            promptEl.style.height = 'auto';
 
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime:       { value: 0 },
-      uSunDir:     { value: SUN_DIR.clone() },
-      uDeepColor:  { value: new THREE.Color(0.003, 0.018, 0.040) },
-      uShallow:    { value: new THREE.Color(0.008, 0.048, 0.070) },
-      uZenith:     { value: new THREE.Color(0.075, 0.235, 0.780) },
-      uMid:        { value: new THREE.Color(0.320, 0.590, 1.010) },
-      uHorizon:    { value: new THREE.Color(0.940, 0.955, 0.990) },
-      uFogColor:   { value: HORIZON_LIN.clone() },
-      uFogDensity: { value: 0.00042 }
-    },
-    vertexShader: /* glsl */`
-      varying vec3 vWorldPos;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorldPos = wp.xyz;
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: /* glsl */`
-      precision highp float;
+            // push user turn
+            messages.push({ role: 'user', content: userText });
+            addMessage('user', userText);
 
-      uniform float uTime;
-      uniform vec3  uSunDir;
-      uniform vec3  uDeepColor, uShallow;
-      uniform vec3  uZenith, uMid, uHorizon;
-      uniform vec3  uFogColor;
-      uniform float uFogDensity;
+            // placeholder for assistant
+            const assistantDiv = addMessage('assistant', '');
+            assistantDiv.textContent = '▍';  // caret
 
-      varying vec3 vWorldPos;
+            isGenerating = true;
+            sendBtn.disabled = true;
+            updateStatus('⏳ generating...');
 
-      const float PI = 3.14159265;
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                        // optional attribution headers [citation:1]
+                        'HTTP-Referer': 'https://localhost',
+                        'X-OpenRouter-Title': 'Qwen3.8-27B Chat'
+                    },
+                    body: JSON.stringify({
+                        model: 'qwen/qwen3.8-27b:free',
+                        messages: messages,
+                        stream: true,
+                        // optional: enable reasoning if supported
+                        // reasoning: { enabled: true }
+                    })
+                });
 
-      /* ---------- Analytic sky (matches sky dome) ---------- */
-      vec3 skyColor(vec3 rayDir, vec3 sunDir) {
-        float h = max(rayDir.y, 0.0);
-        vec3 col;
-        if (h < 0.24) col = mix(uHorizon, uMid, smoothstep(0.0, 0.24, h));
-        else          col = mix(uMid, uZenith, pow(smoothstep(0.24, 1.0, h), 0.82));
+                if (!response.ok) {
+                    const err = await response.text();
+                    throw new Error(`${response.status} — ${err.slice(0, 300)}`);
+                }
 
-        float sunDot = max(dot(rayDir, sunDir), 0.0);
-        col += vec3(1.00, 0.85, 0.62) * pow(sunDot, 3.0)   * 0.16;
-        col += vec3(1.00, 0.90, 0.72) * pow(sunDot, 14.0)  * 0.34;
-        col += vec3(1.00, 0.95, 0.85) * pow(sunDot, 64.0)  * 0.62;
-        col += vec3(1.00, 0.98, 0.94) * pow(sunDot, 500.0) * 1.10;
-        float disc = smoothstep(0.99970, 0.99994, sunDot);
-        col += vec3(1.0, 0.97, 0.90) * disc * 4.0;
+                // ---- parse SSE stream ----
+                const reader  = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer    = '';
+                let fullText  = '';
+                let reasoningText = '';
 
-        if (rayDir.y < 0.0) {
-          float gt = clamp(-rayDir.y * 4.5, 0.0, 1.0);
-          col = mix(uHorizon, vec3(0.68, 0.74, 0.82), gt);
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || !trimmed.startsWith('data:')) continue;
+                        const data = trimmed.slice(5).trim();
+                        if (data === '[DONE]') continue;
+
+                        try {
+                            const parsed = JSON.parse(data);
+                            const delta  = parsed.choices?.[0]?.delta;
+                            if (!delta) continue;
+
+                            // reasoning tokens (if the model streams them)
+                            if (delta.reasoning || delta.reasoning_content) {
+                                reasoningText += delta.reasoning || delta.reasoning_content || '';
+                            }
+
+                            // main content
+                            if (delta.content) {
+                                fullText += delta.content;
+                                assistantDiv.textContent = fullText + '▍';
+                                chatEl.scrollTop = chatEl.scrollHeight;
+                            }
+                        } catch (_) {
+                            // ignore comment / malformed lines
+                        }
+                    }
+                }
+
+                // finalize assistant bubble
+                assistantDiv.textContent = fullText || '(empty response)';
+
+                // if reasoning was streamed, show it in a small panel
+                if (reasoningText.trim()) {
+                    const reasonDiv = document.createElement('div');
+                    reasonDiv.className = 'reasoning';
+                    reasonDiv.textContent = '🧠 ' + reasoningText.trim().slice(0, 500) +
+                        (reasoningText.length > 500 ? '…' : '');
+                    assistantDiv.appendChild(reasonDiv);
+                }
+
+                // record assistant turn for context
+                messages.push({ role: 'assistant', content: fullText });
+                updateStatus('✅ done');
+
+            } catch (err) {
+                assistantDiv.className = 'msg assistant error';
+                assistantDiv.textContent = '⚠️ ' + err.message;
+                updateStatus('❌ error');
+                // remove failed assistant turn from history
+                messages.pop();
+            } finally {
+                isGenerating = false;
+                sendBtn.disabled = false;
+                promptEl.focus();
+            }
         }
-        return col;
-      }
 
-      /* ---------- Deep-water dispersion relation ----------
-         For wavelength λ (metres), wave number k = 2π/λ
-         Angular frequency ω = sqrt(g · k), g = 9.81 m/s²
-         (Values are pre-baked as literals below.)            */
-      void accumWave(vec2 p, float t,
-                     vec2 dir, float amp, float k, float omega,
-                     inout float h, inout vec2 grad) {
-        vec2 d = normalize(dir);
-        float f = k * dot(d, p) - omega * t;
-        float s = sin(f);
-        float c = cos(f);
-        h    += amp * s;
-        grad += amp * k * c * d;
-      }
-
-      /* Sum of 10 waves spanning 12 m swell down to 25 cm ripple */
-      float waterHeight(vec2 p, float t, out vec2 grad) {
-        grad = vec2(0.0);
-        float h = 0.0;
-
-        // λ=12m  k=0.524  ω=2.27   (long ocean swell)
-        accumWave(p, t, vec2( 1.00,  0.20), 0.150, 0.524, 2.27, h, grad);
-        // λ=8m   k=0.785  ω=2.77
-        accumWave(p, t, vec2( 0.70, -0.70), 0.100, 0.785, 2.77, h, grad);
-        // λ=5m   k=1.257  ω=3.51
-        accumWave(p, t, vec2(-0.30,  0.90), 0.065, 1.257, 3.51, h, grad);
-        // λ=3.2m k=1.964  ω=4.39
-        accumWave(p, t, vec2( 0.90,  0.50), 0.042, 1.964, 4.39, h, grad);
-        // λ=2.0m k=3.142  ω=5.55
-        accumWave(p, t, vec2(-0.80, -0.40), 0.026, 3.142, 5.55, h, grad);
-        // λ=1.4m k=4.488  ω=6.63
-        accumWave(p, t, vec2( 0.40, -0.90), 0.016, 4.488, 6.63, h, grad);
-        // λ=0.9m k=6.981  ω=8.27
-        accumWave(p, t, vec2(-0.60,  0.80), 0.010, 6.981, 8.27, h, grad);
-        // λ=0.6m k=10.47  ω=10.13
-        accumWave(p, t, vec2( 0.20,  0.98), 0.006, 10.47, 10.13, h, grad);
-        // λ=0.4m k=15.71  ω=12.41
-        accumWave(p, t, vec2(-0.95,  0.30), 0.0035, 15.71, 12.41, h, grad);
-        // λ=0.25m k=25.13 ω=15.69
-        accumWave(p, t, vec2( 0.60,  0.80), 0.0020, 25.13, 15.69, h, grad);
-
-        return h;
-      }
-
-      /* Micro-detail normal perturbation (adds sparkle without height) */
-      vec3 microNormal(vec2 p, float t, float fade) {
-        float n1 = sin(p.x * 3.7 + t * 2.3) * cos(p.y * 4.1 - t * 1.7);
-        float n2 = sin(p.x * 8.2 - t * 4.1) * cos(p.y * 7.6 + t * 3.3);
-        float n3 = sin(p.x * 17.5 + t * 6.7) * cos(p.y * 15.3 - t * 5.1);
-        vec2 dxz = vec2(
-          cos(p.x * 3.7 + t * 2.3) * 3.7 * n1 +
-          cos(p.x * 8.2 - t * 4.1) * 8.2 * n2 * 0.6 +
-          cos(p.x * 17.5 + t * 6.7) * 17.5 * n3 * 0.3,
-          -sin(p.y * 4.1 - t * 1.7) * 4.1 * n1 +
-          -sin(p.y * 7.6 + t * 3.3) * 7.6 * n2 * 0.6 +
-          -sin(p.y * 15.3 - t * 5.1) * 15.3 * n3 * 0.3
-        );
-        return normalize(vec3(-dxz.x * 0.014 * fade, 1.0, -dxz.y * 0.014 * fade));
-      }
-
-      void main() {
-        vec3 viewVec = cameraPosition - vWorldPos;
-        float viewDist = length(viewVec);
-        vec3 viewDir = viewVec / viewDist;
-        vec3 sunDir = normalize(uSunDir);
-
-        // Distance-based LOD — fade ripple detail so far water isn't noisy
-        float lodFade = 1.0 / (1.0 + viewDist * 0.012);
-
-        // Wave normal from analytic gradient
-        vec2 grad;
-        float h = waterHeight(vWorldPos.xz, uTime, grad);
-        grad *= lodFade;
-
-        vec3 n = normalize(vec3(-grad.x, 1.0, -grad.y));
-
-        // Blend with micro-detail normal
-        vec3 mn = microNormal(vWorldPos.xz, uTime, lodFade);
-        n = normalize(n + vec3(mn.x, 0.0, mn.z) * 0.6);
-
-        // ---------- Fresnel ----------
-        float NdotV = max(dot(n, viewDir), 0.0);
-        float F0 = 0.020;                              // water IOR = 1.33
-        float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 5.0);
-
-        // ---------- Sky reflection ----------
-        vec3 reflDir = reflect(-viewDir, n);
-        reflDir.y = abs(reflDir.y);                    // never below horizon
-        vec3 reflCol = skyColor(reflDir, sunDir);
-
-        // ---------- Water body ----------
-        // Looking straight down we see through; at grazing angles we see surface
-        float downLooking = smoothstep(0.0, 0.75, NdotV);
-        vec3 bodyCol = mix(uShallow, uDeepColor, downLooking);
-
-        // Subsurface scattering — light punches through wave crests
-        float sss = pow(max(dot(viewDir, -sunDir), 0.0), 2.5)
-                  * smoothstep(0.02, 0.18, h)
-                  * 0.55;
-        bodyCol += vec3(0.055, 0.180, 0.165) * sss;
-
-        // ---------- Combine ----------
-        vec3 col = mix(bodyCol, reflCol, fresnel);
-
-        // ---------- Sun specular (two-lobe) ----------
-        vec3 halfDir = normalize(viewDir + sunDir);
-        float NdotH = max(dot(n, halfDir), 0.0);
-        float NdotL = max(dot(n, sunDir), 0.0);
-
-        // Tight sun glint + wider sheen
-        float glint = pow(NdotH, 1400.0) * 6.5;
-        float sheen = pow(NdotH, 90.0)   * 0.28;
-        col += vec3(1.0, 0.96, 0.86) * (glint + sheen) * (0.3 + 0.7 * NdotL);
-
-        // ---------- Fog ----------
-        float fogFactor = 1.0 - exp(-pow(uFogDensity * viewDist, 2.0));
-        col = mix(col, uFogColor, fogFactor);
-
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  });
-
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(LAKE_X, LAKE_Y, LAKE_Z);
-  mesh.renderOrder = 1;
-  return mesh;
-}
-
-/* ===================================================================== */
-/*  Forest — instanced trunks + instanced foliage                        */
-/* ===================================================================== */
-function makeForest(count) {
-  const rng = mulberry32(0x7EEE5);
-
-  // Trunk: tapered cylinder, base at y = 0
-  const trunkGeo = new THREE.CylinderGeometry(0.06, 0.14, 1.0, 6, 1);
-  trunkGeo.translate(0, 0.5, 0);
-
-  // Foliage: cluster of low-poly icospheres (pine cone meets blob)
-  const foliageGeo = new THREE.IcosahedronGeometry(0.65, 1);
-  foliageGeo.scale(1.0, 0.92, 1.0);
-  foliageGeo.translate(0, 1.78, 0);
-
-  const trunkMat = new THREE.MeshStandardMaterial({
-    color: 0x3d2c20,
-    roughness: 0.95,
-    metalness: 0.0,
-    flatShading: true,
-    envMapIntensity: 0.35
-  });
-
-  const foliageMat = new THREE.MeshStandardMaterial({
-    color: 0x3d5a2a,
-    roughness: 0.90,
-    metalness: 0.0,
-    flatShading: true,
-    envMapIntensity: 0.5
-  });
-
-  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
-  const foliage = new THREE.InstancedMesh(foliageGeo, foliageMat, count);
-
-  trunks.castShadow = true;
-  trunks.receiveShadow = true;
-  foliage.castShadow = true;
-  foliage.receiveShadow = true;
-
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
-  const v = new THREE.Vector3();
-  const s = new THREE.Vector3();
-  const c = new THREE.Color();
-
-  const lakeR2 = (LAKE_RADIUS + 3) * (LAKE_RADIUS + 3);
-
-  let placed = 0;
-  let attempts = 0;
-  while (placed < count && attempts < count * 40) {
-    attempts++;
-
-    const t = rng();
-    const radius = 10 + Math.pow(t, 1.7) * 280;
-    const ang = rng() * Math.PI * 2;
-    const px = Math.cos(ang) * radius;
-    const pz = Math.sin(ang) * radius;
-
-    // Keep the lake clear
-    const dx = px - LAKE_X, dz = pz - LAKE_Z;
-    if (dx * dx + dz * dz < lakeR2) continue;
-
-    const scale = 2.6 + rng() * 5.2;
-
-    v.set(px, 0, pz);
-    e.set(0, rng() * Math.PI * 2, 0);
-    q.setFromEuler(e);
-
-    s.set(scale * (0.7 + rng() * 0.35),
-          scale,
-          scale * (0.7 + rng() * 0.35));
-
-    m.compose(v, q, s);
-    trunks.setMatrixAt(placed, m);
-    foliage.setMatrixAt(placed, m);
-
-    // Colour variation per tree
-    const hue = 0.26 + (rng() - 0.5) * 0.07;
-    const sat = 0.32 + rng() * 0.18;
-    const lit = 0.16 + rng() * 0.10;
-    c.setHSL(hue, sat, lit);
-    foliage.setColorAt(placed, c);
-
-    placed++;
-  }
-
-  trunks.count = placed;
-  foliage.count = placed;
-  trunks.instanceMatrix.needsUpdate = true;
-  foliage.instanceMatrix.needsUpdate = true;
-  if (foliage.instanceColor) foliage.instanceColor.needsUpdate = true;
-
-  return { trunks, foliage };
-}
-
-/* ===================================================================== */
-/*  Undergrowth — instanced low-poly bushes                              */
-/* ===================================================================== */
-function makeBushes(count) {
-  const rng = mulberry32(0xB005);
-
-  const geo = new THREE.IcosahedronGeometry(0.55, 1);
-  geo.scale(1.25, 0.78, 1.25);
-  geo.translate(0, 0.42, 0);
-
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x3a4d28,
-    roughness: 0.92,
-    metalness: 0.0,
-    flatShading: true,
-    envMapIntensity: 0.4
-  });
-
-  const mesh = new THREE.InstancedMesh(geo, mat, count);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
-  const v = new THREE.Vector3();
-  const s = new THREE.Vector3();
-  const c = new THREE.Color();
-
-  const lakeR2 = (LAKE_RADIUS + 2) * (LAKE_RADIUS + 2);
-
-  let placed = 0;
-  let attempts = 0;
-  while (placed < count && attempts < count * 40) {
-    attempts++;
-
-    const t = rng();
-    const radius = 6 + Math.pow(t, 2.0) * 200;
-    const ang = rng() * Math.PI * 2;
-    const px = Math.cos(ang) * radius;
-    const pz = Math.sin(ang) * radius;
-
-    const dx = px - LAKE_X, dz = pz - LAKE_Z;
-    if (dx * dx + dz * dz < lakeR2) continue;
-
-    const scale = 0.6 + rng() * 1.4;
-
-    v.set(px, 0, pz);
-    e.set(0, rng() * Math.PI * 2, 0);
-    q.setFromEuler(e);
-    s.set(scale * (0.85 + rng() * 0.4),
-          scale * (0.7 + rng() * 0.5),
-          scale * (0.85 + rng() * 0.4));
-
-    m.compose(v, q, s);
-    mesh.setMatrixAt(placed, m);
-
-    const hue = 0.25 + (rng() - 0.5) * 0.06;
-    c.setHSL(hue, 0.35 + rng() * 0.15, 0.14 + rng() * 0.08);
-    mesh.setColorAt(placed, c);
-
-    placed++;
-  }
-
-  mesh.count = placed;
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-
-  return mesh;
-}
-
-/* ===================================================================== */
-/*  PMREM environment bake                                               */
-/* ===================================================================== */
-function bakeEnvironment() {
-  const tmpScene = new THREE.Scene();
-  scene.remove(sky);
-  tmpScene.add(sky);
-  sky.position.set(0, 0, 0);
-
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  pmrem.compileEquirectangularShader();
-  pmremRT = pmrem.fromScene(tmpScene, 0, 0.1, 50000);
-  scene.environment = pmremRT.texture;
-
-  tmpScene.remove(sky);
-  scene.add(sky);
-  sky.position.copy(camera.position);
-  pmrem.dispose();
-}
-
-/* ===================================================================== */
-/*  Distant terrain                                                      */
-/* ===================================================================== */
-function makeDistantTerrain() {
-  const SIZE = 24000;
-  const SEGS = 180;
-  const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEGS, SEGS);
-  geo.rotateX(-Math.PI / 2);
-
-  const pos = geo.attributes.position;
-  const FLAT_R = 900;
-
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const z = pos.getZ(i);
-    const r = Math.sqrt(x * x + z * z);
-
-    if (r < FLAT_R) {
-      pos.setY(i, -1.0);
-    } else {
-      const t = Math.min(1.0, (r - FLAT_R) / 7000);
-      const h1 = Math.sin(x * 0.00055) * Math.cos(z * 0.00072) * 520;
-      const h2 = Math.sin(x * 0.00140 + 1.7) * Math.sin(z * 0.00118 + 0.4) * 240;
-      const h3 = Math.sin(x * 0.00350 + 0.9) * Math.cos(z * 0.00310) * 90;
-      pos.setY(i, (h1 + h2 + h3) * t * t);
-    }
-  }
-  geo.computeVertexNormals();
-
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x6b7686,
-    roughness: 1.0,
-    metalness: 0.0,
-    flatShading: true,
-    fog: true,
-    envMapIntensity: 0.6
-  });
-
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.y = -0.5;
-  return mesh;
-}
-
-/* ===================================================================== */
-/*  Rocks                                                                */
-/* ===================================================================== */
-function makeRocks(count) {
-  const geo = new THREE.DodecahedronGeometry(1.0, 0);
-  geo.scale(1.0, 0.68, 1.0);
-
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x707478,
-    roughness: 0.94,
-    metalness: 0.0,
-    flatShading: true,
-    envMapIntensity: 1.0
-  });
-
-  const mesh = new THREE.InstancedMesh(geo, mat, count);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-
-  const rng = mulberry32(0xDEADBEEF);
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const e = new THREE.Euler();
-  const v = new THREE.Vector3();
-  const s = new THREE.Vector3();
-
-  const lakeR2 = (LAKE_RADIUS + 2) * (LAKE_RADIUS + 2);
-
-  let placed = 0;
-  let attempts = 0;
-  while (placed < count && attempts < count * 20) {
-    attempts++;
-
-    const t = rng();
-    const radius = 4 + Math.pow(t, 2.4) * 400;
-    const ang = rng() * Math.PI * 2;
-    const px = Math.cos(ang) * radius;
-    const pz = Math.sin(ang) * radius;
-
-    const dx = px - LAKE_X, dz = pz - LAKE_Z;
-    if (dx * dx + dz * dz < lakeR2) continue;
-
-    v.set(px, 0, pz);
-
-    const sizeClass = rng();
-    let base;
-    if (sizeClass < 0.78)      base = 0.05 + rng() * 0.10;
-    else if (sizeClass < 0.96) base = 0.18 + rng() * 0.22;
-    else                        base = 0.42 + rng() * 0.40;
-
-    s.set(base * (0.85 + rng() * 0.35),
-          base * (0.75 + rng() * 0.35),
-          base * (0.85 + rng() * 0.35));
-
-    e.set(rng() * 0.35, rng() * Math.PI * 2, rng() * 0.35);
-    q.setFromEuler(e);
-
-    v.y = s.y * 0.45;
-
-    m.compose(v, q, s);
-    mesh.setMatrixAt(placed, m);
-    placed++;
-  }
-  mesh.count = placed;
-
-  mesh.instanceMatrix.needsUpdate = true;
-  return mesh;
-}
-
-/* ===================================================================== */
-/*  Clouds                                                               */
-/* ===================================================================== */
-function buildClouds(maxAniso) {
-  const texRng = mulberry32(0xC10D0C10);
-  const textures = [];
-  for (let i = 0; i < 10; i++) textures.push(makeCloudTexture(texRng, 1024, maxAniso));
-
-  const rng = mulberry32(0xBEEFCAFE);
-
-  const layers = [
-    [ 320, 1100,  180,  340,  120,  260, 22, 0.82],
-    [ 800, 2400,  380,  720,  280,  560, 28, 0.74],
-    [1600, 4600,  750, 1350,  520, 1150, 18, 0.55]
-  ];
-
-  for (const [minD, maxD, minY, maxY, minS, maxS, count, baseOp] of layers) {
-    for (let i = 0; i < count; i++) {
-      const tex = textures[(rng() * textures.length) | 0];
-
-      const mat = new THREE.SpriteMaterial({
-        map: tex,
-        transparent: true,
-        depthWrite: false,
-        depthTest: true,
-        fog: true,
-        opacity: baseOp * (0.85 + rng() * 0.30)
-      });
-
-      const sprite = new THREE.Sprite(mat);
-
-      const ang = rng() * Math.PI * 2;
-      const rad = minD + rng() * (maxD - minD);
-      const y   = minY + rng() * (maxY - minY);
-      const w   = minS + rng() * (maxS - minS);
-
-      sprite.scale.set(w, w * 0.5, 1);
-      sprite.position.set(Math.cos(ang) * rad, y, Math.sin(ang) * rad);
-      sprite.userData.speed = 2.0 + rng() * 4.0;
-
-      cloudGroup.add(sprite);
-      clouds.push(sprite);
-    }
-  }
-}
-
-function makeCloudTexture(rand, size, maxAniso) {
-  const W = size;
-  const H = Math.round(size * 0.5);
-  const cvs = document.createElement('canvas');
-  cvs.width = W; cvs.height = H;
-  const ctx = cvs.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  const puffCount = 60 + Math.floor(rand() * 30);
-  for (let i = 0; i < puffCount; i++) {
-    const t = i / (puffCount - 1);
-    const bell = Math.sin(t * Math.PI);
-
-    const x = W * 0.08 + t * W * 0.84 + (rand() - 0.5) * W * 0.04;
-    const r = W * (0.030 + 0.100 * bell * (0.5 + rand() * 0.9));
-    const y = H * 0.72
-            - bell * H * 0.32 * (0.4 + rand() * 1.0)
-            - rand() * H * 0.05;
-
-    const g = ctx.createRadialGradient(x, y, r * 0.03, x, y, r);
-    g.addColorStop(0.00, 'rgba(255,255,255,1)');
-    g.addColorStop(0.35, 'rgba(255,255,255,0.96)');
-    g.addColorStop(0.70, 'rgba(255,255,255,0.42)');
-    g.addColorStop(1.00, 'rgba(255,255,255,0)');
-
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.globalCompositeOperation = 'source-atop';
-
-  const topLight = ctx.createLinearGradient(0, H * 0.02, 0, H * 0.60);
-  topLight.addColorStop(0.00, 'rgba(255, 252, 238, 0.70)');
-  topLight.addColorStop(1.00, 'rgba(255, 252, 238, 0.00)');
-  ctx.fillStyle = topLight;
-  ctx.fillRect(0, 0, W, H);
-
-  const baseShadow = ctx.createLinearGradient(0, H * 0.32, 0, H * 0.92);
-  baseShadow.addColorStop(0.00, 'rgba(180, 198, 224, 0.00)');
-  baseShadow.addColorStop(0.45, 'rgba(150, 176, 212, 0.45)');
-  baseShadow.addColorStop(1.00, 'rgba(95, 128, 172, 0.95)');
-  ctx.fillStyle = baseShadow;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.globalAlpha = 0.11;
-  for (let i = 0; i < 90; i++) {
-    const x = rand() * W;
-    const y = H * 0.25 + rand() * H * 0.6;
-    const r = 10 + rand() * 34;
-    const dark = rand() < 0.58;
-    ctx.fillStyle = dark ? 'rgba(95,120,158,1)' : 'rgba(255,255,255,1)';
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  const rim = ctx.createLinearGradient(0, H * 0.05, 0, H * 0.42);
-  rim.addColorStop(0.00, 'rgba(255, 255, 255, 0.00)');
-  rim.addColorStop(0.50, 'rgba(255, 254, 244, 0.65)');
-  rim.addColorStop(1.00, 'rgba(255, 255, 255, 0.00)');
-  ctx.fillStyle = rim;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.globalCompositeOperation = 'source-over';
-
-  const tex = new THREE.CanvasTexture(cvs);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = maxAniso;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.magFilter = THREE.LinearFilter;
-  tex.generateMipmaps = true;
-  return tex;
-}
-
-/* ===================================================================== */
-/*  Procedural ground textures                                           */
-/* ===================================================================== */
-function generateConcreteTextures(size, maxAniso) {
-  function hash2(ix, iy) {
-    let h = (ix * 374761393 + iy * 668265263) | 0;
-    h = ((h ^ (h >>> 13)) * 1274126177) | 0;
-    h = (h ^ (h >>> 16)) >>> 0;
-    return h / 4294967295;
-  }
-  function vnoise(x, y, period) {
-    const xi = Math.floor(x), yi = Math.floor(y);
-    const xf = x - xi, yf = y - yi;
-    const u = xf * xf * (3 - 2 * xf);
-    const v = yf * yf * (3 - 2 * yf);
-    const x0 = ((xi % period) + period) % period;
-    const y0 = ((yi % period) + period) % period;
-    const x1 = (x0 + 1) % period;
-    const y1 = (y0 + 1) % period;
-    return hash2(x0,y0)*(1-u)*(1-v) + hash2(x1,y0)*u*(1-v)
-         + hash2(x0,y1)*(1-u)*v   + hash2(x1,y1)*u*v;
-  }
-  function fbm(u, v, baseFreq, octaves) {
-    let val = 0, amp = 0.5, freq = baseFreq;
-    for (let i = 0; i < octaves; i++) {
-      val += amp * vnoise(u * freq, v * freq, freq);
-      freq *= 2; amp *= 0.5;
-    }
-    return val;
-  }
-
-  const height = new Float32Array(size * size);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const u = x / size, v = y / size;
-      let h = fbm(u, v, 10, 5);
-      h += fbm(u, v, 90, 2) * 0.06;
-      h += (Math.random() - 0.5) * 0.025;
-      height[y * size + x] = h;
-    }
-  }
-
-  const albedoCv = document.createElement('canvas');
-  albedoCv.width = albedoCv.height = size;
-  const actx = albedoCv.getContext('2d');
-  const albedoImg = actx.createImageData(size, size);
-  const ad = albedoImg.data;
-  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
-    const h = height[i];
-    const base = 0.50 + (h - 0.5) * 0.34;
-    const n1 = (Math.random() - 0.5) * 0.028;
-    const n2 = (Math.random() - 0.5) * 0.024;
-    const n3 = (Math.random() - 0.5) * 0.020;
-    ad[p]     = Math.max(0, Math.min(255, (base + n1) * 255));
-    ad[p + 1] = Math.max(0, Math.min(255, (base + n2) * 255));
-    ad[p + 2] = Math.max(0, Math.min(255, (base * 1.010 + n3) * 255));
-    ad[p + 3] = 255;
-  }
-  actx.putImageData(albedoImg, 0, 0);
-
-  const normalCv = document.createElement('canvas');
-  normalCv.width = normalCv.height = size;
-  const nctx = normalCv.getContext('2d');
-  const normalImg = nctx.createImageData(size, size);
-  const nd = normalImg.data;
-  const strength = 5.2;
-  for (let y = 0; y < size; y++) {
-    const y0 = (y - 1 + size) % size;
-    const y1 = (y + 1) % size;
-    for (let x = 0; x < size; x++) {
-      const x0 = (x - 1 + size) % size;
-      const x1 = (x + 1) % size;
-      const dx = (height[y * size + x1] - height[y * size + x0]) * strength;
-      const dy = (height[y1 * size + x] - height[y0 * size + x]) * strength;
-      const len = Math.sqrt(dx * dx + dy * dy + 1.0);
-      const i = (y * size + x) * 4;
-      nd[i    ] = ((-dx / len) * 0.5 + 0.5) * 255;
-      nd[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255;
-      nd[i + 2] = (( 1.0 / len) * 0.5 + 0.5) * 255;
-      nd[i + 3] = 255;
-    }
-  }
-  nctx.putImageData(normalImg, 0, 0);
-
-  const roughCv = document.createElement('canvas');
-  roughCv.width = roughCv.height = size;
-  const rctx = roughCv.getContext('2d');
-  const roughImg = rctx.createImageData(size, size);
-  const rd = roughImg.data;
-  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
-    const h = height[i];
-    let r = 0.90 + (h - 0.5) * 0.12;
-    r = Math.max(0.62, Math.min(1.0, r));
-    rd[p] = rd[p + 1] = rd[p + 2] = r * 255;
-    rd[p + 3] = 255;
-  }
-  rctx.putImageData(roughImg, 0, 0);
-
-  const aoCv = document.createElement('canvas');
-  aoCv.width = aoCv.height = size;
-  const aoctx = aoCv.getContext('2d');
-  const aoImg = aoctx.createImageData(size, size);
-  const aod = aoImg.data;
-  for (let i = 0, p = 0; i < size * size; i++, p += 4) {
-    const h = height[i];
-    const v = Math.min(1.0, Math.max(0.4, 0.72 + (h - 0.5) * 0.9));
-    aod[p] = aod[p + 1] = aod[p + 2] = v * 255;
-    aod[p + 3] = 255;
-  }
-  aoctx.putImageData(aoImg, 0, 0);
-
-  const albedoTex = new THREE.CanvasTexture(albedoCv);
-  albedoTex.colorSpace = THREE.SRGBColorSpace;
-  albedoTex.wrapS = albedoTex.wrapT = THREE.RepeatWrapping;
-  albedoTex.anisotropy = maxAniso;
-
-  const normalTex = new THREE.CanvasTexture(normalCv);
-  normalTex.wrapS = normalTex.wrapT = THREE.RepeatWrapping;
-  normalTex.anisotropy = maxAniso;
-
-  const roughTex = new THREE.CanvasTexture(roughCv);
-  roughTex.wrapS = roughTex.wrapT = THREE.RepeatWrapping;
-  roughTex.anisotropy = maxAniso;
-
-  const aoTex = new THREE.CanvasTexture(aoCv);
-  aoTex.wrapS = aoTex.wrapT = THREE.RepeatWrapping;
-  aoTex.anisotropy = maxAniso;
-
-  return { albedo: albedoTex, normal: normalTex, rough: roughTex, ao: aoTex };
-}
-
-function generateDetailTexture(size, maxAniso) {
-  const cvs = document.createElement('canvas');
-  cvs.width = cvs.height = size;
-  const ctx = cvs.getContext('2d');
-  const img = ctx.createImageData(size, size);
-  const d = img.data;
-
-  function hash2(ix, iy) {
-    let h = (ix * 374761393 + iy * 668265263) | 0;
-    h = ((h ^ (h >>> 13)) * 1274126177) | 0;
-    h = (h ^ (h >>> 16)) >>> 0;
-    return h / 4294967295;
-  }
-  function vnoise(x, y, period) {
-    const xi = Math.floor(x), yi = Math.floor(y);
-    const xf = x - xi, yf = y - yi;
-    const u = xf * xf * (3 - 2 * xf);
-    const v = yf * yf * (3 - 2 * yf);
-    const x0 = ((xi % period) + period) % period;
-    const y0 = ((yi % period) + period) % period;
-    const x1 = (x0 + 1) % period;
-    const y1 = (y0 + 1) % period;
-    return hash2(x0,y0)*(1-u)*(1-v) + hash2(x1,y0)*u*(1-v)
-         + hash2(x0,y1)*(1-u)*v   + hash2(x1,y1)*u*v;
-  }
-  function fbm(u, v, baseFreq, octaves) {
-    let val = 0, amp = 0.5, freq = baseFreq;
-    for (let i = 0; i < octaves; i++) {
-      val += amp * vnoise(u * freq, v * freq, freq);
-      freq *= 2; amp *= 0.5;
-    }
-    return val;
-  }
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const u = x / size, v = y / size;
-      let n = fbm(u, v, 32, 4);
-      n = Math.pow(n, 1.4);
-      const i = (y * size + x) * 4;
-      const val = 128 + (n - 0.5) * 240;
-      d[i] = d[i + 1] = d[i + 2] = Math.max(0, Math.min(255, val));
-      d[i + 3] = 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-
-  const tex = new THREE.CanvasTexture(cvs);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = maxAniso;
-  return tex;
-}
-
-/* ===================================================================== */
-/*  Motion blur shader                                                   */
-/* ===================================================================== */
-function makeMotionBlurShader() {
-  return {
-    uniforms: {
-      tDiffuse:  { value: null },
-      uAngular:  { value: new THREE.Vector2(0, 0) },
-      uStrength: { value: MB_STRENGTH },
-      uMax:      { value: MB_MAX }
-    },
-    vertexShader: /* glsl */`
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: /* glsl */`
-      precision highp float;
-      uniform sampler2D tDiffuse;
-      uniform vec2  uAngular;
-      uniform float uStrength;
-      uniform float uMax;
-      varying vec2 vUv;
-
-      void main() {
-        vec2 uv = vUv;
-        vec2 toCenter = uv - 0.5;
-        vec2 dir = toCenter * vec2(uAngular.x, -uAngular.y) * uStrength;
-
-        float len = length(dir);
-        if (len > uMax) dir *= uMax / len;
-
-        vec3 col = vec3(0.0);
-        const int SAMPLES = 9;
-        for (int i = 0; i < SAMPLES; i++) {
-          float t = (float(i) / float(SAMPLES - 1)) - 0.5;
-          col += texture2D(tDiffuse, uv + dir * t).rgb;
-        }
-        col /= float(SAMPLES);
-
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  };
-}
-
-/* ===================================================================== */
-/*  Filmic grade shader                                                  */
-/* ===================================================================== */
-function makeGradeShader() {
-  return {
-    uniforms: {
-      tDiffuse:    { value: null },
-      uTime:       { value: 0 },
-      uResolution: { value: new THREE.Vector2(1, 1) }
-    },
-    vertexShader: /* glsl */`
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: /* glsl */`
-      precision highp float;
-      uniform sampler2D tDiffuse;
-      uniform float uTime;
-      uniform vec2  uResolution;
-      varying vec2 vUv;
-
-      float hash(vec2 p) {
-        p = fract(p * vec2(123.34, 456.21));
-        p += dot(p, p + 45.32);
-        return fract(p.x * p.y);
-      }
-
-      void main() {
-        vec2 uv = vUv;
-        vec2 cc = uv - 0.5;
-        float r2 = dot(cc, cc);
-
-        float ca = r2 * 0.0024;
-        vec3 col;
-        col.r = texture2D(tDiffuse, uv + cc * ca).r;
-        col.g = texture2D(tDiffuse, uv).g;
-        col.b = texture2D(tDiffuse, uv - cc * ca).b;
-
-        float vig = smoothstep(0.95, 0.35, r2 * 1.9);
-        col *= mix(0.70, 1.0, vig);
-
-        float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-        vec3 shadowTint    = vec3(0.94, 0.98, 1.06);
-        vec3 highlightTint = vec3(1.05, 1.00, 0.94);
-        col *= mix(shadowTint, highlightTint, smoothstep(0.0, 1.0, lum));
-
-        col = (col - 0.5) * 1.035 + 0.5;
-
-        float grain = hash(uv * uResolution + uTime * 60.0) - 0.5;
-        col += grain * 0.014;
-
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `
-  };
-}
-
-/* ===================================================================== */
-/*  Main loop                                                            */
-/* ===================================================================== */
-function animate() {
-  requestAnimationFrame(animate);
-
-  const delta = Math.min(clock.getDelta(), 0.05);
-  const active = controls.isLocked;
-  const t = clock.elapsedTime;
-
-  updatePlayer(delta, active, t);
-
-  _deltaQ.copy(_prevQuat).invert().multiply(camera.quaternion);
-  _deltaE.setFromQuaternion(_deltaQ, 'YXZ');
-  motionBlurPass.uniforms.uAngular.value.set(_deltaE.y, _deltaE.x);
-  _prevQuat.copy(camera.quaternion);
-
-  sky.position.copy(camera.position);
-
-  if (water) water.material.uniforms.uTime.value = t;
-
-  const sun = scene.userData.sun;
-  sun.position.copy(camera.position).addScaledVector(SUN_DIR, 160);
-  sun.target.position.copy(camera.position);
-  sun.target.updateMatrixWorld();
-
-  for (let i = 0; i < clouds.length; i++) {
-    const c = clouds[i];
-    c.position.x += c.userData.speed * delta;
-    if (c.position.x > 5600) c.position.x = -5600;
-  }
-  cloudGroup.position.set(camera.position.x, 0, camera.position.z);
-
-  if (gradePass) gradePass.uniforms.uTime.value = t;
-
-  composer.render();
-
-  fpsAccum += delta; fpsFrames++;
-  if (fpsAccum >= 0.5) {
-    hud.textContent = Math.round(fpsFrames / fpsAccum) + ' FPS';
-    fpsAccum = 0; fpsFrames = 0;
-  }
-}
-
-/* ===================================================================== */
-/*  Player movement                                                      */
-/* ===================================================================== */
-function updatePlayer(delta, active, t) {
-  camera.getWorldDirection(forward);
-  forward.y = 0;
-  if (forward.lengthSq() < 1e-8) forward.set(0, 0, -1);
-  forward.normalize();
-  right.crossVectors(forward, UP).normalize();
-
-  const mz = active ? (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0) : 0;
-  const mx = active ? (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0) : 0;
-
-  wish.set(0, 0, 0)
-      .addScaledVector(forward, mz)
-      .addScaledVector(right, mx);
-  if (wish.lengthSq() > 0) wish.normalize();
-
-  const running = active && (keys['ShiftLeft'] || keys['ShiftRight']);
-  const targetSpeed = running ? RUN_SPEED : WALK_SPEED;
-
-  const accel = player.grounded ? 13 : 3;
-  player.vel.x = THREE.MathUtils.damp(player.vel.x, wish.x * targetSpeed, accel, delta);
-  player.vel.z = THREE.MathUtils.damp(player.vel.z, wish.z * targetSpeed, accel, delta);
-
-  player.pos.x += player.vel.x * delta;
-  player.pos.z += player.vel.z * delta;
-
-  player.vel.y -= GRAVITY * delta;
-  player.pos.y += player.vel.y * delta;
-
-  if (player.pos.y <= EYE_HEIGHT) {
-    player.pos.y = EYE_HEIGHT;
-    player.vel.y = 0;
-    player.grounded = true;
-  } else {
-    player.grounded = false;
-  }
-
-  if (active && keys['Space'] && player.grounded) {
-    player.vel.y = JUMP_SPEED;
-    player.grounded = false;
-  }
-
-  const hSpeed = Math.hypot(player.vel.x, player.vel.z);
-  const wantBob = (player.grounded && hSpeed > 0.35) ? 1 : 0;
-  player.bobBlend = THREE.MathUtils.damp(player.bobBlend, wantBob, 6, delta);
-  player.bobPhase += delta * (4.4 + hSpeed * 0.85);
-  player.idlePhase += delta * 1.15;
-
-  const bobY = Math.sin(player.bobPhase * 2) * 0.032 * player.bobBlend;
-  const sway = Math.cos(player.bobPhase)     * 0.022 * player.bobBlend;
-  const idle = (1 - player.bobBlend) * Math.sin(player.idlePhase) * 0.008;
-
-  camera.position.copy(player.pos);
-  camera.position.x += right.x * sway;
-  camera.position.z += right.z * sway;
-  camera.position.y += bobY + idle;
-
-  const rollTarget = -mx * 0.009 * (running ? 1.35 : 1.0);
-  player.roll = THREE.MathUtils.damp(player.roll, rollTarget, 6, delta);
-  camera.rotation.z = player.roll;
-
-  const targetFov = 70 + (running && hSpeed > 4.2 ? 5.5 : 0.0);
-  if (Math.abs(camera.fov - targetFov) > 0.02) {
-    camera.fov = THREE.MathUtils.damp(camera.fov, targetFov, 5, delta);
-    camera.updateProjectionMatrix();
-  }
-}
-
-/* ===================================================================== */
-/*  Helpers                                                              */
-/* ===================================================================== */
-function mulberry32(a) {
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-</script>
+        // ---- event listeners ----
+        sendBtn.addEventListener('click', sendMessage);
+
+        promptEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // auto-resize textarea
+        promptEl.addEventListener('input', () => {
+            promptEl.style.height = 'auto';
+            promptEl.style.height = Math.min(promptEl.scrollHeight, 150) + 'px';
+        });
+
+        // quick sanity check on key input
+        apiKeyEl.addEventListener('input', () => {
+            const val = apiKeyEl.value.trim();
+            updateStatus(val.length > 10 ? '🔑 key ready' : '');
+        });
+
+        promptEl.focus();
+    </script>
 </body>
 </html>
